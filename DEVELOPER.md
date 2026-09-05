@@ -140,20 +140,38 @@ also be built as a plain page over the top of itself.
 ### Why a hymn is two documents rather than one in two formats
 
 Quarto can give one document several formats, and a hymn wanting both
-`revealjs` and `html` looks exactly like that. It is not:
+`revealjs` and `html` looks exactly like that. It works, and two things that
+sound like blockers are not:
 
-- **The outputs collide.** Both are HTML, so both claim `slide/N.html`, and the
-  render dies moving the second over the first.
-- **Search cannot tell them apart.** `search: false` is a property of a
-  document, not of one of its formats. The index here is one entry per *slide*
-  so that a half-remembered line opens the deck at the stanza that sings it;
-  a second rendering of the same words under a second URL is not a second
-  match, and there would be no way to keep it out.
+- Both outputs are HTML and would both claim `slide/N.html`, but `output-file`
+  under the second format renames it and the render succeeds.
+- `search: false` **nested under `format: html:`** does keep that output out of
+  `search.json` while the deck stays in it.
 
-So `md-to-site` writes two documents from one parse instead. What that costs is
-a second file per hymn, ignored by git like the first. What it buys is
-`slide/N.html` and `hymn/N.html` — two names for two things, rather than one
-name and a suffix — and each with its own front matter to say what it is.
+The reasons are the two that remain.
+
+**A single source pins both outputs to one directory.** `output-file` rejects
+anything with a path separator — *"Invalid value for `output-file`: paths are
+not allowed"* — so the page can only be `slide/N-page.html`, beside the deck it
+is not. Two documents give `slide/N.html` and `hymn/N.html`: a directory per
+product, which is what the landing page's two buttons and `goto.html` already
+map onto.
+
+**The two do not differ by visibility.** `content-visible` hides a block that
+both documents contain. These differ in how the same stanzas are *divided* —
+one halves a long stanza and repeats the chorus after each stanza that sings
+it, the other keeps the hymnal's shape and wraps it in three panes. One source
+would have to carry both divisions in full and hide one, roughly doubling every
+generated file and leaving Markdown that has to be de-multiplexed to read. It
+would also have to say `unless-format="revealjs"` rather than
+`when-format="html"` every time, because reveal.js *is* an HTML format and
+`when-format="html"` matches it too — a leak that shows up as page-only content
+appearing on a deck, 848 times over, with nothing failing.
+
+So `md-to-site` writes two documents from one parse instead. The cost is a
+second generated file per hymn, ignored by git like the first, and a check in
+`build_site.py` that both projections describe the same hymns. The gain is that
+each document's front matter says plainly what it is.
 
 | file | kind | used by |
 |---|---|---|
