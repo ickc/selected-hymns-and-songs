@@ -8,12 +8,13 @@ from unittest.mock import patch
 import yaml
 
 from hymn_projection.converter import (
-    markdown_to_slides,
+    markdown_to_site,
     markdown_to_yaml,
     yaml_to_markdown,
 )
 from hymn_projection.environment import BUILD_MODE_ENV
 from hymn_projection.model import Hymn
+from hymn_projection.scans import SCAN_LANGUAGES
 
 
 HYMN_DATA = {
@@ -30,6 +31,34 @@ HYMN_DATA = {
     },
     "title": {"en": "A title <!-- remains literal -->"},
 }
+
+
+def make_site(root: Path, hymns: int) -> tuple[Path, Path]:
+    """Build the Quarto project and scans one projection run needs.
+
+    `markdown_to_site` writes into a Quarto project and reads two things from
+    beside it: where `data/` is browsable, and which pages each hymn is printed
+    on. Both are real inputs, so a test supplies real ones rather than reaching
+    past them.
+    """
+
+    site = root / "site"
+    site.mkdir(parents=True, exist_ok=True)
+    (site / "_quarto.yml").write_text(
+        "source-repo: https://example.invalid/blob/main\n", encoding="utf-8"
+    )
+    scans = root / "scan"
+    # Segment 0 is the front matter and the last is the post-hymn matter, so a
+    # collection of N hymns is N + 2 rows and hymn n is on page n + 1.
+    rows = ["segment,start_page,end_page", "0,1,1"]
+    rows += [f"{number},{number + 1},{number + 1}" for number in range(1, hymns + 1)]
+    rows.append(f"{hymns + 1},{hymns + 2},{hymns + 2}")
+    for language in SCAN_LANGUAGES:
+        (scans / language).mkdir(parents=True, exist_ok=True)
+        (scans / f"{language}.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+        for number in range(1, hymns + 1):
+            (scans / language / f"{number + 1}.png").write_bytes(b"")
+    return site, scans
 
 
 class HymnConversionTest(TestCase):
@@ -96,17 +125,23 @@ class HymnConversionTest(TestCase):
             root = Path(temporary_directory)
             source = root / "source.yml"
             markdown = root / "data"
-            slides = root / "site" / "slide"
+            site, scans = make_site(root, hymns=2)
             source.write_text(source_yaml, encoding="utf-8")
             yaml_to_markdown(source, markdown)
-            markdown_to_slides(markdown, slides, jobs=2)
-            self.assertTrue((slides / "2.md").exists())
+            markdown_to_site(markdown, site, scans, jobs=2)
+            self.assertTrue((site / "slide" / "2.md").exists())
+            self.assertTrue((site / "hymn" / "2.md").exists())
 
             (markdown / "2.md").unlink()
-            markdown_to_slides(markdown, slides, jobs=2)
+            markdown_to_site(markdown, site, scans, jobs=2)
 
-            self.assertFalse((slides / "2.md").exists())
-            self.assertTrue((slides / "1.md").exists())
+            # Both projections, not just the one the decks are rendered from: a
+            # page left behind would go on being published and link to a deck
+            # that is no longer there.
+            self.assertFalse((site / "slide" / "2.md").exists())
+            self.assertFalse((site / "hymn" / "2.md").exists())
+            self.assertTrue((site / "slide" / "1.md").exists())
+            self.assertTrue((site / "hymn" / "1.md").exists())
 
     def test_developer_projection_writes_the_chorus_report(self) -> None:
         with TemporaryDirectory() as temporary_directory:
@@ -117,19 +152,19 @@ class HymnConversionTest(TestCase):
                 Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
             )
 
+            site, scans = make_site(root, hymns=1)
             with patch.dict("os.environ", {BUILD_MODE_ENV: "develop"}):
-                markdown_to_slides(source, root / "site" / "slide", jobs=1)
+                markdown_to_site(source, site, scans, jobs=1)
 
-            report = (root / "site" / "chorus.md").read_text(encoding="utf-8")
+            report = (site / "chorus.md").read_text(encoding="utf-8")
             self.assertIn("search: false", report)
 
     def test_production_projection_removes_the_chorus_report(self) -> None:
         with TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             source = root / "data"
-            site = root / "site"
             source.mkdir()
-            site.mkdir()
+            site, scans = make_site(root, hymns=1)
             (source / "1.md").write_text(
                 Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
             )
@@ -137,7 +172,7 @@ class HymnConversionTest(TestCase):
             (site / "chorus.html").write_text("stale", encoding="utf-8")
 
             with patch.dict("os.environ", {BUILD_MODE_ENV: "production"}):
-                markdown_to_slides(source, site / "slide", jobs=1)
+                markdown_to_site(source, site, scans, jobs=1)
 
             self.assertFalse((site / "chorus.md").exists())
             self.assertFalse((site / "chorus.html").exists())
@@ -152,22 +187,19 @@ class HymnConversionTest(TestCase):
                     Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
                 )
 
-            serial = root / "serial" / "slide"
-            parallel = root / "parallel" / "slide"
-            markdown_to_slides(source, serial, jobs=1)
-            markdown_to_slides(source, parallel, jobs=3)
+            serial, scans = make_site(root / "serial", hymns=3)
+            parallel, _ = make_site(root / "parallel", hymns=3)
+            markdown_to_site(source, serial, scans, jobs=1)
+            markdown_to_site(source, parallel, scans, jobs=3)
 
-            serial_files = {
-                path.relative_to(serial.parent): path.read_bytes()
-                for path in serial.parent.rglob("*")
-                if path.is_file()
-            }
-            parallel_files = {
-                path.relative_to(parallel.parent): path.read_bytes()
-                for path in parallel.parent.rglob("*")
-                if path.is_file()
-            }
-            self.assertEqual(parallel_files, serial_files)
+            def written(site: Path) -> dict[Path, bytes]:
+                return {
+                    path.relative_to(site): path.read_bytes()
+                    for path in site.rglob("*")
+                    if path.is_file() and path.name != "_quarto.yml"
+                }
+
+            self.assertEqual(written(parallel), written(serial))
 
     def test_unknown_hymn_field_is_rejected(self) -> None:
         invalid = dict(HYMN_DATA, unexpected="value")

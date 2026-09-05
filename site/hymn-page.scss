@@ -1,0 +1,427 @@
+/*-- scss:rules --*/
+
+// The hymn page: the text of a hymn beside the scanned pages it was read off.
+//
+// Three panes that scroll independently, because the two never line up. A
+// stanza is four lines of type here and two systems of music there, and where
+// the same words fall on the page depends on the tune. Locking the scrolls
+// together would be a guess; letting each pane move under the other is the
+// whole interaction.
+//
+// `hymn-page.html` builds the toolbar and owns which panes are shown; this
+// file lays out what it leaves. Everything here is scoped to `.hymn-page`, the
+// class that script adds, so the landing page and the chorus report are
+// untouched.
+
+// Where the panes stop being columns and become a swipeable stack. Below this
+// two columns of scanned music are narrower than the staves printed on them.
+$hymn-panes-break: 860px;
+$hymn-rule: rgba(128, 128, 128, 0.35);
+
+// The panes are the window, so the document behind them does not scroll: each
+// pane owns its own scrollbar and nothing moves the toolbar out of reach.
+body.hymn-page {
+  overflow: hidden;
+}
+
+// `page-layout: custom` still leaves Quarto's own padding around the content.
+// A pane runs to the edge of the window.
+body.hymn-page #quarto-content,
+body.hymn-page main.content,
+body.hymn-page div.quarto-container {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
+// --- the toolbar ------------------------------------------------------------
+
+.hymn-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid $hymn-rule;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.hymn-toolbar-number {
+  font-size: 1.15rem;
+  font-weight: 700;
+  min-width: 2ch;
+}
+
+// Pushes the links to the far end, so the controls stay together on the left
+// and wrap as one group rather than interleaving with them.
+.hymn-toolbar-spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+// A segmented control: one button per choice, the chosen one filled in.
+.hymn-switch {
+  display: inline-flex;
+  border: 1px solid $hymn-rule;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.hymn-switch button {
+  padding: 0.15rem 0.6rem;
+  border: 0;
+  border-left: 1px solid $hymn-rule;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hymn-switch button:first-child {
+  border-left: 0;
+}
+
+.hymn-switch button[aria-pressed="true"] {
+  // No colour of its own: the theme supplies both palettes, and a translucent
+  // wash of the current text colour reads on either.
+  background: rgba(128, 128, 128, 0.32);
+  font-weight: 700;
+}
+
+.hymn-switch button:hover:not([aria-pressed="true"]) {
+  background: rgba(128, 128, 128, 0.14);
+}
+
+.hymn-toolbar .hymn-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.hymn-toolbar .hymn-links a {
+  text-decoration: none;
+  border-bottom: 1px solid $hymn-rule;
+}
+
+// The two numbers are a hymn away in either direction, and are the one control
+// here that is not a switch.
+.hymn-link-previous::before {
+  content: "← ";
+}
+
+.hymn-link-next::after {
+  content: " →";
+}
+
+// --- the panes --------------------------------------------------------------
+
+.hymn-compare {
+  display: flex;
+  align-items: stretch;
+  // Set by hymn-page.html against the window, because what is above the panes
+  // -- a navbar that wraps, a toolbar that wraps -- is not a fixed height.
+  height: var(--hymn-panes-height, 70vh);
+}
+
+.hymn-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: auto;
+  // Anchoring keeps the scroll position of a pane pinned to its content while
+  // a lazily loaded scan above it arrives and pushes everything down.
+  overflow-anchor: auto;
+  padding: 0 1rem 40vh;
+  border-left: 1px solid $hymn-rule;
+}
+
+.hymn-pane.hymn-pane-first {
+  border-left: 0;
+}
+
+.hymn-pane[hidden] {
+  display: none;
+}
+
+// The text is what is being checked, so it gets the room; a scan is legible at
+// a third of the window and can be zoomed past it.
+.hymn-text {
+  flex-grow: 1.5;
+}
+
+// Which pane this is. It stays put while the pane scrolls under it, which is
+// what makes three columns of unfamiliar material readable -- and on a phone,
+// where only one pane is on screen, it is the only thing that says which.
+.hymn-pane-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 -1rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  // The pane's own background, not a transparent one: text scrolls under this.
+  background: var(--bs-body-bg, #fff);
+}
+
+// --- the text ---------------------------------------------------------------
+
+// A line of a hymn is short, and two languages of it are two short lines. Left
+// to fill a wide window they would sit a hand's width apart with nothing
+// between them, which is not two columns anyone can read across.
+.hymn-heading,
+.hymn-stanza {
+  max-width: 58rem;
+}
+
+.hymn-heading {
+  margin: 0.6rem 0 1.4rem;
+}
+
+.hymn-heading .hymn-number {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hymn-heading .hymn-title {
+  margin-top: 0.2rem;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.hymn-heading .hymn-meta,
+.hymn-heading .hymn-note {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+.hymn-stanza {
+  margin-bottom: 1.6rem;
+}
+
+// The stanza number, which is how a line here is found on the page there.
+.hymn-stanza > h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  border: 0;
+}
+
+// The chorus's source name, on the hymns that have more than one. It is an
+// identifier, not code, and the theme's box for a code span makes it a label
+// the eye stops on -- ahead of the stanza number, which is what is being read.
+.hymn-stanza > h2 code {
+  padding: 0;
+  color: inherit;
+  background: none;
+  font-size: 0.95em;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+// Which stanzas sing this chorus, on the seventeen hymns where the source only
+// implies it. It is our reading of the hymnal, not the hymnal, so it is set
+// apart from the words.
+.hymn-resolution {
+  margin: 0 0 0.4rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid $hymn-rule;
+  font-size: 0.78rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.hymn-text .lyrics p {
+  margin: 0 0 0.55rem;
+  line-height: 1.45;
+}
+
+.hymn-text .singing-note {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  opacity: 0.65;
+}
+
+.hymn-absent {
+  margin: 2rem 0;
+  padding: 1rem;
+  border: 1px dashed $hymn-rule;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-align: center;
+}
+
+// One language at a time: the other is not there, and neither is the break
+// that separated them, which would otherwise leave a blank line per lyric line.
+//
+// The hymn only, never the line under the title. Category, meter and author
+// are what the hymnal says this hymn is, and only the category is written in
+// Chinese: hiding it would leave the separator in front of a meter with
+// nothing before it.
+$hymn-sung: ".lyrics, .hymn-title, .singing-note, .hymn-note";
+
+// `[lang|=]` and not `:lang()`. `:lang()` matches an element that *inherits*
+// the language too, and every paragraph here inherits the document's -- so on
+// a hymn whose document language is English, `:lang(en)` selects the paragraph
+// holding both spans and hides the Chinese with it.
+body[data-hymn-langs="en"] .hymn-text :is(#{$hymn-sung}) [lang|="zh"],
+body[data-hymn-langs="zh"] .hymn-text :is(#{$hymn-sung}) [lang|="en"] {
+  display: none;
+}
+
+body[data-hymn-langs="en"] .hymn-text :is(#{$hymn-sung}) br,
+body[data-hymn-langs="zh"] .hymn-text :is(#{$hymn-sung}) br {
+  display: none;
+}
+
+// A stanza with nothing in the language asked for. On a hymn the other edition
+// does not have that is all of them, and a column of bare stanza numbers under
+// the notice below says less than nothing.
+body[data-hymn-langs="en"] .hymn-stanza:not(:has(.lyrics [lang|="en"])),
+body[data-hymn-langs="zh"] .hymn-stanza:not(:has(.lyrics [lang|="zh"])) {
+  display: none;
+}
+
+// The language asked for is not in this hymn -- 39 of them are in the Chinese
+// hymnal only. An empty column under a row of stanza numbers says nothing.
+.hymn-missing {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px dashed $hymn-rule;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-align: center;
+}
+
+// Both languages, side by side in fixed columns, so a line missing one of them
+// cannot slide the next line into the wrong row -- the same arrangement the
+// decks reach with `?grid`.
+//
+// It is a container query rather than a switch because it is not a preference:
+// two columns of lyrics need the width, and the text pane's width is decided
+// by how many scans are open beside it. Below that width the languages
+// interleave line by line instead, which is what a phone gets.
+.hymn-text {
+  container-type: inline-size;
+  container-name: hymn-text;
+}
+
+// The heading is left alone: two columns of one line is a worse heading than
+// one, and the title is not a line anyone reads across from the other.
+@container hymn-text (min-width: 30rem) {
+  body[data-hymn-langs="both"] .hymn-text .lyrics p {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 1.4rem;
+  }
+
+  body[data-hymn-langs="both"] .hymn-text .lyrics p > [lang|="en"] {
+    grid-column: 1;
+  }
+
+  body[data-hymn-langs="both"] .hymn-text .lyrics p > [lang|="zh"] {
+    grid-column: 2;
+  }
+
+  body[data-hymn-langs="both"] .hymn-text .lyrics br {
+    display: none;
+  }
+
+  // A stanza written in one language has no second column to hold open, and a
+  // hymn the other edition does not have is a whole page of them.
+  body[data-hymn-langs="both"] .hymn-text .lyrics:not(:has([lang|="zh"])) p > [lang|="en"],
+  body[data-hymn-langs="both"] .hymn-text .lyrics:not(:has([lang|="en"])) p > [lang|="zh"] {
+    grid-column: 1 / -1;
+  }
+}
+
+// --- the scans --------------------------------------------------------------
+
+.hymn-scan-page {
+  margin: 0.9rem 0 1.4rem;
+}
+
+.hymn-scan-page img {
+  display: block;
+  // Zoom is a width, not a transform: the pane goes on scrolling the image
+  // rather than clipping a scaled copy of it, so an enlarged stave can be
+  // panned to.
+  width: calc(100% * var(--hymn-zoom, 1));
+  max-width: none;
+  // The scans are bilevel, so smoothing them at less than full size is the
+  // difference between legible staves and grey mush.
+  image-rendering: auto;
+}
+
+.hymn-scan-page figcaption {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+// The scans are black on white. In the dark theme that is a lamp in the face,
+// and inverting a bilevel scan loses nothing -- there is no colour in it.
+body.quarto-dark[data-hymn-invert="auto"] .hymn-scan-page img,
+body[data-hymn-invert="on"] .hymn-scan-page img {
+  filter: invert(1);
+}
+
+// --- narrow windows ---------------------------------------------------------
+
+@media (max-width: $hymn-panes-break) {
+  // One pane fills the window and the rest are a swipe away, each still
+  // scrolling on its own. Stacking them instead would put the scan a thousand
+  // lines below the stanza it belongs to, which is not a comparison.
+  .hymn-compare {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+  }
+
+  .hymn-pane {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+
+  // Four rows of controls over a phone screen is most of the hymn. The links
+  // go up beside the number, and everything else tightens until the two
+  // switches share a row.
+  .hymn-toolbar {
+    font-size: 0.72rem;
+    gap: 0.3rem 0.5rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .hymn-switch button {
+    padding: 0.15rem 0.4rem;
+  }
+
+  .hymn-toolbar-number {
+    order: 0;
+  }
+
+  .hymn-toolbar .hymn-links {
+    order: 1;
+    gap: 0.7rem;
+  }
+
+  .hymn-toolbar-spacer {
+    order: 2;
+    flex-basis: 100%;
+  }
+
+  .hymn-switch,
+  .hymn-invert {
+    order: 3;
+  }
+}

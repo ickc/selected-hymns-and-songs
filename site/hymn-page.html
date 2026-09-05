@@ -1,0 +1,301 @@
+<script>
+// The toolbar over the hymn pages, and the state it holds.
+//
+// The Markdown in `hymn/N.md` carries what differs between the 848 pages: the
+// three panes, and the links that point at this hymn. Everything here is the
+// same on all of them, which is why it is here and not written into each one
+// -- the same division `fit.html` makes for the decks.
+//
+// Inert anywhere else: the landing page and the chorus report have no panes,
+// so this returns before it touches them.
+(function () {
+  var compare = document.querySelector('.hymn-compare');
+  if (!compare) return;
+
+  var STORE = 'hymn-page';
+  // Zoom is a width multiplier on the scanned page, not a transform, so the
+  // pane keeps scrolling the image instead of clipping a scaled copy.
+  var ZOOMS = [0.75, 1, 1.25, 1.5, 2, 3];
+  // Every label here is [English, Chinese], either half optional, because both
+  // are set in their own face and each has to say which language it is in.
+  var PANES = {
+    'scan-en': ['English', '英文'],
+    'text': ['Text', '歌詞'],
+    'scan-zh': ['Chinese', '中文']
+  };
+  var SWITCHES = [
+    {
+      key: 'langs',
+      label: 'Language 語言',
+      options: [['en', 'English', null], ['zh', null, '中文'], ['both', 'Both', '雙語']]
+    },
+    {
+      key: 'view',
+      label: 'Show 顯示',
+      options: [['text', 'Text', '歌詞'], ['scan', 'Scan', '掃描'], ['both', 'Both', '並排']]
+    }
+  ];
+  var MISSING = {
+    en: ['This hymn has no English text.', '這首詩歌沒有英文歌詞。'],
+    zh: ['This hymn has no Chinese text.', '這首詩歌沒有中文歌詞。']
+  };
+  var DEFAULTS = {langs: 'both', view: 'both', zoom: 1, invert: 'auto'};
+  var state = load();
+
+  // --- state ----------------------------------------------------------------
+
+  // Three places, in order of how specific they are to this visit: a link
+  // someone was sent ("hymn 42, the Chinese scan") beats what this browser was
+  // last set to, which beats the default.
+  function load() {
+    var saved = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(STORE) || '{}') || {};
+    } catch (error) {
+      saved = {};
+    }
+    var query = new URLSearchParams(location.search);
+    var value = Object.assign({}, DEFAULTS, saved);
+    SWITCHES.forEach(function (control) {
+      var wanted = query.get(control.key === 'langs' ? 'lang' : control.key);
+      var allowed = control.options.map(function (option) { return option[0]; });
+      if (allowed.indexOf(wanted) >= 0) value[control.key] = wanted;
+      if (allowed.indexOf(value[control.key]) < 0) value[control.key] = DEFAULTS[control.key];
+    });
+    var zoom = parseFloat(query.get('zoom') || value.zoom);
+    value.zoom = ZOOMS.indexOf(zoom) >= 0 ? zoom : DEFAULTS.zoom;
+    if (['auto', 'on', 'off'].indexOf(value.invert) < 0) value.invert = DEFAULTS.invert;
+    return value;
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify(state));
+    } catch (error) {
+      // A browser refusing storage is not a reason to stop working; the page
+      // simply forgets the choice at the next hymn.
+    }
+    // The address bar follows the panes, so what is on screen can be sent to
+    // someone else. `replaceState` rather than `pushState`: flipping a switch
+    // is not a place to come back to with the back button.
+    var query = new URLSearchParams(location.search);
+    query.set('lang', state.langs);
+    query.set('view', state.view);
+    if (state.zoom === DEFAULTS.zoom) query.delete('zoom');
+    else query.set('zoom', String(state.zoom));
+    history.replaceState(null, '', location.pathname + '?' + query + location.hash);
+  }
+
+  function apply() {
+    var body = document.body;
+    body.dataset.hymnLangs = state.langs;
+    body.dataset.hymnView = state.view;
+    body.dataset.hymnInvert = state.invert;
+    compare.style.setProperty('--hymn-zoom', state.zoom);
+    // A scan pane belongs to a language, so the language switch hides it along
+    // with the words it holds; the view switch decides text, scans, or both.
+    //
+    // With both languages open the scans flank the text, each beside the words
+    // it holds. With one, the words lead and its page follows -- so English on
+    // its own is the one arrangement that is not the order they are written in.
+    var order = state.langs === 'en'
+      ? ['text', 'scan-en', 'scan-zh']
+      : ['scan-en', 'text', 'scan-zh'];
+    var first = null;
+    order.forEach(function (name, index) {
+      var pane = compare.querySelector('[data-pane="' + name + '"]');
+      if (!pane) return;
+      var shown = name === 'text'
+        ? state.view !== 'scan'
+        : state.view !== 'text' && state.langs !== (name === 'scan-en' ? 'zh' : 'en');
+      pane.hidden = !shown;
+      pane.style.order = index;
+      pane.classList.remove('hymn-pane-first');
+      if (shown && first === null) first = pane;
+    });
+    // Which pane is leftmost is the script's answer, so the rule between panes
+    // is too: a border on the left of the first would be a line down the edge
+    // of the window.
+    if (first) first.classList.add('hymn-pane-first');
+
+    // Asking for the English of a hymn the English hymnal does not have leaves
+    // a column of stanza numbers over nothing. Say which it is instead.
+    if (missing) {
+      var absent = state.langs !== 'both'
+        && !text.querySelector('.lyrics [lang|="' + state.langs + '"]');
+      missing.hidden = !absent;
+      if (absent) bilingual(missing, MISSING[state.langs][0], MISSING[state.langs][1]);
+    }
+
+    document.querySelectorAll('.hymn-switch button[data-key]').forEach(function (button) {
+      button.setAttribute(
+        'aria-pressed', String(state[button.dataset.key] === button.dataset.value)
+      );
+    });
+    if (zoomLabel) zoomLabel.textContent = Math.round(state.zoom * 100) + '%';
+    if (invertButton) invertButton.setAttribute('aria-pressed', String(inverted()));
+    sizePanes();
+  }
+
+  function inverted() {
+    if (state.invert !== 'auto') return state.invert === 'on';
+    return document.body.classList.contains('quarto-dark');
+  }
+
+  function set(key, value) {
+    state[key] = value;
+    save();
+    apply();
+  }
+
+  // --- building it ----------------------------------------------------------
+
+  function element(tag, className) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    return node;
+  }
+
+  // Both languages of a label, each in a span that says which it is, so the
+  // stylesheet sets the Chinese in a Chinese face here as it does everywhere
+  // else on the site.
+  function bilingual(node, english, chinese) {
+    node.textContent = '';
+    [['en', english], ['zh-Hant', chinese]].forEach(function (part) {
+      if (!part[1]) return;
+      if (node.childNodes.length) node.appendChild(document.createTextNode(' '));
+      var span = element('span');
+      span.lang = part[0];
+      span.textContent = part[1];
+      node.appendChild(span);
+    });
+    return node;
+  }
+
+  var toolbar = element('div', 'hymn-toolbar');
+  var number = compare.querySelector('.hymn-number');
+  var identifier = element('span', 'hymn-toolbar-number');
+  identifier.textContent = number ? number.textContent.trim() : '';
+  toolbar.appendChild(identifier);
+
+  SWITCHES.forEach(function (control) {
+    var group = element('div', 'hymn-switch');
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', control.label);
+    control.options.forEach(function (option) {
+      var button = bilingual(element('button'), option[1], option[2]);
+      button.type = 'button';
+      button.dataset.key = control.key;
+      button.dataset.value = option[0];
+      button.addEventListener('click', function () { set(control.key, option[0]); });
+      group.appendChild(button);
+    });
+    toolbar.appendChild(group);
+  });
+
+  var zoomGroup = element('div', 'hymn-switch');
+  zoomGroup.setAttribute('role', 'group');
+  zoomGroup.setAttribute('aria-label', 'Scan size 掃描大小');
+  var zoomLabel = element('button', 'hymn-zoom-label');
+  [['−', -1, 'Smaller 縮小'], [null, 0, null], ['+', 1, 'Larger 放大']].forEach(function (step) {
+    if (step[1] === 0) {
+      zoomLabel.type = 'button';
+      zoomLabel.title = 'Reset 還原';
+      zoomLabel.addEventListener('click', function () { set('zoom', DEFAULTS.zoom); });
+      zoomGroup.appendChild(zoomLabel);
+      return;
+    }
+    var button = element('button');
+    button.type = 'button';
+    button.textContent = step[0];
+    button.title = step[2];
+    button.addEventListener('click', function () {
+      var index = ZOOMS.indexOf(state.zoom) + step[1];
+      set('zoom', ZOOMS[Math.min(Math.max(index, 0), ZOOMS.length - 1)]);
+    });
+    zoomGroup.appendChild(button);
+  });
+  toolbar.appendChild(zoomGroup);
+
+  // The scans are black on white, which in the dark theme is a lamp in the
+  // face. Inverting a bilevel scan loses nothing: there is no colour in it.
+  var invertButton = bilingual(element('button', 'hymn-invert'), 'Invert', '反白');
+  invertButton.type = 'button';
+  invertButton.addEventListener('click', function () {
+    set('invert', inverted() ? 'off' : 'on');
+  });
+  toolbar.appendChild(invertButton);
+
+  toolbar.appendChild(element('span', 'hymn-toolbar-spacer'));
+  // Written per hymn, because only these differ between the 848 pages. The
+  // Source link goes to `data/N.md` -- the file a typo is fixed in, which is
+  // never the generated Markdown this page was rendered from.
+  var links = document.querySelector('.hymn-links');
+  if (links) toolbar.appendChild(links);
+
+  compare.parentNode.insertBefore(toolbar, compare);
+
+  var text = compare.querySelector('.hymn-text');
+  var missing = null;
+  if (text) {
+    missing = element('div', 'hymn-missing');
+    missing.hidden = true;
+    text.insertBefore(missing, text.querySelector('.hymn-stanza'));
+  }
+
+  // Which pane this is, pinned to the top of it as it scrolls. On a phone only
+  // one pane is on screen, and this is the only thing that says which.
+  compare.querySelectorAll('.hymn-pane').forEach(function (pane) {
+    var label = PANES[pane.dataset.pane];
+    if (!label) return;
+    var node = bilingual(element('div', 'hymn-pane-label'), label[0], label[1]);
+    pane.insertBefore(node, pane.firstChild);
+  });
+
+  // --- fitting the window ---------------------------------------------------
+
+  // The panes fill what the navbar and the toolbar leave, and both of those
+  // change height when they wrap. Measuring beats naming a height that is
+  // wrong at some width.
+  function sizePanes() {
+    var top = compare.getBoundingClientRect().top;
+    compare.style.setProperty(
+      '--hymn-panes-height', Math.max(window.innerHeight - top, 240) + 'px'
+    );
+  }
+
+  // Where the panes are a swipeable stack rather than columns, the first one
+  // is all there is to see, and the text is what someone came for. Nothing to
+  // do where they are columns: they are all on screen already.
+  function showTextFirst() {
+    if (!text || text.hidden) return;
+    if (compare.scrollWidth <= compare.clientWidth + 1) return;
+    compare.scrollLeft = text.offsetLeft - compare.offsetLeft;
+  }
+
+  document.body.classList.add('hymn-page');
+  window.addEventListener('resize', sizePanes);
+  if (window.ResizeObserver) new ResizeObserver(sizePanes).observe(toolbar);
+  // The light/dark switch is Quarto's, and `auto` inversion follows it.
+  new MutationObserver(function () {
+    if (state.invert === 'auto') apply();
+  }).observe(document.body, {attributes: true, attributeFilter: ['class']});
+
+  // Proofreading runs through the collection in order, so the next hymn is
+  // worth a key. Not while something is being typed into: the navbar search
+  // box is one bracket away from every one of these.
+  document.addEventListener('keydown', function (event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    var active = document.activeElement;
+    if (active && (active.matches('input, textarea, select') || active.isContentEditable)) return;
+    var wanted = event.key === '[' ? '.hymn-link-previous'
+      : event.key === ']' ? '.hymn-link-next' : null;
+    if (!wanted) return;
+    var target = document.querySelector(wanted);
+    if (target) location.href = target.href;
+  });
+
+  apply();
+  showTextFirst();
+})();
+</script>

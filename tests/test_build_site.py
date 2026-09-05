@@ -5,7 +5,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from hymn_projection.environment import _linux_physical_cores, available_cpu_count
-from scripts.build_site import _merge, _partition
+from scripts.build_site import _hymn_numbers, _merge, _partition
 
 
 CPUINFO = """\
@@ -52,12 +52,41 @@ class CpuCountTest(TestCase):
 
 class PartitionTest(TestCase):
     def test_every_hymn_belongs_to_one_balanced_worker(self) -> None:
-        hymns = [Path(f"{number}.md") for number in range(1, 9)]
+        hymns = list(range(1, 9))
 
         partitions = _partition(hymns, 3)
 
         self.assertEqual([len(partition) for partition in partitions], [3, 3, 2])
-        self.assertCountEqual([path for partition in partitions for path in partition], hymns)
+        self.assertCountEqual(
+            [number for partition in partitions for number in partition], hymns
+        )
+
+
+class ProjectionTest(TestCase):
+    """A worker renders one hymn twice, so it needs both projections of it."""
+
+    def _project(self, root: Path, slides: list[int], pages: list[int]) -> None:
+        for name, numbers in (("slide", slides), ("hymn", pages)):
+            (root / name).mkdir(parents=True)
+            for number in numbers:
+                (root / name / f"{number}.md").write_text("", encoding="utf-8")
+
+    def test_both_projections_describe_the_same_hymns(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._project(root, [1, 2, 3], [1, 2, 3])
+
+            self.assertEqual(_hymn_numbers(root), [1, 2, 3])
+
+    def test_one_projection_lagging_the_other_is_an_error(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            # A half-finished `md-to-site` would otherwise publish a page
+            # linking to a deck that was never rendered.
+            self._project(root, [1, 2, 3], [1, 2])
+
+            with self.assertRaisesRegex(RuntimeError, r"different hymns.*\[3\]"):
+                _hymn_numbers(root)
 
 
 class MergeTest(TestCase):

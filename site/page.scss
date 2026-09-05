@@ -1,7 +1,8 @@
 /*-- scss:defaults --*/
 
-// The two pages of this site that are not decks: the landing page, which is a
-// box to open a hymn by number, and the chorus report. Everything structural
+// The two documents of this site that are neither a deck nor a hymn page: the
+// landing page, which is a box to open a hymn by number, and the chorus
+// report. `hymn-page.scss` is the hymn pages. Everything structural
 // -- the navbar, the search box in it, the light and dark palettes -- is the
 // theme's. This is only what the hymnal adds on top.
 
@@ -10,9 +11,12 @@ $font-family-sans-serif: "TeX Gyre Schola", serif;
 
 /*-- scss:rules --*/
 
-// :lang() matches by prefix, so this reaches every zh-Hant span, and the
-// Chinese in a mixed line without touching the English beside it.
-:lang(zh) {
+// Every element *tagged* zh-Hant, and only those: the attribute selector
+// matches by prefix as `:lang()` does, but not the elements that merely
+// inherit the language. On a hymn whose document language is Chinese --
+// 39 of them are in the Chinese hymnal only -- `:lang(zh)` would reach the
+// whole page and set its English in a Chinese face.
+[lang|="zh"] {
   font-family: "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
 }
 

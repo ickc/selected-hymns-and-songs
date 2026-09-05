@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the hymn decks in parallel without sharing Quarto project state.
+"""Render the hymn decks and pages in parallel without sharing project state.
 
 Quarto can render one file or directory at a time, but a website render also
 writes project-wide files such as ``search.json``, ``index.html`` and
@@ -7,8 +7,13 @@ writes project-wide files such as ``search.json``, ``index.html`` and
 when their input documents are disjoint.
 
 Each worker here gets an isolated copy of the project containing only its
-share of ``slide/*.md``. The resulting sites are combined after every Quarto
-process succeeds, including one merged search index.
+share of ``slide/*.md`` and ``hymn/*.md``. A hymn's deck and its page go to the
+same worker: they are two renders of one hymn, and keeping them together makes
+a worker's share one contiguous idea rather than two independent partitions.
+
+The resulting sites are combined after every Quarto process succeeds, including
+one merged search index. The scanned pages are linked in at the end by
+``scans.stage``, which keeps 45 MB of PNG out of every worker's copy.
 """
 
 from __future__ import annotations
@@ -32,13 +37,18 @@ from hymn_projection.environment import (
     available_cpu_count,
     build_mode,
 )
+from hymn_projection.scans import stage
 
+
+# The two projected directories, each rendered to its own format. A worker is
+# given one share of the hymns and both projections of it.
+PROJECTIONS = ("slide", "hymn")
 
 IGNORED_PROJECT_ENTRIES = {
     ".quarto",
     "_site",
     "site_libs",
-    "slide",
+    *PROJECTIONS,
     # A stopped Quarto render can leave these generated pages beside their
     # Markdown sources. They must not become input resources in a later build.
     "index.html",
@@ -53,15 +63,15 @@ def _positive_integer(value: str) -> int:
     return number
 
 
-def _partition(paths: Sequence[Path], jobs: int) -> list[list[Path]]:
-    workers = min(jobs, len(paths))
-    return [list(paths[index::workers]) for index in range(workers)]
+def _partition(numbers: Sequence[int], jobs: int) -> list[list[int]]:
+    workers = min(jobs, len(numbers))
+    return [list(numbers[index::workers]) for index in range(workers)]
 
 
 def _copy_project(
     source: Path,
     destination: Path,
-    slides: Sequence[Path],
+    numbers: Sequence[int],
     first: bool,
     mode: str,
 ) -> None:
@@ -72,14 +82,15 @@ def _copy_project(
         return ignored
 
     shutil.copytree(source, destination, ignore=ignore)
-    slide_directory = destination / "slide"
-    slide_directory.mkdir()
-    for path in slides:
-        shutil.copy2(path, slide_directory / path.name)
+    for projection in PROJECTIONS:
+        directory = destination / projection
+        directory.mkdir()
+        for number in numbers:
+            shutil.copy2(source / projection / f"{number}.md", directory / f"{number}.md")
 
     config_path = destination / "_quarto.yml"
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    targets = ["slide/*.md"]
+    targets = [f"{projection}/*.md" for projection in PROJECTIONS]
     if first:
         targets.insert(0, "index.md")
         if mode == DEVELOP:
@@ -141,7 +152,7 @@ def _merge(worker_outputs: Sequence[Path], destination: Path) -> int:
         raise RuntimeError("the developer-only chorus report entered the search index")
 
     # Make the merge deterministic: documents follow the lexical expansion of
-    # slide/*.md, while entries within a document remain in slide order.
+    # the render globs, while entries within a document remain in slide order.
     by_document: dict[str, list[dict[str, Any]]] = {}
     for entry in search_entries:
         document = str(entry.get("href", "")).split("#", 1)[0]
@@ -155,15 +166,32 @@ def _merge(worker_outputs: Sequence[Path], destination: Path) -> int:
     return len(search_entries)
 
 
+def _hymn_numbers(project: Path) -> list[int]:
+    """Return the hymns both projections have written Markdown for."""
+
+    written = {
+        projection: {int(path.stem) for path in (project / projection).glob("*.md")}
+        for projection in PROJECTIONS
+    }
+    for projection, numbers in written.items():
+        if not numbers:
+            raise RuntimeError(f"no hymn Markdown found in {project / projection}")
+    # One projection lagging the other is a half-finished `md-to-site`, and
+    # would publish a page linking to a deck that is not there.
+    first, second = PROJECTIONS
+    if written[first] != written[second]:
+        difference = written[first] ^ written[second]
+        raise RuntimeError(
+            f"{first}/ and {second}/ describe different hymns: "
+            f"{sorted(difference)[:5]}"
+        )
+    return sorted(written[first])
+
+
 def build(project: Path, jobs: int) -> None:
     project = project.resolve()
     mode = build_mode()
-    slides = sorted(
-        (project / "slide").glob("*.md"),
-        key=lambda path: int(path.stem),
-    )
-    if not slides:
-        raise RuntimeError(f"no hymn Markdown found in {project / 'slide'}")
+    slides = _hymn_numbers(project)
 
     partitions = _partition(slides, jobs)
     started = time.monotonic()
@@ -173,7 +201,8 @@ def build(project: Path, jobs: int) -> None:
     print(f"Build mode: {mode}", flush=True)
     print(f"Detected {available_cores} usable CPU cores", flush=True)
     print(
-        f"Rendering {len(slides)} hymn decks with {process_count} Quarto {noun}",
+        f"Rendering {len(slides)} hymn decks and pages with "
+        f"{process_count} Quarto {noun}",
         flush=True,
     )
 
@@ -223,9 +252,12 @@ def build(project: Path, jobs: int) -> None:
         merge_started = time.monotonic()
         combined = temporary_path / "combined"
         search_count = _merge([worker / "_site" for worker in workers], combined)
-        rendered = len(list((combined / "slide").glob("*.html")))
-        if rendered != len(slides):
-            raise RuntimeError(f"rendered {rendered} of {len(slides)} hymn decks")
+        for projection in PROJECTIONS:
+            rendered = len(list((combined / projection).glob("*.html")))
+            if rendered != len(slides):
+                raise RuntimeError(
+                    f"rendered {rendered} of {len(slides)} documents in {projection}/"
+                )
         chorus_exists = (combined / "chorus.html").exists()
         if chorus_exists != (mode == DEVELOP):
             raise RuntimeError(f"chorus.html does not match {mode} build mode")
@@ -236,9 +268,14 @@ def build(project: Path, jobs: int) -> None:
         combined.replace(output)
         print(f"Merged worker output in {time.monotonic() - merge_started:.1f}s", flush=True)
 
+    # After the output is in place, and outside the Quarto project throughout:
+    # the scans are files to publish, not documents to render.
+    staged = stage(project.parent / "scan", output)
+
     elapsed = time.monotonic() - started
     print(
-        f"Built {len(slides)} decks and {search_count} search entries in {elapsed:.1f}s",
+        f"Built {len(slides)} decks and pages, {staged} scanned pages and "
+        f"{search_count} search entries in {elapsed:.1f}s",
         flush=True,
     )
 
