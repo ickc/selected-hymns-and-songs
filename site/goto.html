@@ -1,7 +1,9 @@
 <script>
 // Type a number, press Enter, and the deck opens in a new tab -- so this page
 // stays where it is, which is what someone running a meeting wants when the
-// next hymn is called.
+// next hymn is called. The second button opens the same hymn as text beside
+// the scanned page instead; Enter still takes the deck, because that is the
+// one that is wanted in a hurry.
 //
 // The form itself is in the generated index, which is where the collection's
 // highest number is known. This reads that range off the field rather than
@@ -12,6 +14,10 @@
   var input = document.getElementById('hymn-number');
   var message = document.getElementById('hymn-goto-message');
   var highest = parseInt(input.max, 10) || 0;
+  // The two things a hymn number can open, named by the directory each is
+  // rendered into. The submitter's value picks one; Enter with the field
+  // focused submits the first button, which is the deck.
+  var DESTINATIONS = {slide: 'slide/', hymn: 'hymn/'};
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();
@@ -25,16 +31,17 @@
       return;
     }
     message.hidden = true;
+    var chosen = event.submitter && DESTINATIONS[event.submitter.value];
+    var target = (chosen || DESTINATIONS.slide) + number + '.html';
     // Open first so the return value still distinguishes a blocked popup,
-    // then sever the opener before sending the new tab to the deck. Passing
+    // then sever the opener before sending the new tab to the page. Passing
     // `noopener` to window.open() would return null even when it succeeded.
-    var deck = 'slide/' + number + '.html';
     var popup = window.open('', '_blank');
     if (popup) {
       popup.opener = null;
-      popup.location = deck;
+      popup.location = target;
     } else {
-      location.href = deck;
+      location.href = target;
     }
   });
 

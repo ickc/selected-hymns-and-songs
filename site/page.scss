@@ -61,9 +61,26 @@ $font-family-sans-serif: "TeX Gyre Schola", serif;
   border-color: currentColor;
 }
 
+// The two things a number can open. They sit together so the choice reads as
+// one control with a default rather than two unrelated actions, and the first
+// is what Enter submits.
+.hymn-goto-buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+
 .hymn-goto-message {
   flex-basis: 100%;
   color: #b00020;
+}
+
+// Which button does what. Two destinations for the same number need a sentence
+// each; anyone who already knows never reads them again.
+.hymn-goto-explain {
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  opacity: 0.7;
 }
 
 // The chorus report is one long table of hymn, stanza and the chorus each
