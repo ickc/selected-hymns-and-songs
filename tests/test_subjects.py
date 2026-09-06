@@ -61,10 +61,21 @@ class IndexTest(TestCase):
         self.assertIn("### 1. [The Trinity]{lang=en} [三一神]{lang=zh-Hant} {#subject-1-1}", page)
         self.assertNotIn("#### 1. [The Trinity]", page)
 
-    def test_a_hymn_is_a_number_linking_to_its_page(self) -> None:
+    def test_a_hymn_is_its_number_and_its_opening_line_in_both_languages(self) -> None:
         page = to_markdown(self.subjects, self.entries)
 
-        self.assertIn('[8](hymn/8.html "O Lord my God 主啊")', page)
+        self.assertIn(
+            "[[8]{.subject-number} [O Lord my God]{lang=en} [主啊]{lang=zh-Hant}](hymn/8.html)",
+            page,
+        )
+
+    def test_a_hymn_with_no_english_shows_the_line_it_has(self) -> None:
+        # 39 hymns are in the Chinese hymnal only, and the entry is whatever
+        # the hymn actually carries rather than a gap where English would be.
+        chinese_only = Hymn.from_markdown("---\ncategory: 聖靈——火\n---\n\n# 1\n\n我心單愛主\n")
+        page = to_markdown(self.subjects, [(178, chinese_only)])
+
+        self.assertIn("[[178]{.subject-number} [我心單愛主]{lang=zh-Hant}](hymn/178.html)", page)
 
     def test_the_top_headings_are_offered_as_a_strip_to_jump_by(self) -> None:
         page = to_markdown(self.subjects, self.entries)
@@ -78,7 +89,7 @@ class IndexTest(TestCase):
         page = to_markdown(self.subjects, self.entries)
 
         for number in (1, 8, 9, 178):
-            self.assertEqual(page.count(f"[{number}](hymn/{number}.html"), 1)
+            self.assertEqual(page.count(f"](hymn/{number}.html)"), 1)
 
     def test_a_hymn_the_index_does_not_list_is_named(self) -> None:
         entries = self.entries + [(999, hymn("福音——無此主題", "Nowhere"))]

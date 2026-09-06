@@ -117,30 +117,43 @@ td {
   font-size: 0.9rem;
 }
 
-// A subject's hymns are numbers, not first lines: they read as a block to
-// scan, and each carries the line it is known by as its title.
-.subject-hymns {
-  margin: 0.4rem 0 1.2rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.subject-contents p,
-.subject-hymns p {
+.subject-contents p {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.3rem 0.9rem;
   margin: 0;
 }
 
-.subject-contents p {
-  gap: 0.3rem 0.9rem;
+// A subject's hymns: one entry a line, number then the line the hymn opens
+// with, set in columns as the book's index is. `columns` rather than a grid
+// because the entries are of one kind and any number of them, so the browser
+// balancing them is exactly right; one column on a narrow screen follows.
+.subject-hymns {
+  margin: 0.4rem 0 1.4rem;
+  columns: 24rem;
+  column-gap: 2rem;
 }
 
 .subject-hymns p {
-  gap: 0.2rem 0.55rem;
+  margin: 0 0 0.15rem;
+  // The number and the line it belongs to must not be split across columns.
+  break-inside: avoid;
+  text-indent: -2.9rem;
+  padding-left: 2.9rem;
 }
 
+// The number is the hymnal's own handle on a hymn, so it leads and lines up.
+.subject-number {
+  display: inline-block;
+  min-width: 2.6rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+// The whole entry is the link, so it must not read as 848 underlines.
 .subject-hymns a {
   text-decoration: none;
+  color: inherit;
 }
 
 .subject-hymns a:hover,

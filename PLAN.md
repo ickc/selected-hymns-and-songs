@@ -24,7 +24,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
 | `author` | 4 | 0 both — all English-only | see D2 |
-| `title` | 0 | — | correctly empty; the hymnal prints no titles |
+| `title` | 0 | — | empty, but see D12 — the book *does* name 764 of them |
 
 So: **no, not every field is bilingual.** `category` is, now. `meter` is
 effectively bilingual because the numeric notation is shared and the only
@@ -264,6 +264,45 @@ the twelve other hymns under that subject do. The table had carried both, two
 rows flattening to one English heading, and the index prints only one entry —
 whose hymn run, 577-579.581-584, includes 583. 285 subjects now, not 286.
 
+### D12 — the book names 764 hymns, and we have none of those names
+
+`title` is empty on all 848 hymns, and this document has been saying that is
+correct because the hymnal prints no title over a hymn. That is true of the
+*page*. It is not true of the book: the English subject index prints a line
+beside every number, and for a third of them that line is not the opening
+words but the name the hymn is known by.
+
+Measured over all 764 entries (`en/004`–`en/015`), against the first line
+`slides.title()` infers:
+
+| | |
+|---|---|
+| the same line | 373 — 49% |
+| the index cuts our first line short to fit its column | 148 — 19% |
+| **a different string altogether** | **243 — 32%** |
+
+Hymn 8 is *How great Thou art*, 338 is *Leaning on the Everlasting Arms*, 395
+is *Higher ground*, 695 is *Only trust Him*, 342 is *He hideth my soul* — none
+of which is anywhere in `data/` today, and all of which are what a person
+would call the hymn.
+
+**The extraction is already most of the way done and it is cheap**, because the
+same trick works here as for the subject order: the OCR only has to *identify*
+the phrase, and the clean text can come from `data/`. Of the 764 printed lines,
+**664 match a phrase in their own hymn's English text at 0.90 or better** — a
+whole line, or a line cut at a comma — so their text is taken from `data/` and
+no OCR string is published at all. The remaining 100 are mostly OCR damage over
+a phrase that is plainly there (`Sec the golden lampstands`, `I wil! sing of my
+Redeemer`, `Channels only, blessed MasTN......_`) and a genuine minority that
+is not in the lyrics at all (`Spirit song`). Those 100 need a page read.
+
+**Not done, and deliberately.** Populating `title` would change what every
+slide and every hymn page shows as the hymn's name, on 764 hymns at once —
+`slides.title()` prefers `title` over the first line. That is a decision about
+the whole site, not a side effect of building an index page. The proposal:
+store the reading in `data/titles.tsv` first, as §5 proposes for the authors,
+and decide separately whether it goes into `data/N.md`.
+
 ### D10 — fixed in passing
 
 `DEVELOPER.md` still said the category table had 290 rows; it had 286 by then
@@ -336,11 +375,14 @@ All three of the things this section said were missing were dealt with:
    prints*, alongside a note that the book also lists them by first line. The
    second table remains an option, not a plan.
 
-**What the page does not do.** No collapsing: 303 headings and 848 numbers make
-a long page, but it is one document — the browser's find works on it, it prints,
-it needs no JavaScript, and it is in the search index one entry per section, so
-a subject can be searched for by name in either language. A hymn's first line is
-the link's `title`, so it is there on hover without 848 of them down the page.
+Each hymn is its number and the line it opens with, in both languages, set in
+columns as the book's index is. That line is **ours, not the book's** — see
+D12, which is what checking the two against each other found.
+
+**What the page does not do.** No collapsing: 303 headings and 848 entries make
+a long page (244 KB), but it is one document — the browser's find works on it,
+it prints, it needs no JavaScript, and it is in the search index one entry per
+section, so a subject can be searched for by name in either language.
 
 ## 5. Index of authors and composers
 
@@ -511,3 +553,6 @@ committed table itself rather than in a commit message.
    because everything before it makes the tooling better.
 7. **D2/D3/D4/D6** — the small consistency fixes, folded into whichever pass
    is already touching those pages.
+8. **D12 titles** — 664 of 764 already resolve to clean text in `data/`; 100
+   need a page read. Fits naturally beside §5, which reads the same index
+   family.

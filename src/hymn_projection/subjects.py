@@ -11,12 +11,23 @@ hymns cannot say them. The **order** is the book's, which nothing in
 comes in the index. The **levels** are the table's columns, so a name that
 contains a dash or a parenthesis needs no unpicking here.
 
-Two things it is honestly less than the book. The hymnal lists hymns under a
-subject by first line; this lists them by number, which is what the collection
-can be ordered by without reading the index again. And the hymnal cross-lists a
-few hymns under a second subject, which a single-valued category cannot hold,
-so each hymn appears once -- under the subject its own page prints. The page
-says both.
+Each hymn is its number and the line it opens with, in both languages. The
+book's index prints a line too, but not always that one: measured over all 764
+entries of the English subject index, 49% are the hymn's opening line, 19% are
+that line cut short to fit the column, and **32% are a different string
+altogether** -- the name the hymn is known by, which is often a phrase from its
+chorus. Hymn 8 is indexed as *How great Thou art* and opens *O Lord my God,
+when I in awesome wonder*; 395 is *Higher ground* and opens *I'm pressing on
+the upward way*. So the line here is the hymn's own, taken from ``data/`` where
+it is already proofread, rather than a transcription of the index -- and it is
+in both languages, where the book's is English and covers 1-764 only.
+
+Two things it is honestly less than the book, and the page says both. The
+hymnal orders the hymns under a subject by that line; this orders them by
+number, which is what the collection can be ordered by without reading the
+index again. And the hymnal cross-lists a few hymns under a second subject,
+which a single-valued category cannot hold, so each hymn appears once -- under
+the subject its own page prints.
 """
 
 from __future__ import annotations
@@ -79,16 +90,17 @@ def _heading(subject: Subject, level: int) -> str:
     )
 
 
-def _link(number: int, hymn: Hymn) -> str:
-    """Return one hymn as its number, linked to its page and named on hover.
+def _entry(number: int, hymn: Hymn) -> str:
+    """Return one hymn as its number and its opening line, linked to its page.
 
-    The hymnal's own index lists first lines; this page lists numbers, so the
-    line a hymn is known by is the link's title -- there for the asking, and
-    not 848 of them down the page.
+    All of it is the link, not just the number: a number alone is a small thing
+    to hit with a thumb, and the line is what a reader is actually looking for.
     """
 
-    named = " ".join(title(hymn).values()).replace('"', "")
-    return f'[{number}]({PAGE_DIRECTORY}/{number}.html "{named}")'
+    return (
+        f"[[{number}]{{.subject-number}} {_localized_inline(title(hymn))}]"
+        f"({PAGE_DIRECTORY}/{number}.html)"
+    )
 
 
 def _filed(
@@ -124,13 +136,17 @@ def to_markdown(subjects: Sequence[Subject], entries: Sequence[tuple[int, Hymn]]
         _localized_inline(
             {
                 "en": (
-                    "The hymnal lists the hymns under a subject by their first line and "
-                    "cross-lists a few under a second subject. This lists them by number, "
-                    "each under the one subject its own page prints."
+                    "Every hymn under the one subject its own page prints, in number "
+                    "order, with the line it opens with. The hymnal orders them by that "
+                    "line instead, names about a third of them by a familiar title "
+                    "rather than their opening words, and cross-lists a few under a "
+                    "second subject."
                 ),
                 "zh": (
-                    "本目錄按詩歌編號排列，各首詩歌只列於其詩頁所印的主題之下；"
-                    "詩本則按首句排列，並將少數詩歌兼列於第二個主題之下。"
+                    "本目錄按詩歌編號排列，並列出各首詩歌的首句；"
+                    "各首詩歌只列於其詩頁所印的主題之下。"
+                    "詩本則按首句排列，其中約三分之一以慣用的題名代替首句，"
+                    "並將少數詩歌兼列於第二個主題之下。"
                 ),
             }
         ),
@@ -162,7 +178,7 @@ def to_markdown(subjects: Sequence[Subject], entries: Sequence[tuple[int, Hymn]]
         if hymns:
             lines += [
                 "::: {.subject-hymns}",
-                " ".join(_link(number, hymn) for number, hymn in hymns),
+                "\n\n".join(_entry(number, hymn) for number, hymn in hymns),
                 ":::",
                 "",
             ]

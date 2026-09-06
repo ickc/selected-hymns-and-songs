@@ -44,8 +44,8 @@ Both are carried in git. Everything else is generated.
   it. Add `?grid` to a hymn's URL for two aligned columns instead of
   interleaved lines.
 - **Or browse by subject.** The hymnal's own subject index, all eighteen
-  sections of it in both languages, in the order the book prints them, with
-  every hymn a number that opens its page.
+  sections of it in both languages, in the order the book prints them, each
+  hymn its number and its opening line in both languages.
 - **Or each hymn beside the hymnal**, the text in the middle and the scanned
   page of each edition either side of it, scrolling independently. Follow the
   music while the words are in front of you, or check a line against the book —

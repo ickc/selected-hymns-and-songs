@@ -266,12 +266,39 @@ as its identifier (`#subject-1-2-1`), because two subjects under one heading are
 named the same often enough — the Father's Love and the Son's — that an
 identifier made of the words would collide.
 
+Each hymn is its number and the line it opens with, both languages, set in
+columns as the book's index is.
+
+### Why the line shown is ours and not the book's
+
+The book's index prints a line beside each number too, and it is tempting to
+assume it is the hymn's opening line — the one `slides.title()` infers when a
+hymn has no `title`, which is all 848 of them. It is not. Measured over all 764
+entries of the English subject index, read off `en/004`–`en/015`:
+
+| | |
+|---|---|
+| the same line | 373 — 49% |
+| the index cuts our first line short to fit its column | 148 — 19% |
+| **a different string altogether** | **243 — 32%** |
+
+The third of them is the name the hymn is *known* by, usually a phrase from its
+chorus: hymn 8 is indexed as *How great Thou art* and opens *O Lord my God,
+when I in awesome wonder*; 338 is *Leaning on the Everlasting Arms* and opens
+*What a fellowship, what a joy divine*; 395 is *Higher ground* and opens *I'm
+pressing on the upward way*.
+
+So the line here is the hymn's own, taken from `data/` where it is already
+proofread, rather than a transcription of the index — and it is in both
+languages, where the book's index is English and covers 1–764 only. That the
+index also *names* 764 hymns is a real find and a bigger one than this page;
+see [PLAN.md](PLAN.md).
+
 Two ways it is honestly less than the book, and the page says both:
 
-- The hymnal lists the hymns under a subject **by first line**; this lists them
-  by number, which is what the collection can be ordered by without reading the
-  index again. The line a hymn is known by is the link's title instead of 848
-  of them down the page.
+- The hymnal **orders** the hymns under a subject by that line; this orders
+  them by number, which is what the collection can be ordered by without
+  reading the index again.
 - The hymnal **cross-lists** a few hymns under a second subject — 13 is under
   both *His Love* and *His Sonship* — and a single-valued `category` cannot
   hold that. Each hymn appears once, under the subject its own page prints.

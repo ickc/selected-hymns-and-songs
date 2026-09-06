@@ -175,7 +175,8 @@ class HymnConversionTest(TestCase):
 
             index = (site / "subject.md").read_text(encoding="utf-8")
             self.assertIn("## I. [Category]{lang=en} [分類]{lang=zh-Hant}", index)
-            self.assertIn("[1](hymn/1.html", index)
+            self.assertIn("[[1]{.subject-number}", index)
+            self.assertIn("](hymn/1.html)", index)
 
     def test_developer_projection_writes_the_chorus_report(self) -> None:
         with TemporaryDirectory() as temporary_directory:
