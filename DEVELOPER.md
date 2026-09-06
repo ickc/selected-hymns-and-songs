@@ -66,6 +66,7 @@ preprocessing, run when it changes rather than on the way to the site; see
 | `pages.py` | the other **one-way** projection: `Hymn` + `scan/` → page Markdown. |
 | `scans.py` | the segmentation CSVs, and linking the page images into the built site. |
 | `categories.py` | the **preprocessing** step: `data/categories.tsv` → the English half of each hymn's category. |
+| `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -132,6 +133,12 @@ What has been added here and is not there:
   has), the removal of `（參720）` from 840's, which is not printed on its page,
   and a missing syllable in 845 (從未曾拒絕人來信, eight as its 8.8.8.5. meter
   wants);
+- **eight more lines a syllable short**, found by counting rather than by
+  reading: 412 (但願我能像馬利亞), 430 (祂的豐盛我能倚), 441 (背起十架跟耶穌),
+  479 (將我恢復), 486 (主，我接受你作一切), 503 (我也禱告並立志), 704
+  (要我遠離罪俗) and 729 (沒有神，沒指望, which had a 有 too many). Each was
+  the one verse of its hymn that would not scan; see `meter-report` under
+  [Checking](#checking);
 - **hymns 797 and 798, which were each other**. Not just their subjects: the
   Chinese page 855 prints 求你揀選我道路 under 797 and page 857 prints
   我無能力 under 798, and `data/` had both hymns entire under the other's
@@ -452,13 +459,22 @@ Nobody is going to open 848 decks, so two scripts do it instead.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
+- `scripts/check_meters.py` (`pixi run meter-report`) counts the syllables of
+  every Chinese lyric line against the meter printed over the hymn. A meter is
+  a syllable count and Chinese is one syllable to the character, so this is not
+  a heuristic: where the two disagree, either a character has gone missing from
+  the text or the meter was mistyped, and the report's classification says
+  which shape the disagreement has. It is still a report and not a gate --
+  `--strict` makes it one -- because 312 hymns disagree and each one needs a
+  page read to settle it; see [PLAN.md](PLAN.md).
 
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`
 the page projection — including the ways it deliberately differs from the deck —
 `tests/test_scans.py` the segmentation CSVs and the staging of their images,
-`tests/test_categories.py` the category table and the step that applies it, and
-`tests/test_build_site.py` the partitioning and merge.
+`tests/test_categories.py` the category table and the step that applies it,
+`tests/test_meters.py` the syllable check, and `tests/test_build_site.py` the
+partitioning and merge.
 
 The hymn pages have no equivalent of `check-slides`. A deck can fail invisibly,
 by overflowing a fixed viewport 848 times over; a page scrolls, so there is no
@@ -477,6 +493,7 @@ build-serial      Regenerate the projections and render in one Quarto process
 serve             Preview the site on $QUARTO_PORT (8020)
 check-slides      Measure every rendered deck in a browser; fail on overflow
 chorus-report     List the hymns whose chorus the projection resolves
+meter-report      List the hymns whose Chinese lyrics do not scan as their meter
 test              Run the conversion and projection tests
 setup-chrome      Install the headless browser check-slides needs
 clean             Remove everything the projection and the render generate

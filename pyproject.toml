@@ -36,6 +36,9 @@ check-slides = { cmd = "python scripts/check_slides.py site/_site/slide", descri
 setup-chrome = { cmd = "quarto install chrome-headless-shell --no-prompt", description = "Install the headless browser check-slides needs" }
 test = { cmd = "python -m unittest discover -s tests -v", description = "Run the conversion and projection tests" }
 chorus-report = { cmd = "python scripts/chorus_report.py data", description = "List the hymns whose chorus the projection resolves, to check against the hymnal" }
+# A meter is a syllable count and Chinese is one syllable a character, so
+# this counts rather than trusts. A report while 312 hymns still disagree.
+meter-report = { cmd = "python scripts/check_meters.py data", description = "List the hymns whose Chinese lyrics do not scan as their meter says" }
 clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/chorus.md site/index.html site/chorus.html", description = "Remove everything the projection and the render generate" }
 
 [tool.pixi.dependencies]
