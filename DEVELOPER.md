@@ -2,7 +2,9 @@
 
 Enough to navigate the project. For what the checked-in Markdown means, see
 [FORMAT.md](FORMAT.md); for what the site is, see [README.md](README.md). The
-files themselves carry the reasoning behind each decision in comments.
+files themselves carry the reasoning behind each decision in comments. For what
+the data is still missing and what could be built from the book's front and
+back matter, see [PLAN.md](PLAN.md) — proposals, none of them built yet.
 
 ## The shape of it
 
@@ -23,7 +25,7 @@ flowchart LR
   yaml["../selected-hymns/data.yml<br/>where data/ came from"]
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
-  cats["<b>data/categories.tsv</b><br/>290 rows, in git"]
+  cats["<b>data/categories.tsv</b><br/>286 rows, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
   index["site/index.md<br/>written, in git"]
@@ -156,7 +158,7 @@ English edition (pages v–xvi). That index is numbered exactly as the Chinese
 one (pages 七–十一) is, three levels deep — `I. PRAISE AND WORSHIP`,
 `2. THE FATHER`, `(1) His Greatness` against `一．讚美和敬拜`, `2. 聖父`,
 `(1) 祂的偉大` — and each entry lists the hymns filed under it. Matching the
-two by those hymn numbers pairs 248 of the 290 Chinese categories with one
+two by those hymn numbers pairs 248 of the Chinese categories with one
 English heading and no ambiguity at all; the rest are named in
 `data/categories.tsv` itself.
 
