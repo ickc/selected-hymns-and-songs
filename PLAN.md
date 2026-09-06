@@ -224,21 +224,50 @@ hymn 133 is under *(14) His Kingdom* and *(26) Rejoicing in Him*. The hymn
 So `category` is the hymn's **home** subject, and the index has placements the
 home subject does not capture. A faithful subject-index page (§4) needs the
 many-to-many relation, which lives in the index, not in `data/N.md`. This is a
-design fact, not a defect — but it decides the shape of §4.
+design fact, not a defect — but it decided the shape of §4: the page built in
+§4 files each hymn once, under the subject its own page prints, and says so.
 
-### D9 — the order of the subjects is lost
+### D9 — the order of the subjects is lost — **done**
 
-`data/categories.tsv` is sorted by the lowest hymn number filed under each
+`data/categories.tsv` was sorted by the lowest hymn number filed under each
 subject. That is *not* the book's order. Under *The Father*, the book runs
 Greatness, Glory, Majesty, Mercy, Love, Faithfulness, Redemption, Sonship,
-Crying Abba; sorted by first hymn number it comes out Greatness, Glory, Love,
+Crying Abba; sorted by first hymn number it came out Greatness, Glory, Love,
 Redemption, Majesty, Mercy, Crying Abba, Faithfulness, Sonship. The printed
-numbering (`I.` / `2.` / `(1)`) is the order, and we did not keep it.
+numbering (`I.` / `2.` / `(1)`) is the order, and we had not kept it.
+
+The table now carries it, in `n1 n2 n3` beside `zh1 zh2 zh3` and `en1 en2 en3`,
+and the reader checks it: every level has to run 1, 2, 3… under its parent, a
+heading has to keep one number throughout, and a level 2 is either one subject
+or a run of them.
+
+The order was read back off the Chinese subject index (`zh/003`–`zh/007`,
+主題目錄) from the OCR's own bounding boxes, two columns a page. The names were
+not taken from that reading — we already had all 285 — only the sequence, which
+made the pass self-checking three ways:
+
+- all 285 subjects matched, exactly once, with nothing left over and nothing
+  unmatched;
+- of the 307 index lines, 222 had a printed number the OCR read legibly, and
+  every one of them agreed with the position it had been given;
+- 703 of the 848 hymns appear in the OCR of the index line of the very subject
+  they are filed under. The 145 that do not are lines whose hymn list wrapped
+  onto a continuation line, or ranges the OCR broke (`252-26l`), not
+  disagreements.
+
+It also turned up **D11**.
+
+### D11 — hymn 583's subject was a typo — **fixed**
+
+`data/583.md` said `因著信靠祂`; its own page (`zh/621`) prints `因著信靠主`, as
+the twelve other hymns under that subject do. The table had carried both, two
+rows flattening to one English heading, and the index prints only one entry —
+whose hymn run, 577-579.581-584, includes 583. 285 subjects now, not 286.
 
 ### D10 — fixed in passing
 
-`DEVELOPER.md` still said the category table had 290 rows; it has had 286 since
-four rows were dropped. Corrected.
+`DEVELOPER.md` still said the category table had 290 rows; it had 286 by then
+and has 285 now. Corrected, and it names subjects rather than rows.
 
 ---
 
@@ -286,62 +315,32 @@ OCR. This is the one proposal that is nearly free.
 
 ---
 
-## 4. A subject index page
+## 4. A subject index page — **done**
 
-**What we have.** `data/categories.tsv`, 286 subjects, both languages, and
-every one of the 848 hymns filed under exactly one of them. From that alone a
-tree can be built today.
+`site/subject.md`, written by `md-to-site` from `data/categories.tsv` and the
+category on every `data/N.md`, and reachable from the navbar. 18 sections, 232
+subheadings, 57 third-level subjects, 848 hymn numbers each appearing exactly
+once, in the order the book prints them.
 
-**What we are missing — three things.**
+All three of the things this section said were missing were dealt with:
 
-1. **The levels are implicit.** The table stores one flat string per language.
-   Splitting `Praise and Worship—The Son, His Person and Work (His Divinity)`
-   into three levels means splitting on the first em dash and a trailing
-   parenthesis — which works, until a level‑2 name legitimately contains a
-   comma (`The Son, His Person and Work`, already there) or a scripture
-   reference contains a colon and digits (`Psalms and Scripture
-   Portions—Psalm 126:1-3`). Parsing a format we control is silly when we can
-   store it. **Proposal: widen `data/categories.tsv` to explicit level
-   columns** — `zh1 zh2 zh3 en1 en2 en3`, empty where a level is absent (229 of
-   286 subjects are two-level, 57 are three-level, 18 distinct level‑1
-   headings). `categories.py` then joins them for `data/N.md` instead of
-   splitting them apart, which is the direction that cannot go wrong. Same file,
-   same idempotent apply, same CI check.
+1. **The levels are now explicit.** `zh1 zh2 zh3` / `en1 en2 en3`, and the code
+   joins them for `data/N.md` instead of splitting them apart. 228 subjects are
+   two-level and 57 three-level, under 18 level-1 headings. The join
+   reproduces all 285 old rows byte for byte, which is how the widening was
+   checked.
+2. **The order is now stored** — see D9, which is where the reconstruction and
+   its three checks are written up.
+3. **The cross-listings are still not held**, as expected: the page is built
+   from `data/N.md` and labels itself *hymns under the subject their own page
+   prints*, alongside a note that the book also lists them by first line. The
+   second table remains an option, not a plan.
 
-2. **The order (D9).** Add the printed numbering as columns —
-   `I` / `2` / `(1)` — or a single sort key like `I.2.1`. The Chinese subject
-   index (`zh/003`–`zh/007`, 主題目錄) prints all three levels numbered, and
-   covers the appendix hymns in the same sequence, so it is a better single
-   source for ordering than the English index, which splits 1–764 from the
-   supplement. Reconstructing this is a re-read of five pages we have already
-   read once for the labels.
-
-3. **The cross-listings (D8).** The index files a hymn under every subject it
-   belongs to; `data/N.md` records only its home subject. Building the tree
-   from `data/N.md` alone silently drops those placements. Two honest options:
-   build the tree from `data/N.md` and label the page *hymns by their printed
-   subject* (cheap, self-consistent, slightly less than the book); or extract
-   the full index and carry the extra placements in a second table (faithful,
-   another extraction pass). I lean to the first now and the second later, if at
-   all — the cross-listings are a small minority and the site has search.
-
-**Ordering within a subject.** The book lists hymns under a subject by first
-line, not by number (`Behold, what love 13` before `We praise Thee 26`). By
-number is more useful on a screen and is what we can do without another
-extraction. Say so on the page rather than pretending it is the book's order.
-
-**Shape of the page.** `site/subject.md`, generated by `md-to-site` alongside
-the decks and pages, from `data/categories.tsv` plus the categories in
-`data/N.md`. A collapsible three-level list, both languages side by side the
-way the hymn meta line does it, each hymn a number linking to `hymn/N.html`.
-It should also be reachable from the navbar, which currently has only the
-landing page.
-
-**Cost.** Moderate. The generator is a day's work over data we already have;
-the table widening is mechanical; the numbering is one careful reading pass
-over five Chinese pages.
-
----
+**What the page does not do.** No collapsing: 303 headings and 848 numbers make
+a long page, but it is one document — the browser's find works on it, it prints,
+it needs no JavaScript, and it is in the search index one entry per section, so
+a subject can be searched for by name in either language. A hymn's first line is
+the link's `title`, so it is there on hover without 848 of them down the page.
 
 ## 5. Index of authors and composers
 
@@ -504,9 +503,9 @@ committed table itself rather than in a commit message.
 2. **D7 + D1** — ~~audit meters~~ done as a syllable count rather than a page
    read, and ~~the model change~~ made; 93 irregulars filled, 175 hymns still
    disagree and need the page.
-3. **§3 preface** — two pages, high value, nearly free.
-4. **D9 + §4** — widen the category table with levels and printed numbering,
-   then generate the subject index page.
+3. **§3 preface** — two pages, high value, nearly free. **Next.**
+4. ~~**D9 + §4** — widen the category table with levels and printed numbering,
+   then generate the subject index page.~~ Done; it also turned up D11.
 5. **§6b tunes**, then **6a** — double-sourced, self-verifying.
 6. **§5 authors** — biggest, weakest verification, most valuable per hymn. Last
    because everything before it makes the tooling better.

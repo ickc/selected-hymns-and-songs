@@ -52,6 +52,7 @@ IGNORED_PROJECT_ENTRIES = {
     # A stopped Quarto render can leave these generated pages beside their
     # Markdown sources. They must not become input resources in a later build.
     "index.html",
+    "subject.html",
     "chorus.html",
 }
 
@@ -92,9 +93,12 @@ def _copy_project(
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     targets = [f"{projection}/*.md" for projection in PROJECTIONS]
     if first:
+        # The documents that are about the collection rather than about one
+        # hymn. They are project-wide, so one worker renders them all.
         targets.insert(0, "index.md")
+        targets.insert(1, "subject.md")
         if mode == DEVELOP:
-            targets.insert(1, "chorus.md")
+            targets.insert(2, "chorus.md")
     config["project"]["render"] = targets
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"

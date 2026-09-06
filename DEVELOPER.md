@@ -25,12 +25,13 @@ flowchart LR
   yaml["../selected-hymns/data.yml<br/>where data/ came from"]
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
-  cats["<b>data/categories.tsv</b><br/>286 rows, in git"]
+  cats["<b>data/categories.tsv</b><br/>285 subjects, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
+  subject["site/subject.md"]
   index["site/index.md<br/>written, in git"]
   chorus["site/chorus.md<br/>developer mode"]
-  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, search.json"]
+  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, subject index,<br/>search.json"]
   pages["GitHub Pages"]
 
   cats -- "apply-categories" --> md
@@ -39,9 +40,12 @@ flowchart LR
   md -- "md-to-site" --> slide
   md -- "md-to-site" --> page
   md -- "md-to-site" --> chorus
+  md -- "md-to-site" --> subject
+  cats -- "the book's order" --> subject
   scan -- "which pages" --> page
   slide -- "parallel Quarto workers" --> built
   page -- "parallel Quarto workers" --> built
+  subject -- "build" --> built
   index -- "build" --> built
   chorus -- "build" --> built
   scan -- "hard-linked after the render" --> built
@@ -55,7 +59,9 @@ there is no generated file to review in a diff.
 
 `data/categories.tsv` is the one thing that writes *into* `data/`. It is
 preprocessing, run when it changes rather than on the way to the site; see
-[the category table](#the-category-table).
+[the category table](#the-category-table). It is read a second time on the way
+*out*, as the subject index: a hymn knows its own subject, but only the table
+knows what order the subjects come in.
 
 ## The Python
 
@@ -65,7 +71,8 @@ preprocessing, run when it changes rather than on the way to the site; see
 | `slides.py` | the **one-way** projection: `Hymn` → slide Markdown, plus the chorus report. |
 | `pages.py` | the other **one-way** projection: `Hymn` + `scan/` → page Markdown. |
 | `scans.py` | the segmentation CSVs, and linking the page images into the built site. |
-| `categories.py` | the **preprocessing** step: `data/categories.tsv` → the English half of each hymn's category. |
+| `categories.py` | `data/categories.tsv`: the book's subject outline, and the **preprocessing** step that writes the English half of each hymn's category from it. |
+| `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
@@ -158,6 +165,11 @@ What has been added here and is not there:
   The Chinese is now broken at its own commas into the same seven, character
   for character unchanged, so that the two languages pair line by line as they
   do in every other bilingual stanza in the collection;
+- **hymn 583's subject**, which `data/` gave as `因著信靠祂` where its own page
+  (`zh/621`) prints `因著信靠主`, as the other twelve hymns under that subject
+  do. The subject index lists 583 in the run under 因着信靠主 and prints no
+  such second subject, so the table had carried two rows that flattened to one
+  English heading;
 - **one normalisation that departs from `scan/`**: hymn 822's subject is
   `因著祂足夠的恩典` here, though its page prints `足彀`. The other four hymns
   under that subject print `足夠`, and a reader searching for one spelling
@@ -190,15 +202,40 @@ English heading and no ambiguity at all; the rest are named in
 `data/categories.tsv` itself.
 
 ```
-zh                                  en
-讚美和敬拜——聖父（祂的偉大）          Praise and Worship—The Father (His Greatness)
+n1  n2  n3  zh1        zh2  zh3      en1                en2         en3
+1   2   1   讚美和敬拜  聖父  祂的偉大  Praise and Worship  The Father  His Greatness
 ```
 
-Tab-separated because both halves contain commas, quotation marks and
-parentheses and neither can contain a tab: a hand-edited row needs no quoting
-and cannot be misread. The English is title-cased, as the table of contents
-prints it, rather than the capitals of the index; the levels are joined with an
-em dash and the third parenthesised, mirroring the Chinese.
+285 rows, one per subject, in the order the book prints them. Tab-separated
+because the names contain commas, quotation marks and parentheses and cannot
+contain a tab: a hand-edited row needs no quoting and cannot be misread. The
+English is title-cased, as the table of contents prints it, rather than the
+capitals of the index.
+
+The table stores the levels **apart** and joins them — Chinese with an em dash
+pair and the third parenthesised, English with one em dash and the third in
+round brackets — which is what the two editions print over a hymn and what
+`data/N.md` carries. Splitting that back into levels would mean parsing a
+format we control, and the parse would have to survive `The Son, His Person and
+Work` and `Psalm 126:1-3`; joining cannot go wrong.
+
+`n1 n2 n3` is the numbering the book prints (`I.` / `2.` / `(1)`), and it is
+the **only** record of the order. Sorting the subjects by their lowest hymn
+number does not recover it: under the Father the book runs Greatness, Glory,
+Majesty, Mercy, Love, and by first hymn number that comes out Greatness, Glory,
+Love, Redemption, Majesty. So the numbering is checked as it is read — every
+level has to run 1, 2, 3… under its parent, a heading has to keep one number
+throughout, and a level 2 is either one subject or a run of them. A row
+inserted without renumbering fails rather than being filed in the wrong place.
+
+The order was read back off the Chinese subject index (`zh/003`–`zh/007`,
+主題目錄), whose OCR gives the headings in print order. The names were not
+taken from that reading — we already had them — only the sequence, and three
+things check it: all 285 subjects matched, exactly once, with nothing left
+over; the 222 rows whose printed number the OCR read legibly all agree with the
+position they were given; and 703 of the 848 hymns appear in the OCR of the
+index line of the very subject they are filed under, the rest lost to wrapped
+lines and broken ranges rather than to disagreement.
 
 `pixi run apply-categories` writes the English half into every `data/N.md` and
 leaves the Chinese half alone — `data/N.md` is the authority on what the
@@ -211,6 +248,34 @@ This is deliberately *not* a step of the site build. `data/N.md` stays the
 source everything is built from; the table is how one field of it was derived
 once, and how a correction to that field is made again.
 
+The table is read a second time on the way *out*, by `subjects.py`, as
+`site/subject.md` — see [the subject index](#the-subject-index).
+
+## The subject index
+
+`site/subject.md` is the third projection of `data/`, and the only one that is
+about the collection rather than about one hymn: the outline the hymnal is
+arranged by, eighteen sections deep in places, with every hymn a number under
+the subject it is filed in. It needs both sources and neither alone — a hymn
+knows its own subject but not where that subject comes in the book, and the
+table knows the order but not which hymns are under it.
+
+It is generated by `md-to-site` beside the decks and the pages, ignored by git
+like them, and reachable from the navbar. Every heading carries its numbering
+as its identifier (`#subject-1-2-1`), because two subjects under one heading are
+named the same often enough — the Father's Love and the Son's — that an
+identifier made of the words would collide.
+
+Two ways it is honestly less than the book, and the page says both:
+
+- The hymnal lists the hymns under a subject **by first line**; this lists them
+  by number, which is what the collection can be ordered by without reading the
+  index again. The line a hymn is known by is the link's title instead of 848
+  of them down the page.
+- The hymnal **cross-lists** a few hymns under a second subject — 13 is under
+  both *His Love* and *His Sonship* — and a single-valued `category` cannot
+  hold that. Each hymn appears once, under the subject its own page prints.
+
 ## The site
 
 `site/` is a Quarto project. `site/slide/*.md` and `site/hymn/*.md` are written
@@ -221,6 +286,7 @@ flowchart TD
   idx["index.md<br/>written, in git"]
 
   subgraph gen["written by md-to-site"]
+    sub["subject.md<br/>the book's outline"]
     chr["chorus.md<br/>developer mode"]
     dck["slide/N.md × 848"]
     pge["hymn/N.md × 848"]
@@ -239,6 +305,7 @@ flowchart TD
   end
 
   idx --> fmt_html
+  sub --> fmt_html
   chr --> fmt_html
   pge --> fmt_html
   dck --> fmt_reveal
@@ -322,6 +389,9 @@ What matters is the shape of the index: **one entry per slide**, not per hymn.
 A half-remembered line therefore finds the hymn *and* opens at the stanza that
 sings it, and the results group by hymn with the other matching stanzas behind
 "more matches in this document".
+
+The subject index is in the index too, one entry per section, so a subject can
+be searched for by name in either language.
 
 Two documents opt out with `search: false`. The chorus report is developer-only
 rather than part of the site's discovery surface. Every `hymn/N.md` opts out
@@ -459,7 +529,9 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   enough to want a second look at how the stanza was divided.
 - `scripts/apply_categories.py --check` (`pixi run check-categories`) fails if
   any hymn's category has drifted from `data/categories.tsv`, so an edit to one
-  without the other cannot be committed unnoticed.
+  without the other cannot be committed unnoticed. Reading the table at all
+  checks its numbering, so a subject inserted without renumbering fails here
+  and in every build.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
@@ -476,7 +548,8 @@ Nobody is going to open 848 decks, so two scripts do it instead.
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`
 the page projection — including the ways it deliberately differs from the deck —
 `tests/test_scans.py` the segmentation CSVs and the staging of their images,
-`tests/test_categories.py` the category table and the step that applies it,
+`tests/test_categories.py` the subject table and the step that applies it,
+`tests/test_subjects.py` the subject index built from it,
 `tests/test_meters.py` the syllable check, and `tests/test_build_site.py` the
 partitioning and merge.
 
@@ -487,9 +560,9 @@ such failure to hunt for.
 ## Tasks
 
 ```
-yaml-to-md        Render the canonical YAML collection as data/N.md
+yaml-to-md        DESTRUCTIVE: overwrite data/N.md with the upstream YAML
 md-to-yaml        Rebuild the canonical YAML from data/N.md
-md-to-site        Project data/N.md as the slide and page Markdown, and the report
+md-to-site        Project data/N.md as the slides, the pages, the subject index and the report
 apply-categories  Rewrite each hymn's category from data/categories.tsv
 check-categories  Fail if any hymn's category disagrees with that table
 build             Regenerate the projections and render every deck and page in parallel
@@ -504,9 +577,11 @@ clean             Remove everything the projection and the render generate
 ```
 
 `yaml-to-md` and `md-to-yaml` are the only tasks that need `../selected-hymns`
-checked out beside this repository, and `yaml-to-md` would undo everything
-`data/` has gained since it was bootstrapped from there — see [the
-split](#the-split-from-selected-hymns). Nothing
+checked out beside this repository. **`yaml-to-md` overwrites all 848 files
+with what upstream says**, which undoes everything `data/` has gained since it
+was bootstrapped from there — see [the
+split](#the-split-from-selected-hymns). Point it at a scratch directory if what
+you want is a comparison; `md-to-yaml` is the direction to use. Nothing
 needs `../selected-hymns-and-songs-pdf`: what the site uses of it is copied into
 `scan/` and carried in git, and `data/categories.tsv` is the reading of its
 front matter, already made.

@@ -21,7 +21,12 @@ hymn_projection = { path = ".", editable = true }
 env = { QUARTO_PORT = "8020" }
 
 [tool.pixi.tasks]
-yaml-to-md = { cmd = "python -m hymn_projection.converter yaml-to-markdown ../selected-hymns/data.yml data", description = "Render the canonical YAML collection as data/N.md" }
+# How data/ was first written, and now a way to lose it: data/ has diverged
+# from the upstream YAML -- English categories, three hymns' English text, the
+# irregular meters -- and this overwrites all 848 files with what upstream
+# says. `md-to-yaml` is the direction to use; run this only into a scratch
+# directory, and never over data/.
+yaml-to-md = { cmd = "python -m hymn_projection.converter yaml-to-markdown ../selected-hymns/data.yml data", description = "DESTRUCTIVE: overwrite data/N.md with the upstream YAML, which data/ has diverged from" }
 md-to-yaml = { cmd = "python -m hymn_projection.converter markdown-to-yaml data data.yml", description = "Rebuild the canonical YAML from data/N.md" }
 md-to-site = { cmd = "python -m hymn_projection.converter markdown-to-site data site", description = "Project data/N.md concurrently as the slide and page Markdown, and the developer chorus report" }
 # Preprocessing over data/, not a step of the build: what it writes is source.
@@ -39,7 +44,7 @@ chorus-report = { cmd = "python scripts/chorus_report.py data", description = "L
 # A meter is a syllable count and Chinese is one syllable a character, so
 # this counts rather than trusts. A report while 312 hymns still disagree.
 meter-report = { cmd = "python scripts/check_meters.py data", description = "List the hymns whose Chinese lyrics do not scan as their meter says" }
-clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/chorus.md site/index.html site/chorus.html", description = "Remove everything the projection and the render generate" }
+clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/subject.md site/chorus.md site/index.html site/subject.html site/chorus.html", description = "Remove everything the projection and the render generate" }
 
 [tool.pixi.dependencies]
 pandoc = ">=3.8.3,<4"

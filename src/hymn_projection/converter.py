@@ -10,10 +10,12 @@ from pathlib import Path
 
 import yaml
 
+from .categories import read_table
 from .environment import PRODUCTION, available_cpu_count, build_mode
 from .model import Hymn
 from .pages import Collection, to_markdown as page_markdown
 from .scans import missing_images, read_editions
+from .subjects import to_markdown as subject_markdown
 from .slides import (
     LINES_PER_SLIDE,
     chorus_report_markdown,
@@ -28,6 +30,10 @@ SOURCE_REPO = "source-repo"
 # What each projection writes, relative to the Quarto project.
 SLIDE_DIRECTORY = "slide"
 PAGE_DIRECTORY = "hymn"
+SUBJECT_PAGE = "subject.md"
+# The subject index, beside the hymns it files. `data/N.md` says which subject
+# a hymn is under; only this says what order the subjects come in.
+SUBJECT_TABLE = "categories.tsv"
 
 
 def hymns_from_yaml(path: Path) -> Iterator[Hymn]:
@@ -185,6 +191,12 @@ def markdown_to_site(
         )
 
     entries = [(number, hymn) for number, hymn, _, _ in projections]
+    # A third projection, and the only one that is about the collection rather
+    # than about a hymn: the outline the hymnal is arranged by, with every
+    # hymn under the subject its own page prints.
+    (destination / SUBJECT_PAGE).write_text(
+        subject_markdown(read_table(source / SUBJECT_TABLE), entries), encoding="utf-8"
+    )
     _replace_directory(
         destination / SLIDE_DIRECTORY,
         {number: slides for number, _, slides, _ in projections},

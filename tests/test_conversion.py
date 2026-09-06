@@ -14,6 +14,7 @@ from hymn_projection.converter import (
 )
 from hymn_projection.environment import BUILD_MODE_ENV
 from hymn_projection.model import Hymn
+from hymn_projection.categories import HEADER
 from hymn_projection.scans import SCAN_LANGUAGES
 
 
@@ -59,6 +60,21 @@ def make_site(root: Path, hymns: int) -> tuple[Path, Path]:
         for number in range(1, hymns + 1):
             (scans / language / f"{number + 1}.png").write_bytes(b"")
     return site, scans
+
+
+def make_table(markdown: Path) -> Path:
+    """Write the subject index beside the hymns, which the site projection reads.
+
+    The fixture files every hymn under one subject; the table is what says
+    where that subject comes in the book and what the English edition calls it.
+    """
+
+    path = markdown / "categories.tsv"
+    path.write_text(
+        "\t".join(HEADER) + "\n" + "\t".join(("1", "1", "", "分類", "測試", "", "Category", "Test", "")) + "\n",
+        encoding="utf-8",
+    )
+    return path
 
 
 class HymnConversionTest(TestCase):
@@ -128,6 +144,7 @@ class HymnConversionTest(TestCase):
             site, scans = make_site(root, hymns=2)
             source.write_text(source_yaml, encoding="utf-8")
             yaml_to_markdown(source, markdown)
+            make_table(markdown)
             markdown_to_site(markdown, site, scans, jobs=2)
             self.assertTrue((site / "slide" / "2.md").exists())
             self.assertTrue((site / "hymn" / "2.md").exists())
@@ -143,6 +160,23 @@ class HymnConversionTest(TestCase):
             self.assertTrue((site / "slide" / "1.md").exists())
             self.assertTrue((site / "hymn" / "1.md").exists())
 
+    def test_the_projection_writes_the_subject_index(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "data"
+            source.mkdir()
+            (source / "1.md").write_text(
+                Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
+            )
+            make_table(source)
+            site, scans = make_site(root, hymns=1)
+
+            markdown_to_site(source, site, scans, jobs=1)
+
+            index = (site / "subject.md").read_text(encoding="utf-8")
+            self.assertIn("## I. [Category]{lang=en} [分類]{lang=zh-Hant}", index)
+            self.assertIn("[1](hymn/1.html", index)
+
     def test_developer_projection_writes_the_chorus_report(self) -> None:
         with TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
@@ -151,6 +185,7 @@ class HymnConversionTest(TestCase):
             (source / "1.md").write_text(
                 Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
             )
+            make_table(source)
 
             site, scans = make_site(root, hymns=1)
             with patch.dict("os.environ", {BUILD_MODE_ENV: "develop"}):
@@ -168,6 +203,7 @@ class HymnConversionTest(TestCase):
             (source / "1.md").write_text(
                 Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
             )
+            make_table(source)
             (site / "chorus.md").write_text("stale", encoding="utf-8")
             (site / "chorus.html").write_text("stale", encoding="utf-8")
 
@@ -186,6 +222,7 @@ class HymnConversionTest(TestCase):
                 (source / f"{number}.md").write_text(
                     Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
                 )
+            make_table(source)
 
             serial, scans = make_site(root / "serial", hymns=3)
             parallel, _ = make_site(root / "parallel", hymns=3)

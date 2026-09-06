@@ -15,9 +15,10 @@ hymnal is maintained here now, and `data/` carries readings and corrections
 that file does not. [FORMAT.md](FORMAT.md) describes what the Markdown looks
 like and why; [DEVELOPER.md](DEVELOPER.md) describes what has been added.
 
-`data/categories.tsv` — what each hymn's Chinese subject is called in the
-English edition, read off that edition's subject index. A hymn's category is
-the one field of `data/N.md` that is written from somewhere else; see
+`data/categories.tsv` — the book's subject outline: 285 subjects, both
+languages, three levels apart, in the order the hymnal numbers them. A hymn's
+category is the one field of `data/N.md` that is written from somewhere else,
+and this is also what the published subject index is built from; see
 [DEVELOPER.md](DEVELOPER.md).
 
 `scan/` — the hymnal itself: one image per page of each language edition, and
@@ -42,6 +43,9 @@ Both are carried in git. Everything else is generated.
   belongs to it, both languages, sized to fill the screen without overflowing
   it. Add `?grid` to a hymn's URL for two aligned columns instead of
   interleaved lines.
+- **Or browse by subject.** The hymnal's own subject index, all eighteen
+  sections of it in both languages, in the order the book prints them, with
+  every hymn a number that opens its page.
 - **Or each hymn beside the hymnal**, the text in the middle and the scanned
   page of each edition either side of it, scrolling independently. Follow the
   music while the words are in front of you, or check a line against the book —
