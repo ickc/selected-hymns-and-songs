@@ -212,3 +212,40 @@ class HymnConversionTest(TestCase):
 
         with self.assertRaisesRegex(ValueError, "meter must be"):
             Hymn.from_dict(invalid)
+
+
+class IrregularMeterTest(TestCase):
+    """A meter whose two languages share no notation to factor out."""
+
+    SOURCE = """---
+category: 甲——乙
+meter: Irregular Meter特.和
+---
+
+# 1
+
+A line
+一二三
+"""
+
+    def test_an_irregular_meter_reads_as_localized_text(self) -> None:
+        hymn = Hymn.from_markdown(self.SOURCE)
+
+        self.assertEqual(
+            hymn.meter.to_dict(), {"en": "Irregular Meter", "zh": "特.和"}
+        )
+
+    def test_an_irregular_meter_round_trips(self) -> None:
+        hymn = Hymn.from_markdown(self.SOURCE)
+
+        self.assertEqual(hymn.to_markdown(), self.SOURCE)
+
+    def test_a_numeric_localized_meter_still_factors_its_notation(self) -> None:
+        source = self.SOURCE.replace("Irregular Meter特.和", "8.6.8.6. with chorus和")
+
+        hymn = Hymn.from_markdown(source)
+
+        self.assertEqual(
+            hymn.meter.to_dict(), {"en": "8.6.8.6. with chorus", "zh": "8.6.8.6. 和"}
+        )
+        self.assertEqual(hymn.to_markdown(), source)

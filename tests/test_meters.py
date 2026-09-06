@@ -112,3 +112,45 @@ class DisagreementTest(TestCase):
 
         self.assertEqual([d.kind for d in found], ["verses disagree with each other"])
         self.assertIsNone(found[0].implied)
+
+
+class IrregularTest(TestCase):
+    """`Irregular Meter` / `特`, which states no lengths to count against."""
+
+    def test_an_irregular_meter_states_no_lengths(self) -> None:
+        self.assertIsNone(printed("Irregular Meter特"))
+
+    def test_a_hymn_the_hymnal_calls_irregular_is_not_reported(self) -> None:
+        ragged = hymn("Irregular Meter特", ["一二三四五六", "一二三"], ["一二三四五"])
+
+        self.assertEqual(disagreements([(1, ragged)]), [])
+
+    def test_a_hymn_with_no_meter_at_all_still_is(self) -> None:
+        found = disagreements([(1, hymn(None, ["一二三四五六"], ["一二三"]))])
+
+        self.assertEqual([d.kind for d in found], ["no meter"])
+
+
+class DoubledMeterTest(TestCase):
+    """The two editions count a chorus differently, and neither is wrong.
+
+    Where the chorus is sung to the second half of a doubled tune, the English
+    page writes `8.7.8.7.D.` and the Chinese page writes `8.7.8.7.和`. The
+    eight lines are the verse and the chorus together.
+    """
+
+    def test_a_doubled_meter_may_be_the_verse_and_its_chorus(self) -> None:
+        source = hymn("6.6.D.", ["一二三四五六", "一二三四五六"]).to_markdown()
+        with_chorus = source + "\n# 1-chorus\n\nchorus line\n一二三四五六\n"
+        with_chorus += "another\n一二三四五六\n"
+
+        self.assertEqual(disagreements([(1, Hymn.from_markdown(with_chorus))]), [])
+
+    def test_a_verse_short_of_the_doubled_meter_is_still_reported(self) -> None:
+        source = hymn("6.6.D.", ["一二三四五六", "一二三四五"]).to_markdown()
+        with_chorus = source + "\n# 1-chorus\n\nchorus line\n一二三四五六\n"
+        with_chorus += "another\n一二三四五六\n"
+
+        found = disagreements([(1, Hymn.from_markdown(with_chorus))])
+
+        self.assertEqual(len(found), 1)

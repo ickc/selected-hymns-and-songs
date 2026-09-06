@@ -133,6 +133,10 @@ What has been added here and is not there:
   has), the removal of `（參720）` from 840's, which is not printed on its page,
   and a missing syllable in 845 (從未曾拒絕人來信, eight as its 8.8.8.5. meter
   wants);
+- **93 hymns given the meter the hymnal prints and `data/` had lost**,
+  `Irregular Meter` / `特` — 36 of them `特.和`, which is what the Chinese page
+  writes when the chorus is sung to the same tune. `data.yml` has no meter at
+  all on any of them;
 - **eight more lines a syllable short**, found by counting rather than by
   reading: 412 (但願我能像馬利亞), 430 (祂的豐盛我能倚), 441 (背起十架跟耶穌),
   479 (將我恢復), 486 (主，我接受你作一切), 503 (我也禱告並立志), 704
@@ -465,7 +469,7 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   a heuristic: where the two disagree, either a character has gone missing from
   the text or the meter was mistyped, and the report's classification says
   which shape the disagreement has. It is still a report and not a gate --
-  `--strict` makes it one -- because 312 hymns disagree and each one needs a
+  `--strict` makes it one -- because 175 hymns disagree and each one needs a
   page read to settle it; see [PLAN.md](PLAN.md).
 
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the

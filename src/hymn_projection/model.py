@@ -135,7 +135,10 @@ def _meter_metadata(value: LocalizedText) -> pf.MetaInlines:
         raise ValueError("a localized meter needs two languages to remain distinguishable")
     shared = commonprefix(list(value.translations.values()))
     if not METER_PREFIX.fullmatch(shared):
-        raise ValueError("localized meter translations must share their meter notation")
+        # An irregular meter shares nothing: the English page writes
+        # ``Irregular Meter`` and the Chinese one ``特``. Nothing needs
+        # factoring out, so it is stored as any other localized text is.
+        return _localized_metadata(value)
     return pf.MetaInlines(
         pf.Str(shared),
         *(
@@ -167,7 +170,9 @@ def _meter_from_metadata(value: pf.MetaValue) -> str | LocalizedText:
     rendered = _exact_text(value.content)
     match = METER_PREFIX.match(rendered)
     if not match:
-        raise ValueError("localized meter must begin with shared meter notation")
+        # No shared notation to expand: an irregular meter, read back the way
+        # every other piece of localized metadata is.
+        return _localized_from_metadata(value, "meter")
     shared = match.group()
 
     translations: dict[str, str] = {}

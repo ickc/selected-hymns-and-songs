@@ -20,7 +20,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | --- | --- | --- | --- |
 | `category` | 848 | yes, all 848 | done |
 | `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
-| `meter` | 710 | n/a — notation is shared | 138 missing, see D1 |
+| `meter` | 803 | n/a — notation is shared | 45 missing, see D1 |
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
 | `author` | 4 | 0 both — all English-only | see D2 |
@@ -43,7 +43,7 @@ chorus resolution and its report). No structural defects found.
 
 ## 2. Defects beyond the title and the category
 
-### D1 — 138 hymns have no meter, and most of them should say "Irregular"
+### D1 — 138 hymns have no meter, and most of them should say "Irregular" — **93 done**
 
 The English page prints `Irregular Meter` and the Chinese page prints `特`
 (`特和` when there is a chorus). 93 English pages contain the word
@@ -54,12 +54,22 @@ page reads `特`, `data/840.md` has no `meter` at all.
 them wholesale; 37 are in the Chinese-only appendix and must be read off the
 Chinese page.
 
-**This one has a model consequence.** `_meter_metadata` factors a localized
-meter into a shared numeric prefix plus per-language suffixes, and asserts the
-shared part matches `METER_PREFIX` (`(?:[0-9]+\.)+(?:D\.)?\s+`). `Irregular
-Meter` and `特` share nothing. Adding irregular meters therefore requires
-either relaxing that rule or giving the meter a second representation. Worth
-deciding before the extraction, not after.
+**This one had a model consequence**, now resolved. `_meter_metadata` factored
+a localized meter into a shared numeric prefix plus per-language suffixes and
+asserted the shared part matched `METER_PREFIX`; `Irregular Meter` and `特`
+share nothing. Both halves of the codec now fall back to storing a meter as
+plain localized text when there is no shared notation to factor out, which is
+what every other localized field already does.
+
+93 hymns are done: those with no meter where every page reading of either
+edition says irregular and none gives a number. 36 of them are `特.和`, the
+form the Chinese page prints when the chorus is sung to the same tune — the
+mark itself is the hymn having a chorus block, which agrees with the meter on
+227 of the 232 hymns where both are already present.
+
+**45 hymns still have no meter**: 9 with no legible page reading at all, and
+the rest where the readings conflict or give numbers the lyrics do not scan as.
+`pixi run meter-report` lists them.
 
 ### D2 — `author` is populated on 4 hymns out of 848
 
@@ -168,13 +178,41 @@ Note that D5 and D6 cancelled out numerically — 39 hymns lacked English text i
 nobody noticed the two sets were not the same 39. With D5 done the count no
 longer matches, and these three are what is left.
 
-### D7 — one hymn's meter may disagree with its page
+### D7 — one hymn's meter may disagree with its page — **tooling done, 175 left**
 
 The Chinese page for 779 (`zh/838.txt`) reads `6. 4. 6. 4 雙`; `data/779.md`
-says `8.6.8.6.D.`. The OCR may be wrong. Nobody has ever run the
-category-versus-page-header audit for the *meter* half of the same header line,
-and it costs almost nothing to run now that the tooling exists. Do it before
-building anything on top of `meter` (§6 depends on it).
+says `8.6.8.6.D.`.
+
+Running the audit turned out not to need the pages at all, or not first. A
+meter *is* a syllable count and Chinese is one syllable to the character, so
+`meters.py` counts the lyrics and `pixi run meter-report` says where the count
+and the meter disagree — a check on the transcription and the meter at once,
+classified by the shape of the disagreement, because the shape says which of
+the two is wrong. It found the eight dropped characters listed above.
+
+Three things it taught us about the data:
+
+- **The two editions write a doubled tune's chorus differently, and neither is
+  wrong.** Where the chorus is sung to the second half of the tune, the English
+  page writes `8.7.8.7.D.` and the Chinese page writes `8.7.8.7.和` — the same
+  eight sung lines, counted as one doubled verse on one page and as a verse
+  plus a chorus on the other. (The Chinese also writes `6.6.6.5.雙.和` where it
+  wants to say both.) 44 of the apparent disagreements were only this, and
+  `data/`'s scalar `X.D.` on those hymns is the English form, correct as it
+  stands.
+- **Some Chinese verses were transcribed with two printed lines joined into
+  one.** Hymn 69's page reads `6.6.6.5.雙.和` and prints eight half-lines two to
+  a row; `data/` has four lines of 12.11.12.11 and a meter to match. Hymn 824,
+  re-lineated in D5, was the same thing. This is a lineation question rather
+  than a meter one, and the meter is how to find the rest of them.
+- **`data/777.md`'s meter is `.8.6.8.6.6.6.7.5.`**, with a leading dot that is
+  simply a typo.
+
+**175 hymns still disagree**: 92 where every verse agrees on some other meter
+than the one stored, 45 with no meter, 36 whose verses disagree with each
+other, and 2 a single syllable out (453, whose page says `6.6.11.雙`, and 772,
+whose page says `8.8.8.8.7.` — both meter errors, not text ones). Each needs a
+page read.
 
 ### D8 — the category is single-valued, but the book's index is not
 
@@ -463,8 +501,9 @@ committed table itself rather than in a commit message.
 
 1. ~~**D5** — transcribe the missing English for 797, 824, 845.~~ Done; it also
    turned up a whole-hymn swap between 797 and 798.
-2. **D7 + D1** — audit meters against the page headers, then fill the 138
-   irregulars. Unblocks §6 and settles the model change early.
+2. **D7 + D1** — ~~audit meters~~ done as a syllable count rather than a page
+   read, and ~~the model change~~ made; 93 irregulars filled, 175 hymns still
+   disagree and need the page.
 3. **§3 preface** — two pages, high value, nearly free.
 4. **D9 + §4** — widen the category table with levels and printed numbering,
    then generate the subject index page.

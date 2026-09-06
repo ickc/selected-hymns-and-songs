@@ -50,6 +50,13 @@ meter: 11.10.11.10. with chorus和
 The codec expands the shared `11.10.11.10. ` prefix back into both YAML values.
 A meter with zero or one detected language remains a YAML scalar.
 
+A meter whose two languages share no notation has none factored out and is
+stored as any other localized field is:
+
+```yaml
+meter: Irregular Meter特.和
+```
+
 ## How the languages are recovered
 
 When Markdown is read, the codec injects an `auto-lang` map from Unicode script

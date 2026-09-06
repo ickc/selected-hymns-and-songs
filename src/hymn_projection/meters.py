@@ -12,9 +12,16 @@ The check is over the Chinese only. English syllable counts cannot be had by
 counting anything, and the two editions sing the same tune, so the Chinese
 count carries the meter for both.
 
-Two things a meter does not describe, and which are therefore skipped: the
-chorus, which the book marks `和` without giving its lengths, and the repeat a
-`重` asks for, which prints a line twice without counting it twice.
+The two editions do not write a meter the same way, and the difference is not
+a mistake in either. Where a hymn's chorus is sung to the second half of a
+doubled tune, the English page writes `8.7.8.7.D.` and the Chinese page writes
+`8.7.8.7.和` -- the same eight sung lines, counted as one doubled verse on one
+page and as a verse and a chorus on the other. So a doubled meter is measured
+against the verse and the chorus it takes together whenever the verse alone is
+too short for it.
+
+What a meter does not describe, and which is therefore not counted: the repeat
+a `重` asks for, which prints a line twice without counting it twice.
 """
 
 from __future__ import annotations
@@ -25,7 +32,7 @@ from dataclasses import dataclass
 from os.path import commonprefix
 from pathlib import Path
 
-from .model import Hymn
+from .model import Hymn, Stanza
 
 
 # The CJK ranges the hymnal's Chinese is written in. Punctuation is not sung
@@ -66,21 +73,42 @@ def notation(counts: list[int]) -> str:
     return ".".join(str(count) for count in counts) + "."
 
 
+def _counts(stanza: Stanza) -> list[int]:
+    return [
+        syllables(line.translations["zh"])
+        for line in stanza.lines
+        if "zh" in line.translations
+    ]
+
+
 def stanza_counts(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
     """Return the Chinese syllable count of each verse line, chorus aside."""
 
     return [
-        (
-            stanza.name,
-            [
-                syllables(line.translations["zh"])
-                for line in stanza.lines
-                if "zh" in line.translations
-            ],
-        )
+        (stanza.name, _counts(stanza))
         for stanza in hymn.stanzas
         if not isinstance(stanza.name, str)
     ]
+
+
+def sung_counts(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
+    """Return each verse's line lengths with those of the chorus it takes.
+
+    A congregation sings the chorus after the verse, and a doubled meter counts
+    the two together. Which chorus a verse takes is the projection's rule: the
+    most recent one at or before it.
+    """
+
+    choruses = {
+        int(stanza.name.split("-")[0]): _counts(stanza)
+        for stanza in hymn.stanzas
+        if isinstance(stanza.name, str)
+    }
+    sung = []
+    for name, counts in stanza_counts(hymn):
+        taken = [choruses[at] for at in sorted(choruses) if at <= name]
+        sung.append((name, counts + (taken[-1] if taken else [])))
+    return sung
 
 
 def implied(hymn: Hymn) -> str | None:
@@ -135,15 +163,28 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
     found = []
     for number, hymn in hymns:
         counts = stanza_counts(hymn)
-        expected = printed(hymn.meter) if isinstance(hymn.meter, str) else None
-        if hymn.meter is not None and not isinstance(hymn.meter, str):
-            expected = printed(hymn.meter.translations["zh"])
-        if expected is not None and all(c == expected for _, c in counts):
+        text = _meter_text(hymn)
+        if text is not None and printed(text) is None:
+            # `Irregular Meter` / `特` states no lengths, so there is nothing
+            # to count it against. The hymnal says as much and that is that.
+            continue
+        expected = printed(text or "")
+        if expected is not None and _scans(hymn, counts, expected):
             continue
         found.append(
             Disagreement(number, _meter_text(hymn), expected, counts, implied(hymn))
         )
     return found
+
+
+def _scans(
+    hymn: Hymn, counts: list[tuple[int | str, list[int]]], expected: list[int]
+) -> bool:
+    """Say whether every verse is as long as the meter says, chorus included."""
+
+    if all(c == expected for _, c in counts):
+        return True
+    return all(c == expected for _, c in sung_counts(hymn))
 
 
 def _meter_text(hymn: Hymn) -> str | None:
