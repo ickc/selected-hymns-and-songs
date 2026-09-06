@@ -9,6 +9,7 @@
 site/slide/
 site/hymn/
 site/subject.md
+site/tune.md
 site/chorus.md
 
 # Quarto render output. Its cache is ignored by site/.gitignore, which Quarto

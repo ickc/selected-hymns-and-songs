@@ -53,6 +53,7 @@ IGNORED_PROJECT_ENTRIES = {
     # Markdown sources. They must not become input resources in a later build.
     "index.html",
     "subject.html",
+    "tune.html",
     "chorus.html",
 }
 
@@ -97,8 +98,9 @@ def _copy_project(
         # hymn. They are project-wide, so one worker renders them all.
         targets.insert(0, "index.md")
         targets.insert(1, "subject.md")
+        targets.insert(2, "tune.md")
         if mode == DEVELOP:
-            targets.insert(2, "chorus.md")
+            targets.insert(3, "chorus.md")
     config["project"]["render"] = targets
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"

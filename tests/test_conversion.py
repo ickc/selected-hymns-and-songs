@@ -178,6 +178,24 @@ class HymnConversionTest(TestCase):
             self.assertIn("[[1]{.subject-number}", index)
             self.assertIn("](hymn/1.html)", index)
 
+    def test_the_projection_writes_the_index_of_tunes(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "data"
+            source.mkdir()
+            (source / "1.md").write_text(
+                Hymn.from_dict(dict(HYMN_DATA, tune="Beecher")).to_markdown(),
+                encoding="utf-8",
+            )
+            make_table(source)
+            site, scans = make_site(root, hymns=1)
+
+            markdown_to_site(source, site, scans, jobs=1)
+
+            index = (site / "tune.md").read_text(encoding="utf-8")
+            self.assertIn("[[Beecher]{lang=en}]{.tune-name}", index)
+            self.assertIn("[[1](hymn/1.html)]{.tune-hymns}", index)
+
     def test_developer_projection_writes_the_chorus_report(self) -> None:
         with TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
@@ -249,6 +267,26 @@ class HymnConversionTest(TestCase):
         invalid = dict(HYMN_DATA, meter=None)
 
         with self.assertRaisesRegex(ValueError, "meter must be"):
+            Hymn.from_dict(invalid)
+
+    def test_one_tune_and_an_ordered_pair_both_survive_the_round_trip(self) -> None:
+        for tune in ("Azmon", ["Azmon", "Lyngham"]):
+            with self.subTest(tune=tune):
+                hymn = Hymn.from_dict(dict(HYMN_DATA, tune=tune))
+
+                self.assertEqual(Hymn.from_markdown(hymn.to_markdown()).tune, tune)
+                self.assertEqual(hymn.to_dict()["tune"], tune)
+
+    def test_a_hymn_set_to_one_tune_twice_is_rejected(self) -> None:
+        invalid = dict(HYMN_DATA, tune=["Azmon", "Azmon"])
+
+        with self.assertRaisesRegex(ValueError, "one tune twice"):
+            Hymn.from_dict(invalid)
+
+    def test_an_empty_tune_is_rejected(self) -> None:
+        invalid = dict(HYMN_DATA, tune=[])
+
+        with self.assertRaisesRegex(ValueError, "tune must be"):
             Hymn.from_dict(invalid)
 
 

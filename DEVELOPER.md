@@ -27,27 +27,32 @@ flowchart LR
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
   cats["<b>data/categories.tsv</b><br/>285 subjects, in git"]
   tits["<b>data/titles.tsv</b><br/>778 names, in git"]
+  tuns["<b>data/tunes.tsv</b><br/>765 pairs, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
   subject["site/subject.md"]
+  tune["site/tune.md"]
   index["site/index.md<br/>written, in git"]
   chorus["site/chorus.md<br/>developer mode"]
-  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, subject index,<br/>search.json"]
+  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, subject index,<br/>index of tunes, search.json"]
   pages["GitHub Pages"]
 
   cats -- "apply-categories" --> md
   tits -- "apply-titles" --> md
+  tuns -- "apply-tunes" --> md
   yaml -- "yaml-to-md" --> md
   md -- "md-to-yaml" --> yaml
   md -- "md-to-site" --> slide
   md -- "md-to-site" --> page
   md -- "md-to-site" --> chorus
   md -- "md-to-site" --> subject
+  md -- "md-to-site" --> tune
   cats -- "the book's order" --> subject
   scan -- "which pages" --> page
   slide -- "parallel Quarto workers" --> built
   page -- "parallel Quarto workers" --> built
   subject -- "build" --> built
+  tune -- "build" --> built
   index -- "build" --> built
   chorus -- "build" --> built
   scan -- "hard-linked after the render" --> built
@@ -59,13 +64,16 @@ flowchart LR
 is generated, ignored, and rebuilt here and in CI — so it cannot be stale, and
 there is no generated file to review in a diff.
 
-`data/categories.tsv` and `data/titles.tsv` are the two things that write
-*into* `data/`. Both are preprocessing, run when they change rather than on the
-way to the site; both were read out of the book's front matter, which is the
-only place either exists. See [the category table](#the-category-table) and
-[the title table](#the-title-table). The category table is read a second time
-on the way *out*, as the subject index: a hymn knows its own subject, but only
-the table knows what order the subjects come in.
+`data/categories.tsv`, `data/titles.tsv` and `data/tunes.tsv` are the three
+things that write *into* `data/`. All three are preprocessing, run when they
+change rather than on the way to the site, and all three were read out of the
+book's own front or back matter, which is the only place any of them exists.
+See [the category table](#the-category-table), [the title
+table](#the-title-table) and [the tune table](#the-tune-table). The category
+table is read a second time on the way *out*, as the subject index: a hymn
+knows its own subject, but only the table knows what order the subjects come
+in. The tune table is not — once applied, a hymn knows its own tune, and the
+[index of tunes](#the-index-of-tunes) is projected from the hymns.
 
 ## The Python
 
@@ -77,6 +85,8 @@ the table knows what order the subjects come in.
 | `scans.py` | the segmentation CSVs, and linking the page images into the built site. |
 | `categories.py` | `data/categories.tsv`: the book's subject outline, and the **preprocessing** step that writes the English half of each hymn's category from it. |
 | `titles.py` | `data/titles.tsv`: the name the book's subject index files each hymn under, and the **preprocessing** step that writes it. |
+| `tunes.py` | `data/tunes.tsv`: the tune the English edition sets each hymn to, and the **preprocessing** step that writes it. |
+| `tuneindex.py` | The **projection** of the whole collection as the book's alphabetical index of tunes. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
@@ -328,6 +338,64 @@ the three the book's own *Hymns Available In Chinese But Not In English* page
 names, and exactly the three PLAN.md says carry English the book does not
 print.
 
+## The tune table
+
+**The hymnal does not print the tune over the hymn either.** Look at
+`scan/en/159.png`, which is hymn 146: the subject, the meter `8. 6. 8. 6.`, the
+number, and — because this one hymn is printed to two settings — the words
+*First tune*. It does not name either tune. The names are in the back matter,
+and they are there **twice**:
+
+- *Alphabetical Index of Tunes*, `en/895`–`en/898`: tune, then the hymns set to
+  it.
+- *Metrical Index of Tunes*, `en/899`–`en/904`: meter, then tune, then the same
+  hymns.
+
+```
+hymn    tune
+146     Azmon
+146     Lyngham
+```
+
+765 rows: one per (hymn, tune) pair, covering hymns 1–764 — the English
+edition's own extent, with the supplement and the 39 Chinese-only hymns having
+no tune because neither index reaches them. 625 distinct tunes. One hymn, 146,
+carries two, in the order the indexes number them, `Azmon (1)` and
+`Lyngham (2)`, which is the *First tune* and *Second tune* its page prints; the
+field is a name or an ordered list of names, and never localized, because the
+Chinese edition names no tune at all.
+
+**Two printings of one relation is what makes the table trustworthy.** Each
+index was parsed on its own — three narrow columns per page, so the column has
+to be decided line by line from the bounding boxes, and rows clustered on the
+vertical centre rather than the top — and the two were then required to agree
+exactly, hymn for hymn and letter for letter:
+
+| | |
+|---|---|
+| both indexes give the same name | 632 hymns |
+| the two scans disagree; the printed page settles it | 132 hymns |
+| **left unresolved** | **none** |
+
+Every one of those 132 turned out to be the *scan* misreading a name the two
+indexes in fact print alike — `Ononville` for `Ortonville`, `Hennas` for
+`Hermas`, a nought for the `O` of `O Perfect Love`, a full stop for the comma
+of `Courage, Brother`. Not one was a real disagreement between the two printed
+indexes. What comes out is a relation covering exactly hymns 1 to 764 with no
+hymn missing and none past the end — a shape neither index states and neither
+could have been rigged to produce.
+
+`pixi run apply-tunes` writes the tune into every `data/N.md` and removes it
+from a hymn the table no longer names; `pixi run check-tunes` reports the same
+without writing. The tune is then shown on the hymn page beside the meter,
+which is where a hymnal reader looks for it: the two together are what say
+whether one text can be sung to another's music. It is not on a slide, for the
+same reason the meter is not.
+
+**What this cost.** The metrical index also files each hymn under a meter, so
+it is a third opinion on the meter `data/N.md` already carries — see
+[D13](PLAN.md), which is what that comparison turned up.
+
 ## The subject index
 
 `site/subject.md` is the third projection of `data/`, and the only one that is
@@ -358,6 +426,31 @@ Two ways it is honestly less than the book, and the page says both:
   both *His Love* and *His Sonship* — and a single-valued `category` cannot
   hold that. Each hymn appears once, under the subject its own page prints.
 
+## The index of tunes
+
+`site/tune.md` is the fourth projection, and the second about the collection
+rather than about one hymn: every tune the English edition names, and the hymns
+set to it. Unlike the subject index it needs no table on the way out — once
+`apply-tunes` has run, each hymn carries its own tune, and the page is the
+collection inverted.
+
+**The order is the hymnal's, and it is not plain alphabetical.** The book files
+a name word by word, so `A Friend` precedes `Abba` and `Alford` precedes `All
+for Jesus`; it expands a leading `St.` to the word it stands for, so `St.
+Thomas` sits between `Sagina` and `Sandon`; and it lets a comma or an
+apostrophe sort before a letter, so `Behold What Manner of Love` precedes
+`Behold, What Love` and `I Will Guide Thee` precedes `I'd Rather Have Jesus`.
+Sorting the 625 names by that rule reproduces the book's printed sequence
+exactly but for two entries, where the book's own index disagrees with itself
+(`Come, Let us Anew` is filed as though the comma were not there, and `Let the
+Beauty of Jesus Seen in Me` is simply out of order).
+
+**The metrical index is not generated**, though it is the same relation grouped
+the other way and the book prints both. It would have to be filed by the meter
+in `data/N.md`, and 30 of the 764 hymns do not yet agree with the book about
+what that is — see [D13](PLAN.md). It is worth doing after D1 and D7, not
+before.
+
 ## The site
 
 `site/` is a Quarto project. `site/slide/*.md` and `site/hymn/*.md` are written
@@ -369,6 +462,7 @@ flowchart TD
 
   subgraph gen["written by md-to-site"]
     sub["subject.md<br/>the book's outline"]
+    tun["tune.md<br/>the index of tunes"]
     chr["chorus.md<br/>developer mode"]
     dck["slide/N.md × 848"]
     pge["hymn/N.md × 848"]
@@ -388,6 +482,7 @@ flowchart TD
 
   idx --> fmt_html
   sub --> fmt_html
+  tun --> fmt_html
   chr --> fmt_html
   pge --> fmt_html
   dck --> fmt_reveal
@@ -616,6 +711,8 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   and in every build.
 - `scripts/apply_titles.py --check` (`pixi run check-titles`) does the same for
   `data/titles.tsv`, and also fails if a row names a hymn that is not there.
+- `scripts/apply_tunes.py --check` (`pixi run check-tunes`) does the same for
+  `data/tunes.tsv`.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
@@ -647,11 +744,13 @@ such failure to hunt for.
 ```
 yaml-to-md        DESTRUCTIVE: overwrite data/N.md with the upstream YAML
 md-to-yaml        Rebuild the canonical YAML from data/N.md
-md-to-site        Project data/N.md as the slides, the pages, the subject index and the report
+md-to-site        Project data/N.md as the slides, the pages, the two indexes and the report
 apply-categories  Rewrite each hymn's category from data/categories.tsv
 check-categories  Fail if any hymn's category disagrees with that table
 apply-titles      Rewrite each hymn's title from data/titles.tsv
 check-titles      Fail if any hymn's title disagrees with that table
+apply-tunes       Rewrite each hymn's tune from data/tunes.tsv
+check-tunes       Fail if any hymn's tune disagrees with that table
 build             Regenerate the projections and render every deck and page in parallel
 build-serial      Regenerate the projections and render in one Quarto process
 serve             Preview the site on $QUARTO_PORT (8020)
@@ -670,8 +769,8 @@ was bootstrapped from there — see [the
 split](#the-split-from-selected-hymns). Point it at a scratch directory if what
 you want is a comparison; `md-to-yaml` is the direction to use. Nothing
 needs `../selected-hymns-and-songs-pdf`: what the site uses of it is copied into
-`scan/` and carried in git, and `data/categories.tsv` and `data/titles.tsv` are
-the reading of its front matter, already made.
+`scan/` and carried in git, and `data/categories.tsv`, `data/titles.tsv` and
+`data/tunes.tsv` are the reading of its front and back matter, already made.
 
 ## Getting set up
 

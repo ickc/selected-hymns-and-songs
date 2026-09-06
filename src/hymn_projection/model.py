@@ -151,6 +151,22 @@ def _meter_metadata(value: LocalizedText) -> pf.MetaInlines:
     )
 
 
+def _tune_metadata(value: str | list[str]) -> pf.MetaValue:
+    """Represent one tune name, or an ordered list of them, as metadata."""
+
+    if isinstance(value, str):
+        return pf.MetaInlines(pf.RawInline(value, format="markdown"))
+    return pf.MetaList(*(_tune_metadata(name) for name in value))
+
+
+def _tune_from_metadata(value: pf.MetaValue) -> str | list[str]:
+    """Recover the tune names, keeping the order the hymnal numbers them in."""
+
+    if isinstance(value, pf.MetaList):
+        return [_tune_from_metadata(item) for item in value.content]
+    return pf.stringify(value).strip()
+
+
 def _meter_from_metadata(value: pf.MetaValue) -> str | LocalizedText:
     """Recover a scalar meter or expand shared notation over its translations."""
 
@@ -321,6 +337,10 @@ class Hymn:
     note: LocalizedText | None = None
     ref: LocalizedText | None = None
     title: LocalizedText | None = None
+    #: The tune the English edition sets the hymn to, and the second one where
+    #: it prints two.  Not localized: a tune has one name, in the edition that
+    #: names it.
+    tune: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.category, LocalizedText):
@@ -332,6 +352,12 @@ class Hymn:
             raise ValueError("stanza names must be unique")
         if self.meter is not None and not isinstance(self.meter, (str, LocalizedText)):
             raise ValueError("meter must be a string or localized text")
+        if self.tune is not None:
+            tunes = self.tune if isinstance(self.tune, list) else [self.tune]
+            if not tunes or not all(isinstance(name, str) and name for name in tunes):
+                raise ValueError("tune must be a name or a list of names")
+            if len(tunes) != len(set(tunes)):
+                raise ValueError("a hymn cannot be set to one tune twice")
         for name in ("author", "note", "ref", "title"):
             value = getattr(self, name)
             if value is not None and not isinstance(value, LocalizedText):
@@ -342,7 +368,7 @@ class Hymn:
         """Validate and construct a hymn from a YAML-compatible mapping."""
 
         mapping = _mapping(value, "hymn")
-        allowed = {"author", "category", "meter", "note", "ref", "stanza", "title"}
+        allowed = {"author", "category", "meter", "note", "ref", "stanza", "title", "tune"}
         unknown = set(mapping) - allowed
         missing = {"category", "stanza"} - set(mapping)
         if unknown:
@@ -361,6 +387,16 @@ class Hymn:
             else:
                 raise ValueError("meter must be a string or localized mapping")
 
+        tune: str | list[str] | None = None
+        if "tune" in mapping:
+            tune_value = mapping["tune"]
+            if isinstance(tune_value, str):
+                tune = tune_value
+            elif isinstance(tune_value, Sequence):
+                tune = [str(name) for name in tune_value]
+            else:
+                raise ValueError("tune must be a name or a list of names")
+
         def optional_text(name: str) -> LocalizedText | None:
             if name not in mapping:
                 return None
@@ -374,6 +410,7 @@ class Hymn:
             note=optional_text("note"),
             ref=optional_text("ref"),
             title=optional_text("title"),
+            tune=tune,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -396,6 +433,8 @@ class Hymn:
         result["stanza"] = {stanza.name: stanza.to_yaml() for stanza in self.stanzas}
         if self.title is not None:
             result["title"] = self.title.to_dict()
+        if self.tune is not None:
+            result["tune"] = list(self.tune) if isinstance(self.tune, list) else self.tune
         return result
 
     def to_document(self) -> pf.Doc:
@@ -430,6 +469,8 @@ class Hymn:
             metadata["ref"] = _localized_metadata(self.ref)
         if self.title is not None:
             metadata["title"] = _localized_metadata(self.title)
+        if self.tune is not None:
+            metadata["tune"] = _tune_metadata(self.tune)
         document = pf.Doc(*blocks, metadata=metadata)
         # Panflute 2.0 defaults to an API version rejected by Pandoc 3.8.
         document.api_version = pandoc_api_version()
@@ -476,6 +517,7 @@ class Hymn:
             "note",
             "ref",
             "title",
+            "tune",
         }
         unknown = set(plain_metadata) - allowed_metadata
         if unknown:
@@ -496,6 +538,8 @@ class Hymn:
         if "meter" in document.metadata:
             meter = _meter_from_metadata(document.metadata["meter"])
             metadata["meter"] = meter.to_dict() if isinstance(meter, LocalizedText) else meter
+        if "tune" in document.metadata:
+            metadata["tune"] = _tune_from_metadata(document.metadata["tune"])
         for name in ("note", "ref"):
             if name in document.metadata:
                 metadata[name] = _localized_from_metadata(

@@ -48,6 +48,9 @@ website:
       # exist before a render -- which it does: the projection runs first.
       - href: subject.md
         text: Subjects 主題
+      # Likewise, from the tune each `data/N.md` now carries.
+      - href: tune.md
+        text: Tunes 曲調
     right:
       - icon: github
         href: https://github.com/ickc/selected-hymns-and-songs

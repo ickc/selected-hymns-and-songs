@@ -36,6 +36,10 @@ check-categories = { cmd = "python scripts/apply_categories.py data --check", de
 # index files each hymn under, which no page prints over the hymn itself.
 apply-titles = { cmd = "python scripts/apply_titles.py data", description = "Rewrite each hymn's title from data/titles.tsv" }
 check-titles = { cmd = "python scripts/apply_titles.py data --check", description = "Fail if any hymn's title disagrees with data/titles.tsv" }
+# The third: the tune the English edition sets each hymn to, read out of the
+# book's two back-matter indexes of tunes and cross-checked between them.
+apply-tunes = { cmd = "python scripts/apply_tunes.py data", description = "Rewrite each hymn's tune from data/tunes.tsv" }
+check-tunes = { cmd = "python scripts/apply_tunes.py data --check", description = "Fail if any hymn's tune disagrees with data/tunes.tsv" }
 build = { cmd = "python scripts/build_site.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the decks and pages in parallel into site/_site" }
 build-serial = { cmd = "quarto render site && python scripts/stage_scans.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the site in one Quarto process" }
 serve = { cmd = "quarto preview site --render none --port $QUARTO_PORT --host 0.0.0.0", depends-on = ["build"], description = "Build in parallel, then preview and rebuild changed pages on $QUARTO_PORT" }
@@ -48,7 +52,7 @@ chorus-report = { cmd = "python scripts/chorus_report.py data", description = "L
 # A meter is a syllable count and Chinese is one syllable a character, so
 # this counts rather than trusts. A report while 312 hymns still disagree.
 meter-report = { cmd = "python scripts/check_meters.py data", description = "List the hymns whose Chinese lyrics do not scan as their meter says" }
-clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/subject.md site/chorus.md site/index.html site/subject.html site/chorus.html", description = "Remove everything the projection and the render generate" }
+clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/subject.md site/tune.md site/chorus.md site/index.html site/subject.html site/tune.html site/chorus.html", description = "Remove everything the projection and the render generate" }
 
 [tool.pixi.dependencies]
 pandoc = ">=3.8.3,<4"

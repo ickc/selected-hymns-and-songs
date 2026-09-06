@@ -187,6 +187,12 @@ def _heading(hymn: Hymn, number: int) -> str:
             else _localized_inline(hymn.meter.translations)
         )
         meta.append(meter)
+    if hymn.tune is not None:
+        # Beside the meter, which is where a hymnal reader looks for it: the
+        # two together are what say whether one text can be sung to another's
+        # music. The name is English -- no Chinese index names a tune.
+        names = hymn.tune if isinstance(hymn.tune, list) else [hymn.tune]
+        meta.append(span(", ".join(names), "en"))
     for field in ("author", "ref"):
         value = getattr(hymn, field)
         if value is not None:
