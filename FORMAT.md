@@ -1,8 +1,9 @@
 # The Markdown representation of a hymn
 
-`data/N.md` is a bidirectionally lossless projection of one item of the
-canonical YAML collection. This is the contract it keeps; how it is generated,
-and what else is built from it, is in [DEVELOPER.md](DEVELOPER.md).
+`data/N.md` is a bidirectionally lossless projection of one item of the YAML
+collection `data/` was bootstrapped from. This is the contract it keeps; how it
+is generated, and what else is built from it, is in
+[DEVELOPER.md](DEVELOPER.md).
 
 ## Stanzas
 

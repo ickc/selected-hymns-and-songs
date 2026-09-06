@@ -7,8 +7,10 @@ files themselves carry the reasoning behind each decision in comments.
 ## The shape of it
 
 One source, `data/`, and three projections of it: a lossless one back to the
-canonical YAML, and two one-way ones — the deck a hymn is sung from and the
-page its text is read against the scanned hymnal on.
+YAML shape it was bootstrapped from, and two one-way ones — the deck a hymn is
+sung from and the page its text is read against the scanned hymnal on. `data/`
+is the source of record; see [the split from
+`selected-hymns`](#the-split-from-selected-hymns).
 
 Beside `data/` sits `scan/`, which is not a projection of anything here. It is
 the hymnal itself, copied in from
@@ -18,7 +20,7 @@ hymn is printed on. See [scan/README.md](scan/README.md).
 
 ```mermaid
 flowchart LR
-  yaml["../selected-hymns/data.yml<br/>canonical YAML"]
+  yaml["../selected-hymns/data.yml<br/>where data/ came from"]
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
   cats["<b>data/categories.tsv</b><br/>290 rows, in git"]
@@ -105,6 +107,40 @@ belongs to the collection is the range the number box accepts, and the collectio
 book of 848 hymns: `hymns: 848` in `_quarto.yml`, `max="{{< meta hymns >}}"` in
 the page, and `goto.html` reads the range off the field. A constant kept where
 the site is configured, named once.
+
+## The split from `selected-hymns`
+
+`data/` was bootstrapped from
+[`selected-hymns`](https://github.com/ickc/selected-hymns)`/data.yml`, and for
+a while the two said the same thing. They no longer do, and are not meant to.
+This repository is where the hymnal is now maintained: `data/N.md` is the
+source of record, and `data.yml` is the shape it started in.
+
+What has been added here and is not there:
+
+- **the English half of every category**, from
+  [the category table](#the-category-table);
+- **hymn 570's meter**, `8.6.8.6. with chorus和`, which the publisher's English
+  source had dropped along with the whole header line — leaving a placeholder
+  an editor had typed in its place sitting in the `title` field, the only
+  `title` in the collection and not a title at all. The hymnal prints no hymn
+  titles;
+- **corrections read off `scan/`**: hymn 108's subject (祂的得勝, not
+  祂的救贖), hymns 797 and 798, which carried each other's, 832 and 833
+  (預備, as 654–656 have), 838 (我們的深切需要, as 690 has), and the removal
+  of `（參720）` from 840's, which is not printed on its page;
+- **one normalisation that departs from `scan/`**: hymn 822's subject is
+  `因著祂足夠的恩典` here, though its page prints `足彀`. The other four hymns
+  under that subject print `足夠`, and a reader searching for one spelling
+  should not be shown four of the five. The rule that the page wins still
+  holds everywhere else, `彀` included: the Chinese-only appendix uses it in
+  the lyrics of 814 and 817, where the body of the book would write `夠`, and
+  those are left as printed.
+
+`md-to-yaml` still works and is still lossless — that is a property of the
+projection, not a claim that the two repositories agree. **`yaml-to-md` is the
+task to be careful with**: run against the upstream file it would overwrite all
+of the above. Point it at a scratch directory if what you want is a comparison.
 
 ## The category table
 
@@ -428,8 +464,10 @@ setup-chrome      Install the headless browser check-slides needs
 clean             Remove everything the projection and the render generate
 ```
 
-`yaml-to-md` and `md-to-yaml` are the only tasks that need the canonical
-collection checked out beside this repository at `../selected-hymns`. Nothing
+`yaml-to-md` and `md-to-yaml` are the only tasks that need `../selected-hymns`
+checked out beside this repository, and `yaml-to-md` would undo everything
+`data/` has gained since it was bootstrapped from there — see [the
+split](#the-split-from-selected-hymns). Nothing
 needs `../selected-hymns-and-songs-pdf`: what the site uses of it is copied into
 `scan/` and carried in git, and `data/categories.tsv` is the reading of its
 front matter, already made.

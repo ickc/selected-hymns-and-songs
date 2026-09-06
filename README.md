@@ -8,10 +8,12 @@ one way. 848 hymns, English and Traditional Chinese together.
 `data/N.md` — one Markdown file per hymn, numbered as the hymnal numbers them.
 This is the source everything else is built from.
 
-It is a lossless projection of the canonical YAML collection in
-[`selected-hymns`](https://github.com/ickc/selected-hymns): each hymn can be
-converted back to the canonical shape and comes out unchanged.
-[FORMAT.md](FORMAT.md) describes what the Markdown looks like and why.
+It began as a projection of the YAML collection in
+[`selected-hymns`](https://github.com/ickc/selected-hymns) and can still be
+converted back to that shape unchanged, but the two have since diverged: the
+hymnal is maintained here now, and `data/` carries readings and corrections
+that file does not. [FORMAT.md](FORMAT.md) describes what the Markdown looks
+like and why; [DEVELOPER.md](DEVELOPER.md) describes what has been added.
 
 `data/categories.tsv` — what each hymn's Chinese subject is called in the
 English edition, read off that edition's subject index. A hymn's category is
