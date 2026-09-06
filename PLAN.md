@@ -19,7 +19,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | field | hymns | both languages? | verdict |
 | --- | --- | --- | --- |
 | `category` | 848 | yes, all 848 | done |
-| `stanza` | 848 | 809 both, 39 Chinese-only | see D5/D6 |
+| `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
 | `meter` | 710 | n/a — notation is shared | 138 missing, see D1 |
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
@@ -118,17 +118,35 @@ While there: the English wording is not normalised either — `Repeat the last
 two lines` (71, 76) vs `Repeat the last 2 lines` (282, 290), and
 `Repeat last two lines of each stanza` (638) without the leading article.
 
-### D5 — three hymns are missing their English lyrics entirely
+### D5 — three hymns are missing their English lyrics entirely — **done**
 
 **797, 824, 845.** `scan/en.csv` gives each an English page (847–848, 866,
 875), and the English edition's own list of Chinese-only hymns (`en/923.txt`,
 *Hymns Available In Chinese But Not In English*) does not include them. English
-page 847 plainly prints hymn 797 as *"Thy way, not mine, 0 Lord"* — and
-`data/797.md` has four Chinese stanzas and no English at all.
+page 847 plainly prints hymn 797 as *"Thy way, not mine, O Lord"* — and
+`data/797.md` had four Chinese stanzas and no English at all.
 
-This is the largest single gap in the collection: three hymns' worth of English
-text that the book prints and we do not have. It is also a straightforward
-transcription job, not a research one.
+Transcribed off the page images. Two things turned up in the doing:
+
+- **797 and 798 were each other.** Not only their subjects, which had already
+  been swapped back: the Chinese page 855 prints 求你揀選我道路 under 797 and
+  page 857 prints 我無能力 under 798, and `data/` held both hymns entire under
+  the other's number. So the earlier subject-only fix had left each file
+  internally inconsistent; the stanzas have now moved too.
+- **824 had to be re-lineated.** The English page breaks its one stanza into
+  seven six-syllable lines; `data/` had the Chinese as the four lines of its
+  12.12.12.6. meter, and the Chinese page sets the text continuously under the
+  staff with no lineation of its own. Re-broken at its own commas into the same
+  seven, unchanged character for character.
+
+Also: 845's fourth stanza was missing a syllable (從未拒絕人來信 for
+從未曾拒絕人來信, which its 8.8.8.5. meter wants), and its four Chinese choruses
+against the English edition's one are carried by the projection's existing rule
+— each language takes the most recent chorus at or before its stanza — so only
+`1-chorus` has an English half and `site/chorus.md` lists 845 for review.
+
+`data/` is now Chinese-only for exactly 36 hymns, and the remaining difference
+from the book's 39 is D6.
 
 ### D6 — three hymns carry English the book does not print
 
@@ -145,9 +163,10 @@ against. Either document it as a deliberate addition (a fourth entry in
 DEVELOPER.md's list of departures from the scan) or drop it. I would keep it
 and say so.
 
-Note that D5 and D6 cancel out numerically — 39 hymns lack English text in
+Note that D5 and D6 cancelled out numerically — 39 hymns lacked English text in
 `data/` and 39 are absent from the English edition — which is exactly why
-nobody noticed the two sets are not the same 39.
+nobody noticed the two sets were not the same 39. With D5 done the count no
+longer matches, and these three are what is left.
 
 ### D7 — one hymn's meter may disagree with its page
 
@@ -442,8 +461,8 @@ committed table itself rather than in a commit message.
 
 ## 8. Suggested order
 
-1. **D5** — transcribe the missing English for 797, 824, 845. Largest real gap,
-   no research required.
+1. ~~**D5** — transcribe the missing English for 797, 824, 845.~~ Done; it also
+   turned up a whole-hymn swap between 797 and 798.
 2. **D7 + D1** — audit meters against the page headers, then fill the 138
    irregulars. Unblocks §6 and settles the model change early.
 3. **§3 preface** — two pages, high value, nearly free.

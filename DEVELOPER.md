@@ -128,9 +128,25 @@ What has been added here and is not there:
   `title` in the collection and not a title at all. The hymnal prints no hymn
   titles;
 - **corrections read off `scan/`**: hymn 108's subject (祂的得勝, not
-  祂的救贖), hymns 797 and 798, which carried each other's, 832 and 833
-  (預備, as 654–656 have), 838 (我們的深切需要, as 690 has), and the removal
-  of `（參720）` from 840's, which is not printed on its page;
+  祂的救贖), 832 and 833 (預備, as 654–656 have), 838 (我們的深切需要, as 690
+  has), the removal of `（參720）` from 840's, which is not printed on its page,
+  and a missing syllable in 845 (從未曾拒絕人來信, eight as its 8.8.8.5. meter
+  wants);
+- **hymns 797 and 798, which were each other**. Not just their subjects: the
+  Chinese page 855 prints 求你揀選我道路 under 797 and page 857 prints
+  我無能力 under 798, and `data/` had both hymns entire under the other's
+  number;
+- **the English of 797, 824 and 845**, which `data/` did not have at all
+  although the English edition prints all three — and says so itself, in the
+  list of Chinese-only hymns on its own last page, which names 39 hymns and not
+  these. `data/` was missing English for a different 39, which is why the two
+  sets looked like each other for so long. See [PLAN.md](PLAN.md);
+- **a re-lineation, in 824**. The English page breaks its single stanza into
+  seven six-syllable lines; the Chinese page sets the text continuously under
+  the staff, and `data/` had it as the four lines of its 12.12.12.6. meter.
+  The Chinese is now broken at its own commas into the same seven, character
+  for character unchanged, so that the two languages pair line by line as they
+  do in every other bilingual stanza in the collection;
 - **one normalisation that departs from `scan/`**: hymn 822's subject is
   `因著祂足夠的恩典` here, though its page prints `足彀`. The other four hymns
   under that subject print `足夠`, and a reader searching for one spelling
