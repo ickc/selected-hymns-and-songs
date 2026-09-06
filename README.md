@@ -13,6 +13,11 @@ It is a lossless projection of the canonical YAML collection in
 converted back to the canonical shape and comes out unchanged.
 [FORMAT.md](FORMAT.md) describes what the Markdown looks like and why.
 
+`data/categories.tsv` — what each hymn's Chinese subject is called in the
+English edition, read off that edition's subject index. A hymn's category is
+the one field of `data/N.md` that is written from somewhere else; see
+[DEVELOPER.md](DEVELOPER.md).
+
 `scan/` — the hymnal itself: one image per page of each language edition, and
 the page each hymn is printed on. `data/` was read off these and corrected
 against them, so where the two disagree the page is right. See

@@ -48,6 +48,9 @@ jobs:
         with:
           locked: true
       - run: pixi run test
+      # data/N.md is the source, but one field of it is written from a table
+      # beside it. Fail here if the two have been edited apart.
+      - run: pixi run check-categories
       # Developer-mode dispatches print and guard the exceptional chorus list.
       - if: env.HYMN_BUILD_MODE == 'develop'
         run: pixi run chorus-report -- --expect 17

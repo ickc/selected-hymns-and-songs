@@ -35,7 +35,7 @@ retains runs of English-only or Chinese-only mappings without placeholders.
 Localized mappings are flattened by concatenation:
 
 ```yaml
-category: 讚美和敬拜——聖父（祂的偉大）
+category: Praise and Worship—The Father (His Greatness)讚美和敬拜——聖父（祂的偉大）
 note: Repeat the last two lines重複最後兩行
 ```
 

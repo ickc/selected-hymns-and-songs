@@ -21,6 +21,7 @@ flowchart LR
   yaml["../selected-hymns/data.yml<br/>canonical YAML"]
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
+  cats["<b>data/categories.tsv</b><br/>290 rows, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
   index["site/index.md<br/>written, in git"]
@@ -28,6 +29,7 @@ flowchart LR
   built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, search.json"]
   pages["GitHub Pages"]
 
+  cats -- "apply-categories" --> md
   yaml -- "yaml-to-md" --> md
   md -- "md-to-yaml" --> yaml
   md -- "md-to-site" --> slide
@@ -47,6 +49,10 @@ flowchart LR
 is generated, ignored, and rebuilt here and in CI — so it cannot be stale, and
 there is no generated file to review in a diff.
 
+`data/categories.tsv` is the one thing that writes *into* `data/`. It is
+preprocessing, run when it changes rather than on the way to the site; see
+[the category table](#the-category-table).
+
 ## The Python
 
 | module | what it is |
@@ -55,6 +61,7 @@ there is no generated file to review in a diff.
 | `slides.py` | the **one-way** projection: `Hymn` → slide Markdown, plus the chorus report. |
 | `pages.py` | the other **one-way** projection: `Hymn` + `scan/` → page Markdown. |
 | `scans.py` | the segmentation CSVs, and linking the page images into the built site. |
+| `categories.py` | the **preprocessing** step: `data/categories.tsv` → the English half of each hymn's category. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -98,6 +105,46 @@ belongs to the collection is the range the number box accepts, and the collectio
 book of 848 hymns: `hymns: 848` in `_quarto.yml`, `max="{{< meta hymns >}}"` in
 the page, and `goto.html` reads the range off the field. A constant kept where
 the site is configured, named once.
+
+## The category table
+
+The hymnal prints a subject over every hymn, and the two editions print
+different amounts of it. The Chinese page carries the whole path —
+`安慰與鼓勵－因着主的照顧` — while the English page carries only its first
+level, `Comfort and Encouragement`. The publisher's Chinese source, which
+`data/` descends from, therefore gave every hymn a Chinese category and no
+English one at all.
+
+The rest of the English path is in the book, in the subject index of the
+English edition (pages v–xvi). That index is numbered exactly as the Chinese
+one (pages 七–十一) is, three levels deep — `I. PRAISE AND WORSHIP`,
+`2. THE FATHER`, `(1) His Greatness` against `一．讚美和敬拜`, `2. 聖父`,
+`(1) 祂的偉大` — and each entry lists the hymns filed under it. Matching the
+two by those hymn numbers pairs 248 of the 290 Chinese categories with one
+English heading and no ambiguity at all; the rest are named in
+`data/categories.tsv` itself.
+
+```
+zh                                  en
+讚美和敬拜——聖父（祂的偉大）          Praise and Worship—The Father (His Greatness)
+```
+
+Tab-separated because both halves contain commas, quotation marks and
+parentheses and neither can contain a tab: a hand-edited row needs no quoting
+and cannot be misread. The English is title-cased, as the table of contents
+prints it, rather than the capitals of the index; the levels are joined with an
+em dash and the third parenthesised, mirroring the Chinese.
+
+`pixi run apply-categories` writes the English half into every `data/N.md` and
+leaves the Chinese half alone — `data/N.md` is the authority on what the
+Chinese page says, and the table only ever supplies the English. It is
+idempotent, so it can be run at any time, and it fails rather than write if a
+category is missing from the table or a row of the table matches no hymn.
+`pixi run check-categories` reports the same without writing.
+
+This is deliberately *not* a step of the site build. `data/N.md` stays the
+source everything is built from; the table is how one field of it was derived
+once, and how a correction to that field is made again.
 
 ## The site
 
@@ -345,6 +392,9 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   in the headless browser Quarto installs, fails on one whose lyrics overflow
   or whose fitting never ran, and reports the decks whose type ended up small
   enough to want a second look at how the stanza was divided.
+- `scripts/apply_categories.py --check` (`pixi run check-categories`) fails if
+  any hymn's category has drifted from `data/categories.tsv`, so an edit to one
+  without the other cannot be committed unnoticed.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
@@ -352,7 +402,8 @@ Nobody is going to open 848 decks, so two scripts do it instead.
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`
 the page projection — including the ways it deliberately differs from the deck —
-`tests/test_scans.py` the segmentation CSVs and the staging of their images, and
+`tests/test_scans.py` the segmentation CSVs and the staging of their images,
+`tests/test_categories.py` the category table and the step that applies it, and
 `tests/test_build_site.py` the partitioning and merge.
 
 The hymn pages have no equivalent of `check-slides`. A deck can fail invisibly,
@@ -362,23 +413,26 @@ such failure to hunt for.
 ## Tasks
 
 ```
-yaml-to-md     Render the canonical YAML collection as data/N.md
-md-to-yaml     Rebuild the canonical YAML from data/N.md
-md-to-site     Project data/N.md as the slide and page Markdown, and the report
-build          Regenerate the projections and render every deck and page in parallel
-build-serial   Regenerate the projections and render in one Quarto process
-serve          Preview the site on $QUARTO_PORT (8020)
-check-slides   Measure every rendered deck in a browser; fail on overflow
-chorus-report  List the hymns whose chorus the projection resolves
-test           Run the conversion and projection tests
-setup-chrome   Install the headless browser check-slides needs
-clean          Remove everything the projection and the render generate
+yaml-to-md        Render the canonical YAML collection as data/N.md
+md-to-yaml        Rebuild the canonical YAML from data/N.md
+md-to-site        Project data/N.md as the slide and page Markdown, and the report
+apply-categories  Rewrite each hymn's category from data/categories.tsv
+check-categories  Fail if any hymn's category disagrees with that table
+build             Regenerate the projections and render every deck and page in parallel
+build-serial      Regenerate the projections and render in one Quarto process
+serve             Preview the site on $QUARTO_PORT (8020)
+check-slides      Measure every rendered deck in a browser; fail on overflow
+chorus-report     List the hymns whose chorus the projection resolves
+test              Run the conversion and projection tests
+setup-chrome      Install the headless browser check-slides needs
+clean             Remove everything the projection and the render generate
 ```
 
 `yaml-to-md` and `md-to-yaml` are the only tasks that need the canonical
 collection checked out beside this repository at `../selected-hymns`. Nothing
 needs `../selected-hymns-and-songs-pdf`: what the site uses of it is copied into
-`scan/` and carried in git.
+`scan/` and carried in git, and `data/categories.tsv` is the reading of its
+front matter, already made.
 
 ## Getting set up
 
