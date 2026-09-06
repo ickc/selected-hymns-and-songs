@@ -308,9 +308,17 @@ omits are 779, 789 and 840 — exactly the three named on the book's own *Hymns
 Available In Chinese But Not In English* page, and exactly the three D6 says
 carry English the book does not print.
 
-**Left open.** Hymn 365: the index prints *Love Divine, all loves excelling*
-and `data/` has *all love excelling*. The standard text is "all loves"; this
-may be a dropped `s` in the lyrics rather than in the index. One page read.
+**And it found a dropped word.** Hymn 365 was indexed *Love Divine, all loves
+excelling* while `data/` had *all love excelling*. Its page
+(`scan/en/397.png`) prints `all loves ex-cel-ling`, so the lyric was a
+character short; corrected. The name now resolves from the hymn's own text like
+the other 719, leaving 58 read off the page by eye.
+
+This is the third check of its kind. The meter counts syllables against the
+Chinese text; the subject index's hymn lists cross-check the subject order; and
+a name that disagrees with the line it is supposed to be finds a dropped word
+in the English. Each was built for something else and caught a defect on the
+way past.
 
 ### D10 — fixed in passing
 

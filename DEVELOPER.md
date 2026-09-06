@@ -170,6 +170,10 @@ What has been added here and is not there:
   The Chinese is now broken at its own commas into the same seven, character
   for character unchanged, so that the two languages pair line by line as they
   do in every other bilingual stanza in the collection;
+- **hymn 365's first line**, which had `Love Divine, all love excelling` where
+  its page prints `all loves ex-cel-ling`. The subject index names the hymn
+  *Love Divine, all loves excelling*, and the disagreement between that name
+  and the lyric is what found it;
 - **hymn 583's subject**, which `data/` gave as `因著信靠祂` where its own page
   (`zh/621`) prints `因著信靠主`, as the other twelve hymns under that subject
   do. The subject index lists 583 in the run under 因着信靠主 and prints no
@@ -296,14 +300,17 @@ eight-character first lines, so no Chinese index names a hymn at all.
 
 **How the text was got, and why it is not OCR.** The index was read for *which
 line* each hymn is named by; the words come from `data/`, already proofread.
-Of the 778 named hymns, 719 match a span of their own hymn's English text
+Of the 778 named hymns, 720 match a span of their own hymn's English text
 closely enough to take that span verbatim — and because the span is matched
 against the printed extent, the book's truncations survive (`Behold, what love`
-stays short of `what boundless love`). The other 59 name something not in the
+stays short of `what boundless love`). The other 58 name something not in the
 lyrics, or the OCR mangled a word; each of those was read off the rendered page
 by eye. Where the index and the hymn page disagree on a word — `O God and
 Father` against the page's `O God our Father` — the page wins, as it does
-everywhere else here.
+everywhere else here. Read the other way, that disagreement is a way of finding
+dropped words: hymn 365 was indexed *Love Divine, all loves excelling* and had
+*all love excelling* in `data/`, and its page (`scan/en/397.png`) prints
+`loves`.
 
 `pixi run apply-titles` writes the name into every `data/N.md`, and removes it
 from a hymn the table no longer names, so deleting a row is as complete as
