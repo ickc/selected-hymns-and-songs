@@ -32,6 +32,10 @@ md-to-site = { cmd = "python -m hymn_projection.converter markdown-to-site data 
 # Preprocessing over data/, not a step of the build: what it writes is source.
 apply-categories = { cmd = "python scripts/apply_categories.py data", description = "Rewrite each hymn's category from data/categories.tsv" }
 check-categories = { cmd = "python scripts/apply_categories.py data --check", description = "Fail if any hymn's category disagrees with data/categories.tsv" }
+# The other table read out of the book's front matter: the name its subject
+# index files each hymn under, which no page prints over the hymn itself.
+apply-titles = { cmd = "python scripts/apply_titles.py data", description = "Rewrite each hymn's title from data/titles.tsv" }
+check-titles = { cmd = "python scripts/apply_titles.py data --check", description = "Fail if any hymn's title disagrees with data/titles.tsv" }
 build = { cmd = "python scripts/build_site.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the decks and pages in parallel into site/_site" }
 build-serial = { cmd = "quarto render site && python scripts/stage_scans.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the site in one Quarto process" }
 serve = { cmd = "quarto preview site --render none --port $QUARTO_PORT --host 0.0.0.0", depends-on = ["build"], description = "Build in parallel, then preview and rebuild changed pages on $QUARTO_PORT" }

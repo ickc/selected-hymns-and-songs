@@ -24,7 +24,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
 | `author` | 4 | 0 both — all English-only | see D2 |
-| `title` | 0 | — | empty, but see D12 — the book *does* name 764 of them |
+| `title` | 778 | 0 both — all English-only | D12 done; 31 scripture portions and 39 Chinese-only hymns have no name in the book |
 
 So: **no, not every field is bilingual.** `category` is, now. `meter` is
 effectively bilingual because the numeric notation is shared and the only
@@ -264,44 +264,53 @@ the twelve other hymns under that subject do. The table had carried both, two
 rows flattening to one English heading, and the index prints only one entry —
 whose hymn run, 577-579.581-584, includes 583. 285 subjects now, not 286.
 
-### D12 — the book names 764 hymns, and we have none of those names
+### D12 — the book names its hymns, and we had none of those names — **done**
 
-`title` is empty on all 848 hymns, and this document has been saying that is
-correct because the hymnal prints no title over a hymn. That is true of the
-*page*. It is not true of the book: the English subject index prints a line
-beside every number, and for a third of them that line is not the opening
-words but the name the hymn is known by.
+`title` was empty on all 848 hymns, and this document said that was correct
+because the hymnal prints no title over a hymn. True of the *page* — the scan
+of hymn 8 carries the running-head subject, the meter, the number, the credit
+and the music, and nothing else. Not true of the *book*.
 
-Measured over all 764 entries (`en/004`–`en/015`), against the first line
-`slides.title()` infers:
+**How the book defines a name.** Its own back-matter index is headed *Index of
+First Lines and Choruses* — "first lines are in lower case type; choruses in
+small caps" — which is the book saying a hymn is known by its opening line and
+by its chorus. The one place it names each hymn *once* is the **subject
+index**: 764 entries in the main index and 45 more in the supplement's own, all
+in one lower-case face, nothing marking which are names and which are opening
+lines. Against the line each hymn opens with: 373 the same (49%), 148 that line
+cut short to fit the column (19%), **243 another name altogether (32%)** — the
+tune (`Abba`, `Higher ground`, `Spirit song`, all verbatim in the Alphabetical
+Index of Tunes), the chorus (`Up from the grave He arose`), or what the hymn is
+plainly called (`How great Thou art`, `Leaning on the Everlasting Arms`).
 
-| | |
-|---|---|
-| the same line | 373 — 49% |
-| the index cuts our first line short to fit its column | 148 — 19% |
-| **a different string altogether** | **243 — 32%** |
+**The other source had nothing.** `ccbiblestudy.org/Topics/H8Hymnary` — the
+same brother's site, the lineage `data/` descends from — heads every hymn and
+every index entry with a truncated Chinese first line: 008 is 【當我思念，我主】
+/ *O Lord my God, when I in awesome wonder*, not *How great Thou art*. Same
+convention we already had, so no title information. It does carry
+`H8preface-T.pdf`, which is §3.
 
-Hymn 8 is *How great Thou art*, 338 is *Leaning on the Everlasting Arms*, 395
-is *Higher ground*, 695 is *Only trust Him*, 342 is *He hideth my soul* — none
-of which is anywhere in `data/` today, and all of which are what a person
-would call the hymn.
+**What was built.** `data/titles.tsv`, 778 rows, and `apply-titles` /
+`check-titles` beside the category pair. The words come from `data/`, not from
+OCR: 719 of the 778 match a span of their own hymn's English text, and because
+the span is matched against the *printed extent* the book's truncations survive.
+The other 59 were read off the rendered index pages by eye. Where the index and
+the hymn page disagree on a word, the page won, as it does everywhere here.
 
-**The extraction is already most of the way done and it is cheap**, because the
-same trick works here as for the subject order: the OCR only has to *identify*
-the phrase, and the clean text can come from `data/`. Of the 764 printed lines,
-**664 match a phrase in their own hymn's English text at 0.90 or better** — a
-whole line, or a line cut at a comma — so their text is taken from `data/` and
-no OCR string is published at all. The remaining 100 are mostly OCR damage over
-a phrase that is plainly there (`Sec the golden lampstands`, `I wil! sing of my
-Redeemer`, `Channels only, blessed MasTN......_`) and a genuine minority that
-is not in the lyrics at all (`Spirit song`). Those 100 need a page read.
+`slides.title()` now fills a title **per language** — the book's English name
+where there is one, the first line where there is not, the Chinese first line
+always — so hymn 8 reads *How great Thou art* beside *當我思念，我主，你創造大工*
+on its deck, its page and the subject index.
 
-**Not done, and deliberately.** Populating `title` would change what every
-slide and every hymn page shows as the hymn's name, on 764 hymns at once —
-`slides.title()` prefers `title` over the first line. That is a decision about
-the whole site, not a side effect of building an index page. The proposal:
-store the reading in `data/titles.tsv` first, as §5 proposes for the authors,
-and decide separately whether it goes into `data/N.md`.
+**It confirmed D6 from a second direction.** The supplement's subject index
+lists 45 of the 48 supplement hymns `data/` gives English text to. The three it
+omits are 779, 789 and 840 — exactly the three named on the book's own *Hymns
+Available In Chinese But Not In English* page, and exactly the three D6 says
+carry English the book does not print.
+
+**Left open.** Hymn 365: the index prints *Love Divine, all loves excelling*
+and `data/` has *all love excelling*. The standard text is "all loves"; this
+may be a dropped `s` in the lyrics rather than in the index. One page read.
 
 ### D10 — fixed in passing
 
@@ -372,12 +381,12 @@ All three of the things this section said were missing were dealt with:
    its three checks are written up.
 3. **The cross-listings are still not held**, as expected: the page is built
    from `data/N.md` and labels itself *hymns under the subject their own page
-   prints*, alongside a note that the book also lists them by first line. The
-   second table remains an option, not a plan.
+   prints*, alongside a note that the book orders them by name. The second
+   table remains an option, not a plan.
 
-Each hymn is its number and the line it opens with, in both languages, set in
-columns as the book's index is. That line is **ours, not the book's** — see
-D12, which is what checking the two against each other found.
+Each hymn is its number and what the book calls it, in both languages, set in
+columns as the book's index is. Checking that name against the line we had been
+inferring is what turned up D12, and the names now come from D12's table.
 
 **What the page does not do.** No collapsing: 303 headings and 848 entries make
 a long page (244 KB), but it is one document — the browser's find works on it,
@@ -553,6 +562,4 @@ committed table itself rather than in a commit message.
    because everything before it makes the tooling better.
 7. **D2/D3/D4/D6** — the small consistency fixes, folded into whichever pass
    is already touching those pages.
-8. **D12 titles** — 664 of 764 already resolve to clean text in `data/`; 100
-   need a page read. Fits naturally beside §5, which reads the same index
-   family.
+8. ~~**D12 titles**~~ Done: `data/titles.tsv`, 778 names, applied to `data/`.

@@ -21,6 +21,11 @@ category is the one field of `data/N.md` that is written from somewhere else,
 and this is also what the published subject index is built from; see
 [DEVELOPER.md](DEVELOPER.md).
 
+`data/titles.tsv` — the name the hymnal's subject index files each hymn under,
+778 of them. The book prints no title over a hymn; this is the one place it
+names them, and about a third of those names are not the hymn's opening line.
+The other field of `data/N.md` written from somewhere else.
+
 `scan/` — the hymnal itself: one image per page of each language edition, and
 the page each hymn is printed on. `data/` was read off these and corrected
 against them, so where the two disagree the page is right. See
@@ -45,7 +50,7 @@ Both are carried in git. Everything else is generated.
   interleaved lines.
 - **Or browse by subject.** The hymnal's own subject index, all eighteen
   sections of it in both languages, in the order the book prints them, each
-  hymn its number and its opening line in both languages.
+  hymn its number and the name the book gives it.
 - **Or each hymn beside the hymnal**, the text in the middle and the scanned
   page of each edition either side of it, scrolling independently. Follow the
   music while the words are in front of you, or check a line against the book —

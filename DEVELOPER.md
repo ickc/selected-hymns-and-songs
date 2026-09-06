@@ -26,6 +26,7 @@ flowchart LR
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
   cats["<b>data/categories.tsv</b><br/>285 subjects, in git"]
+  tits["<b>data/titles.tsv</b><br/>778 names, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
   subject["site/subject.md"]
@@ -35,6 +36,7 @@ flowchart LR
   pages["GitHub Pages"]
 
   cats -- "apply-categories" --> md
+  tits -- "apply-titles" --> md
   yaml -- "yaml-to-md" --> md
   md -- "md-to-yaml" --> yaml
   md -- "md-to-site" --> slide
@@ -57,11 +59,13 @@ flowchart LR
 is generated, ignored, and rebuilt here and in CI — so it cannot be stale, and
 there is no generated file to review in a diff.
 
-`data/categories.tsv` is the one thing that writes *into* `data/`. It is
-preprocessing, run when it changes rather than on the way to the site; see
-[the category table](#the-category-table). It is read a second time on the way
-*out*, as the subject index: a hymn knows its own subject, but only the table
-knows what order the subjects come in.
+`data/categories.tsv` and `data/titles.tsv` are the two things that write
+*into* `data/`. Both are preprocessing, run when they change rather than on the
+way to the site; both were read out of the book's front matter, which is the
+only place either exists. See [the category table](#the-category-table) and
+[the title table](#the-title-table). The category table is read a second time
+on the way *out*, as the subject index: a hymn knows its own subject, but only
+the table knows what order the subjects come in.
 
 ## The Python
 
@@ -72,6 +76,7 @@ knows what order the subjects come in.
 | `pages.py` | the other **one-way** projection: `Hymn` + `scan/` → page Markdown. |
 | `scans.py` | the segmentation CSVs, and linking the page images into the built site. |
 | `categories.py` | `data/categories.tsv`: the book's subject outline, and the **preprocessing** step that writes the English half of each hymn's category from it. |
+| `titles.py` | `data/titles.tsv`: the name the book's subject index files each hymn under, and the **preprocessing** step that writes it. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
@@ -251,6 +256,71 @@ once, and how a correction to that field is made again.
 The table is read a second time on the way *out*, by `subjects.py`, as
 `site/subject.md` — see [the subject index](#the-subject-index).
 
+## The title table
+
+**The hymnal prints no title over a hymn.** A page carries the subject as a
+running head, the meter, the number, the credits and the music — look at
+`scan/en/21.png`, which is hymn 8, and there is nothing else on it. The book's
+own back-matter index is headed *Index of First Lines and Choruses*, and says
+under that heading: "first lines are in lower case type; choruses in small
+caps". That is the book stating its convention — a hymn is known by the line it
+opens with, and by the chorus it is sung to.
+
+The one place it names each hymn once is the **subject index**: 764 entries in
+the main index (`en/004`–`en/015`) and 45 more in the supplement's own
+(`en/920`–`en/922`), all set in one lower-case face with nothing to mark which
+are names and which are opening lines. Counted against the line each hymn
+opens with:
+
+| | |
+|---|---|
+| the same line | 373 — 49% |
+| the index cuts that line short to fit its column | 148 — 19% |
+| **another name altogether** | **243 — 32%** |
+
+That third is the tune (`Abba` 19, `Higher ground` 395, `Spirit song` 181 —
+all three appear verbatim in the Alphabetical Index of Tunes), the chorus
+(`Up from the grave He arose` 101), or simply what the hymn is called
+(`How great Thou art` 8, `Leaning on the Everlasting Arms` 338).
+
+```
+number  en
+8       How great Thou art
+```
+
+778 rows: 764 − 31 scripture portions, plus 45 from the supplement. **The
+scripture portions, 734–764, have no name** — the index gives them a verse
+reference (`103:1`), and the reference is already in the category. And the
+table is **English**: the 主題目錄 lists bare numbers and the 首句索引 lists
+eight-character first lines, so no Chinese index names a hymn at all.
+
+**How the text was got, and why it is not OCR.** The index was read for *which
+line* each hymn is named by; the words come from `data/`, already proofread.
+Of the 778 named hymns, 719 match a span of their own hymn's English text
+closely enough to take that span verbatim — and because the span is matched
+against the printed extent, the book's truncations survive (`Behold, what love`
+stays short of `what boundless love`). The other 59 name something not in the
+lyrics, or the OCR mangled a word; each of those was read off the rendered page
+by eye. Where the index and the hymn page disagree on a word — `O God and
+Father` against the page's `O God our Father` — the page wins, as it does
+everywhere else here.
+
+`pixi run apply-titles` writes the name into every `data/N.md`, and removes it
+from a hymn the table no longer names, so deleting a row is as complete as
+adding one. `pixi run check-titles` reports the same without writing.
+
+`slides.title()` fills the title in **per language**: the book's English name
+where there is one, the first line where there is not, and the Chinese first
+line always. So hymn 8's deck, page and index entry all read *How great Thou
+art* beside *當我思念，我主，你創造大工*.
+
+**What this cost.** It also confirmed [D6](PLAN.md) from a second direction:
+the supplement's subject index lists 45 of the 48 supplement hymns our `data/`
+gives English text to, and the three it omits are 779, 789 and 840 — exactly
+the three the book's own *Hymns Available In Chinese But Not In English* page
+names, and exactly the three PLAN.md says carry English the book does not
+print.
+
 ## The subject index
 
 `site/subject.md` is the third projection of `data/`, and the only one that is
@@ -266,37 +336,15 @@ as its identifier (`#subject-1-2-1`), because two subjects under one heading are
 named the same often enough — the Father's Love and the Son's — that an
 identifier made of the words would collide.
 
-Each hymn is its number and the line it opens with, both languages, set in
-columns as the book's index is.
-
-### Why the line shown is ours and not the book's
-
-The book's index prints a line beside each number too, and it is tempting to
-assume it is the hymn's opening line — the one `slides.title()` infers when a
-hymn has no `title`, which is all 848 of them. It is not. Measured over all 764
-entries of the English subject index, read off `en/004`–`en/015`:
-
-| | |
-|---|---|
-| the same line | 373 — 49% |
-| the index cuts our first line short to fit its column | 148 — 19% |
-| **a different string altogether** | **243 — 32%** |
-
-The third of them is the name the hymn is *known* by, usually a phrase from its
-chorus: hymn 8 is indexed as *How great Thou art* and opens *O Lord my God,
-when I in awesome wonder*; 338 is *Leaning on the Everlasting Arms* and opens
-*What a fellowship, what a joy divine*; 395 is *Higher ground* and opens *I'm
-pressing on the upward way*.
-
-So the line here is the hymn's own, taken from `data/` where it is already
-proofread, rather than a transcription of the index — and it is in both
-languages, where the book's index is English and covers 1–764 only. That the
-index also *names* 764 hymns is a real find and a bigger one than this page;
-see [PLAN.md](PLAN.md).
+Each hymn is its number and what it is called, set in columns as the book's
+index is: the book's own name for it, from [the title
+table](#the-title-table), and its opening line where the book names it not at
+all. The name is English and the Chinese beside it is always the first line,
+because no Chinese index names a hymn.
 
 Two ways it is honestly less than the book, and the page says both:
 
-- The hymnal **orders** the hymns under a subject by that line; this orders
+- The hymnal **orders** the hymns under a subject by that name; this orders
   them by number, which is what the collection can be ordered by without
   reading the index again.
 - The hymnal **cross-lists** a few hymns under a second subject — 13 is under
@@ -559,6 +607,8 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   without the other cannot be committed unnoticed. Reading the table at all
   checks its numbering, so a subject inserted without renumbering fails here
   and in every build.
+- `scripts/apply_titles.py --check` (`pixi run check-titles`) does the same for
+  `data/titles.tsv`, and also fails if a row names a hymn that is not there.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
@@ -577,6 +627,7 @@ the page projection — including the ways it deliberately differs from the deck
 `tests/test_scans.py` the segmentation CSVs and the staging of their images,
 `tests/test_categories.py` the subject table and the step that applies it,
 `tests/test_subjects.py` the subject index built from it,
+`tests/test_titles.py` the title table and the step that applies it,
 `tests/test_meters.py` the syllable check, and `tests/test_build_site.py` the
 partitioning and merge.
 
@@ -592,6 +643,8 @@ md-to-yaml        Rebuild the canonical YAML from data/N.md
 md-to-site        Project data/N.md as the slides, the pages, the subject index and the report
 apply-categories  Rewrite each hymn's category from data/categories.tsv
 check-categories  Fail if any hymn's category disagrees with that table
+apply-titles      Rewrite each hymn's title from data/titles.tsv
+check-titles      Fail if any hymn's title disagrees with that table
 build             Regenerate the projections and render every deck and page in parallel
 build-serial      Regenerate the projections and render in one Quarto process
 serve             Preview the site on $QUARTO_PORT (8020)
@@ -610,8 +663,8 @@ was bootstrapped from there — see [the
 split](#the-split-from-selected-hymns). Point it at a scratch directory if what
 you want is a comparison; `md-to-yaml` is the direction to use. Nothing
 needs `../selected-hymns-and-songs-pdf`: what the site uses of it is copied into
-`scan/` and carried in git, and `data/categories.tsv` is the reading of its
-front matter, already made.
+`scan/` and carried in git, and `data/categories.tsv` and `data/titles.tsv` are
+the reading of its front matter, already made.
 
 ## Getting set up
 

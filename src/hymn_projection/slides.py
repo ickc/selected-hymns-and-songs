@@ -199,19 +199,24 @@ def slides(hymn: Hymn, limit: int = LINES_PER_SLIDE) -> list[Slide]:
 
 
 def title(hymn: Hymn) -> dict[str, str]:
-    """Return the hymn's title, or the first line it is known by instead.
+    """Return what the hymn is called, one language at a time.
 
-    One hymn in the collection carries a title.  A congregation names the rest
-    by their opening line, which is what a slide should show.
+    The hymnal prints no title over a hymn; what it has is the line it files
+    each one under in its subject index, and that index is English and covers
+    all but the scripture portions.  So a title is filled in per language
+    rather than as a whole: where the book names the hymn, that name; where it
+    does not, the line the hymn opens with, which is how a congregation calls
+    for it.  A hymn whose English half is named therefore still shows its
+    Chinese first line beside it.
     """
 
-    if hymn.title is not None:
-        return dict(hymn.title.translations)
-    first = hymn.stanzas[0].lines[0].translations
-    return {
+    named = hymn.title.translations if hymn.title is not None else {}
+    first = {
         language: INLINE_NOTE.sub("", text).strip().rstrip(TITLE_TRAILING)
-        for language, text in first.items()
+        for language, text in hymn.stanzas[0].lines[0].translations.items()
     }
+    languages = sorted(set(named) | set(first), key=LANGUAGE_ORDER.__getitem__)
+    return {language: named.get(language) or first[language] for language in languages}
 
 
 def document_language(hymn: Hymn) -> str:
