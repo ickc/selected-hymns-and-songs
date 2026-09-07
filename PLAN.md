@@ -595,6 +595,79 @@ lower bound. Realistically it is a §-sized piece of work like §5 or §6, and i
 should decide at the same time what the existing 25 `note`s are and where they
 came from.
 
+### D17 — the Chinese subject names are the publisher's, not the book's
+
+**How it surfaced.** §8 item 10 noticed that both Chinese indexes call V.6
+神的醫治 while `data/` calls it 醫病, and recorded it as an index-against-page
+disagreement of D15's kind. It is not one. Hymns 279 and 280 print 神的醫治
+over themselves — read off `scan/zh/296.png` and `scan/zh/297.png` — so all
+four printed witnesses agree, and 醫病 appears nowhere in the book. It comes
+from `../selected-hymns/data.yml`, and `data/` inherited it.
+
+That is the whole defect in miniature. **The English half of every category
+was read off the English subject index in §4; the Chinese half never was.** It
+has been carried from the publisher's YAML since the split, on the standing
+assumption — written into `categories.py` — that `data/N.md` is the authority
+on what the Chinese page says. For the category, that assumption has now been
+tested for the first time, and it does not hold.
+
+**What the test was.** Each Chinese hymn page prints its full subject over the
+first staff, so the extraction's text layer gives a reading for every hymn
+whose heading is the first line it recovered — 327 of the 848. Comparing those
+against `data/`, after folding away the glyph pairs the layer itself confuses
+(裹/裏, 砷/神, 敎/教, 爲/為 are not distinguished reliably), gives:
+
+| | hymns |
+| --- | --- |
+| agree outright | 291 |
+| differ only by 著 → 着 | 21 |
+| differ only by 裡 → 裏 | 11 |
+| differ only by 為 → 爲 | 4 |
+| differ only by 借 → 藉 | 1 |
+| a different word, or unreadable | 64 |
+
+**The variants are the book's, not the extraction's.** `着` and `裏` were read
+off the page images at hymns 570 (安慰與鼓勵－因着主的照顧) and 455
+(經歷主－在祂的愛裏), so the layer is right about those two characters. And the
+printed Chinese subject index uses `裏` thirteen times and `着` nineteen times
+and the other form of neither, while `data/categories.tsv` uses `著` nineteen
+times, `着` never, and `裡` and `裏` both — thirty-nine and fifteen times across
+the hymn files. The book is consistent and we are not, which is what an
+inherited transcription looks like.
+
+**Some of the 64 are real, and worse than a variant.** Most are the layer
+returning speckle or the wrong line, but several read cleanly and name a
+different subject:
+
+| hymn | `data/` | the page |
+| --- | --- | --- |
+| 70 | 聖子（祂的道成肉身） | 聖子（祂的人性） |
+| 162 | 聖子（祂作我們的祭物） | 聖子（祂作我們的平安祭） |
+| 279, 280 | 醫病 | 神的醫治 |
+| 415 | 求潔淨與鑒察 | 求潔淨與審察 |
+| 618 | 奮勇向前 | 奮勇前進 |
+| 807 | 作我滿足 | 作我一切 |
+
+162 and 618 are confirmed by the Chinese subject index, which prints
+祂作我們的平安祭 and 奮勇前進. A different subject is not an orthographic
+question: it moves a hymn in the tree.
+
+**How big this is, and why it is not §8 item 10's to finish.** 327 of 848
+headings is a floor, not a census — the other 521 pages put something else on
+the line the reader took first, and would need the bounding boxes or the
+images. And the category is not where this stops: `着` appears in **none** of
+the 848 files and `著` in 302 of them, so the same inheritance runs through the
+**lyrics**, which no pass has ever checked against a page except D14's hymn
+480. Fixing the categories alone would leave `data/` printing 因着 over a hymn
+whose verses say 因著.
+
+So this is a §-sized pass of its own, and it has two halves that should be
+decided together: whether to normalise the orthography to the book's forms
+throughout, and whether the handful of genuinely different subject names are
+corrections to make. Nothing has been changed yet, deliberately — the one
+fully verified row, 279 and 280's 神的醫治, is left as it is so that the class
+is fixed in one pass rather than a row at a time.
+
 ### D8 — the category is single-valued, but the book's index is not
 
 The subject index files some hymns under several subjects. Hymn 13 is under
@@ -1093,11 +1166,13 @@ committed table itself rather than in a commit message.
     eighteen sections agree in both editions, and the nine subheadings the
     pages expand agree too — which is the only independent confirmation the 84
     supplement hymns' sections have, those having rested on the Chinese
-    subject index alone. It turned up two small things: the Chinese contents
-    page prints its eighteenth range against no heading at all, and both
-    Chinese indexes call V.6 神的醫治 where hymns 279 and 280 print 醫病.
+    subject index alone. It turned up the Chinese contents page printing its
+    eighteenth range against no heading at all, and — by way of one subject
+    name that looked like an index-against-page disagreement and was not —
+    **D17**, which is not small.
 
-**What is next.** Three things are open and each is a different size.
+**What is next.** Four things are open and each is a different size. **D17**
+is new and is the one with the most `data/` behind it.
 **D15**'s policy question is the smallest and needs a decision rather than
 work: whether `data/` should prefer a hymn's own page over the author index on
 the nine hymns where the two name different people. **D7**'s remaining syllable
@@ -1105,4 +1180,6 @@ disagreements are the middle one, and D13 turned most of them into questions
 about the lyrics rather than the meter. **D16** is the largest, a two-edition
 transcription of the page annotations, and it is what would finally settle what
 the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
-for carrying the front and back matter in `scan/`.
+for carrying the front and back matter in `scan/`. **D17** would want it too:
+the Chinese subject index is one of its witnesses and is not in this
+repository.

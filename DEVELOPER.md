@@ -590,11 +590,13 @@ Two things the reading found, neither of which changes anything here:
   range `734-764` against an empty name. The English page prints `XVIII. Psalms
   and Scripture Portions`; the Chinese subject index prints the subject too.
   The omission is the book's, on that page only.
-- **One subject is named differently in the index from on the hymn.** The
-  Chinese contents page and the Chinese subject index both call V.6 神的醫治;
-  hymns 279 and 280 print 醫病 over themselves. `data/N.md` is the authority on
-  what the Chinese page says, so the table keeps 醫病, and this is the same
-  shape of disagreement as [D15](PLAN.md)'s — recorded, not reconciled.
+- **One subject is named differently here from anywhere in the book.** The
+  Chinese contents page and the Chinese subject index both call V.6 神的醫治,
+  and so do hymns 279 and 280 on their own pages. `data/` calls it 醫病, which
+  is printed nowhere: it comes from the publisher's YAML. That is not a
+  disagreement between two printed sources, and chasing it down opened
+  [D17](PLAN.md) — the Chinese subject names in `data/` have never been checked
+  against the pages, and where they have now been checked they differ.
 
 The contents page's own punctuation is not kept. Both editions separate the two
 runs with a full stop — `220-280. 779-789` — which reads as a decimal point
