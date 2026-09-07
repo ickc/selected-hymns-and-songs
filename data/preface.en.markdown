@@ -1,0 +1,13 @@
+# PREFACE
+
+During the past three centuries there have been untold thousands of hymns composed in the English language with an added number translated into English from other languages. It would be impossible to have access to all of these and review them. But a considerable quantity have been carefully considered by us, and a comparatively large number, 764, selected. The title *Selected Hymns and Songs* indicates that the writings compiled are choice. The basis of their selection, in addition to the matters of truth and usefulness in all areas of Christian life and testimony, was a consideration of the tone of their spirituality as related especially to the inner life and corporate life of God’s people and the eternal purpose of God. That is the particular emphasis of this collection.
+
+The scope of the selection is broad, containing compositions both ancient and modern. The oldest is #547, written in the 3rd century, author unknown. The newest include some of the recently composed “praise songs,” carefully chosen. The works of a number of deeply spiritual saints, rarely noticed in other collections, have been represented: e.g. Jeanne Guyon, Gerhard Tersteegen, J. N. Darby, A. B. Simpson, M. E. Barber, Amy Carmichael, and Watchman Nee. In addition, a number of songs written by saints during the past few decades which focus on the inner life and corporate life have been included. Finally, there are Psalms which have been interpreted in the light of the New Testament, and a good number of other Psalms and scriptural portions directly quoted and versed.
+
+A brief word regarding the format of the book and its indexes: The pages are laid out in the most simplistic manner to allow for undistracted focusing on the song itself. Author’s and composer’s names, except for copyright-bearing songs, are listed numerically in an index at the rear of the book. Following the Table of Contents at the front of the book is a subject index arranged according to the sequence of the contents to assist the singer in finding the song he wants. Other indexes, including copyright owners’ names and addresses, tune index, metrical index, and an index of first lines and choruses, are at the rear.
+
+We have endeavored to trace the source of copyright ownership and the names of authors and composers. If any omissions have occurred, we hope that this will be forgiven. Suitable acknowledgement will be made in any subsequent edition.
+
+We are grateful to be able to publish such a book and pray that it might meet the needs of God’s hungry and seeking people at this time.
+
+Tree of Life Publishers
