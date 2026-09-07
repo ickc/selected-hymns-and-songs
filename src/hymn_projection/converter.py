@@ -16,6 +16,7 @@ from .model import Hymn
 from .pages import Collection, to_markdown as page_markdown
 from .scans import missing_images, read_editions
 from .subjects import to_markdown as subject_markdown
+from .meterindex import to_markdown as metrical_markdown
 from .tuneindex import to_markdown as tune_markdown
 from .slides import (
     LINES_PER_SLIDE,
@@ -33,6 +34,7 @@ SLIDE_DIRECTORY = "slide"
 PAGE_DIRECTORY = "hymn"
 SUBJECT_PAGE = "subject.md"
 TUNE_PAGE = "tune.md"
+METRICAL_PAGE = "metrical.md"
 # The subject index, beside the hymns it files. `data/N.md` says which subject
 # a hymn is under; only this says what order the subjects come in.
 SUBJECT_TABLE = "categories.tsv"
@@ -193,13 +195,17 @@ def markdown_to_site(
         )
 
     entries = [(number, hymn) for number, hymn, _, _ in projections]
-    # Two projections about the collection rather than about a hymn: the
+    # Three projections about the collection rather than about a hymn: the
     # outline the hymnal is arranged by, with every hymn under the subject its
-    # own page prints, and the tunes the English edition sets them to.
+    # own page prints; the tunes the English edition sets them to; and the same
+    # relation grouped by meter, which is the book's other index of tunes.
     (destination / SUBJECT_PAGE).write_text(
         subject_markdown(read_table(source / SUBJECT_TABLE), entries), encoding="utf-8"
     )
     (destination / TUNE_PAGE).write_text(tune_markdown(entries), encoding="utf-8")
+    (destination / METRICAL_PAGE).write_text(
+        metrical_markdown(entries), encoding="utf-8"
+    )
     _replace_directory(
         destination / SLIDE_DIRECTORY,
         {number: slides for number, _, slides, _ in projections},

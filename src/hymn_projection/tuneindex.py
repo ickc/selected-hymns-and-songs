@@ -18,8 +18,9 @@ and the 39 Chinese-only hymns are not here. One hymn, 146, is printed to two
 tunes and appears under both.
 
 The metrical index -- the same relation grouped by meter -- is the other half
-of the book's back matter and is not generated here. It would be a page filed
-by a meter that 30 of the 764 hymns do not yet agree on; see ``PLAN.md``.
+of the book's back matter, and is ``meterindex``. It was blocked on the meter
+until D13 settled the 30 hymns of the 764 that did not agree with the book
+about theirs; see ``PLAN.md``.
 """
 
 from __future__ import annotations

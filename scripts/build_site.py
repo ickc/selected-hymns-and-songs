@@ -54,6 +54,7 @@ IGNORED_PROJECT_ENTRIES = {
     "index.html",
     "subject.html",
     "tune.html",
+    "metrical.html",
     "chorus.html",
 }
 
@@ -99,8 +100,9 @@ def _copy_project(
         targets.insert(0, "index.md")
         targets.insert(1, "subject.md")
         targets.insert(2, "tune.md")
+        targets.insert(3, "metrical.md")
         if mode == DEVELOP:
-            targets.insert(3, "chorus.md")
+            targets.insert(4, "chorus.md")
     config["project"]["render"] = targets
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"

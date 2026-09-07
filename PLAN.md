@@ -259,7 +259,7 @@ is character for character what the Chinese page prints.
 
 After this **759 of the 764 agree with the metrical index**, and the five that
 do not are the four above plus 391, all understood. That is what §6a was waiting
-for.
+for, and §6a is now built.
 
 **The field now holds both editions, and eighteen hymns needed it to.** A
 localized meter used to be flattened into one front-matter scalar and cut apart
@@ -640,7 +640,7 @@ each individual hymn page.
 
 ---
 
-## 6. Indexes of tunes — **6b done, 6a now unblocked**
+## 6. Indexes of tunes — **done, both of them**
 
 **6b is done**: `data/tunes.tsv` carries 765 (hymn, tune) pairs over hymns
 1–764, applied into a `tune` field on every one of them, and `site/tune.md` is
@@ -666,15 +666,41 @@ index.
 
 **So there are two proposals here, and they should not be confused.**
 
-**6a. Metrical index of tunes** — **still to do, and no longer blocked.** With
-`tune` on every hymn it is the book's own three-level page (meter, tune,
-hymns), not the poorer meter-to-numbers page this section first proposed, and
-it needs no new table: both levels are already fields on the hymn. What blocked
-it was that 30 of the 764 hymns did not agree with the book about their meter
-and would have been filed wrong. [D13](#d13--the-metrical-index-against-both-editions-pages--done-59-meters-settled)
-has settled them; 759 of the 764 now agree with the metrical index, and the
-five that do not (278, 296, 616, 738 and 391) are each understood and
-documented there. This is the next thing to build.
+**6a. Metrical index of tunes** — **done.** `site/metrical.md`, the fifth
+projection, generated from the hymns alone: 247 meters, 692 entries, all 848
+hymns filed exactly once except 146, which is printed to two tunes and appears
+under both. It needed no new table — both levels were already fields on the
+hymn — and what had blocked it was that 30 of the 764 did not agree with the
+book about their meter and would have been filed wrong.
+[D13](#d13--the-metrical-index-against-both-editions-pages--done-59-meters-settled)
+settled them.
+
+**The order was the work.** A meter is filed by its figures read as a
+sequence, not as a number and not as text: `10.` after `9.`, a shorter run
+before the run extending it, and where the figures are equal the plain form,
+then `(A)`/`(I)`, then `with Repeat`, then `with Chorus`, then the doubled form
+with that whole run again under it, and `Irregular Meter` last. The check is
+that the printed index's own 212 headings, read off `en/899`–`en/904` in
+sequence and sorted by that key, come back in the printed order with none out
+of place.
+
+**It is filed by our data, not by the book's, which makes it three things more
+than the printed index** — each stated on the page:
+
+- **848 hymns rather than 764.** The book's index stops where the tune indexes
+  do; every hymn now carries a meter, so the 84 supplement hymns file under
+  theirs with the word *supplement* where a tune name would be. A metrical
+  index exists to say what a text can be sung to, and that answer does not stop
+  at 764.
+- **Eighteen hymns under a count rather than under a refusal to count**, from
+  D13. 93 are left under `Irregular Meter`, where the book files 101.
+- **Both editions in the heading**, since a meter is the one field whose halves
+  this collection names separately.
+
+The disagreements with the printed index are therefore the ones D13 already
+documents, and they are visible on the page: hymn 616, for one, sits under
+`6.5.6.5.D.` beside Evelyns and Longstaff, where the book files it under
+`6.5.6.5.D. with Chorus` — a chorus its two pages and its own two stanzas deny.
 
 **6b. Tune names** — **done.** An extraction, and a good one. Sources:
 
@@ -774,13 +800,13 @@ committed table itself rather than in a commit message.
    125 hymns left, and D13 turned it into a question about the *lyrics* rather
    than the meter on the 104 hymns whose meter the book's metrical index
    confirms.
-3. **§3 preface** — two pages, high value, nearly free. **Next.**
+3. **§3 preface** — two pages, high value, nearly free. **Next**, now that
+   §6a is built.
 4. ~~**D9 + §4** — widen the category table with levels and printed numbering,
    then generate the subject index page.~~ Done; it also turned up D11.
-5. ~~**§6b tunes**~~ Done: `data/tunes.tsv`, 765 pairs over hymns 1–764,
-   applied to `data/`, and `site/tune.md` generated back out. It also turned up
-   **D13**, now done, which unblocks **6a** — the metrical index page, buildable
-   from the hymns alone.
+5. ~~**§6 tunes**~~ Done, both halves: `data/tunes.tsv`, 765 pairs over hymns
+   1–764, applied to `data/`, with `site/tune.md` and `site/metrical.md`
+   generated back out. §6b turned up **D13**, which unblocked §6a.
 6. **§5 authors** — biggest, weakest verification, most valuable per hymn. Last
    because everything before it makes the tooling better.
 7. **D2/D3/D4/D6** — the small consistency fixes, folded into whichever pass

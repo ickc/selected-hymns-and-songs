@@ -52,7 +52,7 @@ chorus-report = { cmd = "python scripts/chorus_report.py data", description = "L
 # A meter is a syllable count and Chinese is one syllable a character, so
 # this counts rather than trusts. A report while 312 hymns still disagree.
 meter-report = { cmd = "python scripts/check_meters.py data", description = "List the hymns whose Chinese lyrics do not scan as their meter, their other verses or their other choruses say; --shape prints the counts" }
-clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/subject.md site/tune.md site/chorus.md site/index.html site/subject.html site/tune.html site/chorus.html", description = "Remove everything the projection and the render generate" }
+clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/subject.md site/tune.md site/metrical.md site/chorus.md site/index.html site/subject.html site/tune.html site/metrical.html site/chorus.html", description = "Remove everything the projection and the render generate" }
 
 [tool.pixi.dependencies]
 pandoc = ">=3.8.3,<4"

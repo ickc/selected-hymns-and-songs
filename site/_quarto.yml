@@ -51,6 +51,11 @@ website:
       # Likewise, from the tune each `data/N.md` now carries.
       - href: tune.md
         text: Tunes 曲調
+      # The same relation the book prints twice, grouped the other way: by the
+      # meter each `data/N.md` carries, which is what says two hymns are
+      # interchangeable between tunes.
+      - href: metrical.md
+        text: Meters 格律
     right:
       - icon: github
         href: https://github.com/ickc/selected-hymns-and-songs

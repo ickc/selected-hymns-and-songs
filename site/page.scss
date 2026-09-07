@@ -233,3 +233,36 @@ section[id^="tune-"] > h2 {
   column-span: all;
   margin-top: 1.4rem;
 }
+
+// The metrical index: the same relation as the index of tunes, grouped by the
+// meter each hymn's page prints over it. It reuses `.tune-entry` and its two
+// halves, because an entry means the same thing on both pages -- a tune and
+// the hymns set to it.
+section[id^="meter-"] {
+  scroll-margin-top: 4rem;
+  columns: 22rem;
+  column-gap: 2rem;
+}
+
+// The meter heads its own section, so it must not be balanced into a column
+// beside the tunes it heads.
+section[id^="meter-"] > h2 {
+  column-span: all;
+  margin-top: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+// `(Common Meter)` and its two fellows: the book's own annotation on three of
+// the headings, and a gloss on the figures rather than part of them.
+.meter-named {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+// The 84 supplement hymns have a meter but no tune, so they file under the
+// meter with a phrase where a tune name would be. It is not a name, and is
+// set so it does not read as one.
+.meter-untuned {
+  font-style: italic;
+  opacity: 0.7;
+}

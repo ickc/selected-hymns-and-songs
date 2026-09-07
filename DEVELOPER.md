@@ -8,9 +8,10 @@ back matter, see [PLAN.md](PLAN.md) — proposals, none of them built yet.
 
 ## The shape of it
 
-One source, `data/`, and three projections of it: a lossless one back to the
-YAML shape it was bootstrapped from, and two one-way ones — the deck a hymn is
-sung from and the page its text is read against the scanned hymnal on. `data/`
+One source, `data/`, and its projections: a lossless one back to the YAML shape
+it was bootstrapped from, two one-way ones per hymn — the deck it is sung from
+and the page its text is read against the scanned hymnal on — and three about
+the collection, which are the book's own indexes of subject, tune and meter. `data/`
 is the source of record; see [the split from
 `selected-hymns`](#the-split-from-selected-hymns).
 
@@ -32,9 +33,10 @@ flowchart LR
   page["site/hymn/N.md"]
   subject["site/subject.md"]
   tune["site/tune.md"]
+  metrical["site/metrical.md"]
   index["site/index.md<br/>written, in git"]
   chorus["site/chorus.md<br/>developer mode"]
-  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, subject index,<br/>index of tunes, search.json"]
+  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, subject index,<br/>index of tunes, metrical index,<br/>search.json"]
   pages["GitHub Pages"]
 
   cats -- "apply-categories" --> md
@@ -47,6 +49,7 @@ flowchart LR
   md -- "md-to-site" --> chorus
   md -- "md-to-site" --> subject
   md -- "md-to-site" --> tune
+  md -- "md-to-site" --> metrical
   cats -- "the book's order" --> subject
   scan -- "which pages" --> page
   slide -- "parallel Quarto workers" --> built
@@ -87,6 +90,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `titles.py` | `data/titles.tsv`: the name the book's subject index files each hymn under, and the **preprocessing** step that writes it. |
 | `tunes.py` | `data/tunes.tsv`: the tune the English edition sets each hymn to, and the **preprocessing** step that writes it. |
 | `tuneindex.py` | The **projection** of the whole collection as the book's alphabetical index of tunes. |
+| `meterindex.py` | The **projection** of the same relation grouped the other way: the book's metrical index, meter then tune then hymns. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
@@ -504,11 +508,58 @@ exactly but for two entries, where the book's own index disagrees with itself
 (`Come, Let us Anew` is filed as though the comma were not there, and `Let the
 Beauty of Jesus Seen in Me` is simply out of order).
 
-**The metrical index is not generated**, though it is the same relation grouped
-the other way and the book prints both. It would have to be filed by the meter
-in `data/N.md`, and 30 of the 764 hymns do not yet agree with the book about
-what that is — see [D13](PLAN.md). It is worth doing after D1 and D7, not
-before.
+The metrical index is the same relation grouped the other way, and the book
+prints both. It is the next section.
+
+## The metrical index
+
+`site/metrical.md` is the fifth projection: meter, then tune, then the hymns
+set to that tune. It is what a metrical index is consulted for — that 46 and
+607 are the same tune, and that a text in `6.5.6.5.D.` can be sung to any of
+the seven filed under it. Like the index of tunes it needs no table: both
+levels are already fields on the hymn, `meter` from [D1 and D13](PLAN.md) and
+`tune` from `data/tunes.tsv`, so there is no third copy of either fact to keep
+true. It was blocked until D13 settled the 30 hymns of the 764 that did not
+agree with the book about their meter.
+
+**The order is the hymnal's, and it is neither numeric nor alphabetical.** A
+meter is filed by its figures read as a *sequence*: `10.` after `9.`, not
+between `1.` and `2.`, and a shorter run before the run that extends it, so
+`10.10.` precedes `10.10.9.6. with Chorus`. Where the figures are the same the
+book prints the plain form, then the one marked `(A)` or `(I)`, then `with
+Repeat`, then `with Chorus` — and the doubled form, with that same run of
+qualifiers under it, after all of them. `Irregular Meter` goes last, as the
+book's `Irregular Meters` does.
+
+**That rule was checked against the book.** The printed index's 212 headings
+were read out of `en/899`–`en/904` in the order they appear, normalised to the
+notation `data/N.md` writes, and sorted by this key: all 212 came back in the
+printed sequence, none out of place. A meter the key cannot parse raises
+rather than sorting somewhere arbitrary.
+
+**Three ways it is more than the printed index**, each said on the page itself:
+
+- **It covers all 848 hymns.** The book's stops at 764, because the tune
+  indexes it is drawn from do. Every hymn now carries a meter (D1), so the 84
+  supplement hymns file under theirs with the word *supplement* where a tune
+  name would be — which is still the fact the page is consulted for.
+- **Eighteen hymns file under a count rather than under a refusal to count.**
+  The English edition files 111 under `Irregular Meters`; on eighteen of them
+  the Chinese page prints figures, and D13 made those figures the meter. 93
+  hymns are left under `Irregular Meter` here.
+- **The heading carries both editions.** The printed index is English. A meter
+  is the one field whose two halves this collection names separately, so
+  `7.6.7.6.D. with chorus` heads its section beside `7.6.7.6.D. 和`, as the
+  hymn page shows them. Grouping is by the English half, which determines the
+  Chinese one everywhere but `Irregular Meter` — whose three Chinese forms
+  (`特`, `特.和`, `特.重`) differ by a qualifier belonging to the hymn rather
+  than to the heading, so the heading says `特`.
+
+**One thing on the page is not in `data/`.** The book annotates three headings
+with the names English hymnody knows them by — `(Short Meter)`,
+`(Common Meter)`, `(Long Meter)`. Those are a property of the figures, not of
+any hymn, so `meterindex.py` writes them rather than `data/` storing them 62
+times over.
 
 ## The site
 
@@ -522,6 +573,7 @@ flowchart TD
   subgraph gen["written by md-to-site"]
     sub["subject.md<br/>the book's outline"]
     tun["tune.md<br/>the index of tunes"]
+    met["metrical.md<br/>the metrical index"]
     chr["chorus.md<br/>developer mode"]
     dck["slide/N.md × 848"]
     pge["hymn/N.md × 848"]
@@ -542,6 +594,7 @@ flowchart TD
   idx --> fmt_html
   sub --> fmt_html
   tun --> fmt_html
+  met --> fmt_html
   chr --> fmt_html
   pge --> fmt_html
   dck --> fmt_reveal
