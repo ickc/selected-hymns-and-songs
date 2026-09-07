@@ -201,6 +201,21 @@ body.hymn-page div.quarto-container {
   opacity: 0.7;
 }
 
+// Who wrote the music and who wrote the words. Everything else on this line
+// says what it is by its own shape -- a meter is figures, a tune is a name in
+// small caps' place, a reference is a chapter and verse -- but two personal
+// names side by side do not, so each is marked with the character a Chinese
+// hymnal heads that credit with: 曲 for the music, 詞 for the words.
+.hymn-heading .hymn-composer::before {
+  content: "曲 ";
+  opacity: 0.75;
+}
+
+.hymn-heading .hymn-author::before {
+  content: "詞 ";
+  opacity: 0.75;
+}
+
 .hymn-stanza {
   margin-bottom: 1.6rem;
 }

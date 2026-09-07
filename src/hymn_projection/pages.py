@@ -193,10 +193,15 @@ def _heading(hymn: Hymn, number: int) -> str:
         # music. The name is English -- no Chinese index names a tune.
         names = hymn.tune if isinstance(hymn.tune, list) else [hymn.tune]
         meta.append(span(", ".join(names), "en"))
-    for field in ("author", "ref"):
+    # Who wrote the words and who wrote the music, in that order and each in
+    # its own class: they are the first pair on this line a reader could not
+    # tell apart from the text alone, so `page.scss` marks which is which.
+    for field, kind in (("composer", "hymn-composer"), ("author", "hymn-author")):
         value = getattr(hymn, field)
         if value is not None:
-            meta.append(_localized_inline(value.translations))
+            meta.append(f"[{_localized_inline(value.translations)}]{{.{kind}}}")
+    if hymn.ref is not None:
+        meta.append(_localized_inline(hymn.ref.translations))
     parts.append(_fence(3, ".hymn-meta", " · ".join(meta)))
     if hymn.note is not None:
         parts.append(_fence(3, ".hymn-note", _localized_inline(hymn.note.translations)))

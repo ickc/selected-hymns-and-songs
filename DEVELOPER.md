@@ -4,7 +4,8 @@ Enough to navigate the project. For what the checked-in Markdown means, see
 [FORMAT.md](FORMAT.md); for what the site is, see [README.md](README.md). The
 files themselves carry the reasoning behind each decision in comments. For what
 the data is still missing and what could be built from the book's front and
-back matter, see [PLAN.md](PLAN.md) — proposals, none of them built yet.
+back matter, see [PLAN.md](PLAN.md); the proposals that were taken up say so
+in their own headings.
 
 ## The shape of it
 
@@ -29,6 +30,7 @@ flowchart LR
   cats["<b>data/categories.tsv</b><br/>285 subjects, in git"]
   tits["<b>data/titles.tsv</b><br/>778 names, in git"]
   tuns["<b>data/tunes.tsv</b><br/>765 pairs, in git"]
+  auth["<b>data/authors.tsv</b><br/>764 rows, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
   subject["site/subject.md"]
@@ -43,6 +45,7 @@ flowchart LR
   cats -- "apply-categories" --> md
   tits -- "apply-titles" --> md
   tuns -- "apply-tunes" --> md
+  auth -- "apply-authors" --> md
   yaml -- "yaml-to-md" --> md
   md -- "md-to-yaml" --> yaml
   md -- "md-to-site" --> slide
@@ -70,12 +73,13 @@ flowchart LR
 is generated, ignored, and rebuilt here and in CI — so it cannot be stale, and
 there is no generated file to review in a diff.
 
-`data/categories.tsv`, `data/titles.tsv` and `data/tunes.tsv` are the three
-things that write *into* `data/`. All three are preprocessing, run when they
-change rather than on the way to the site, and all three were read out of the
-book's own front or back matter, which is the only place any of them exists.
-See [the category table](#the-category-table), [the title
-table](#the-title-table) and [the tune table](#the-tune-table). The category
+`data/categories.tsv`, `data/titles.tsv`, `data/tunes.tsv` and
+`data/authors.tsv` are the four things that write *into* `data/`. All four are
+preprocessing, run when they change rather than on the way to the site, and all
+four were read out of the book's own front or back matter, which is the only
+place any of them exists. See [the category table](#the-category-table), [the
+title table](#the-title-table), [the tune table](#the-tune-table) and [the
+credits table](#the-credits-table). The category
 table is read a second time on the way *out*, as the subject index: a hymn
 knows its own subject, but only the table knows what order the subjects come
 in. The tune table is not — once applied, a hymn knows its own tune, and the
@@ -92,6 +96,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `categories.py` | `data/categories.tsv`: the book's subject outline, and the **preprocessing** step that writes the English half of each hymn's category from it. |
 | `titles.py` | `data/titles.tsv`: the name the book's subject index files each hymn under, and the **preprocessing** step that writes it. |
 | `tunes.py` | `data/tunes.tsv`: the tune the English edition sets each hymn to, and the **preprocessing** step that writes it. |
+| `authors.py` | `data/authors.tsv`: who wrote the words and who wrote the music, and the **preprocessing** step that writes them. |
 | `tuneindex.py` | The **projection** of the whole collection as the book's alphabetical index of tunes. |
 | `meterindex.py` | The **projection** of the same relation grouped the other way: the book's metrical index, meter then tune then hymns. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
@@ -522,6 +527,74 @@ Beauty of Jesus Seen in Me` is simply out of order).
 The metrical index is the same relation grouped the other way, and the book
 prints both. It is the next section.
 
+## The credits table
+
+`data/authors.tsv` is who wrote the words and who wrote the music: 764 rows,
+one per hymn the English edition indexes, 704 authors and 708 composers, and
+747 hymns that gain at least one name where `data/` carried four. It is read
+out of the *Index of Authors and Composers*, `en/879`–`en/894`.
+
+**This is the one table with no second source.** The categories could be
+checked against the table of contents, the titles against the index of first
+lines, the tunes against a *second* printed index listing the same relation —
+632 hymns got the same name from both outright, and that agreement is what made
+`data/tunes.tsv` trustworthy. This index is printed once. Nothing else in the
+book says who wrote hymn 393, so the verification had to be built:
+
+- **The structure is machine-derived, not read.** `en/879.txt` extracts as a
+  bare list of hymn numbers with both text columns dropped, and two other pages
+  do the same. The `.json` beside it carries every line's x and y, which say
+  which column a line is in and which row it is on. Parsing that recovered 764
+  rows, 1 to 764, with no gaps and no duplicates.
+- **The numbering is positional.** Five printed numbers are corrupt — `IOI`,
+  `Ill`, `I 16`, `I 17`, `31 I` — so each page's first hymn is decided by a
+  vote among its legible ones and a corrupt one is outvoted rather than
+  believed. Every page's start then landed on the previous page's end plus one
+  without being told to, which is sixteen independent agreements.
+- **The characters were read off the page images**, a reader per page, against
+  the parsed rows rather than from scratch. That is what caught `Gennan` for
+  German, `Heam` for Hearn, `Coilectio11` for Collection, `Tourjee` for
+  Tourjée, and O read as zero throughout.
+- **A one-off spelling near a recurring one was looked at by eye.** Of 509
+  names appearing exactly once, five are a letter from a name appearing twice
+  or more. Four are the book's own inconsistencies, kept as printed: `G. C.
+  Martin` beside `W. C. Martin`, `Williams G. Tomer` beside `William G.
+  Tomer`, `E. Mary Grimes` beside `E. May Grimes`, and `Thomas D. Chisholm`
+  beside `Thomas O. Chisholm`. The fifth was a misreading and was fixed.
+
+**One reader earned the whole exercise.** The page-881 reader reported the
+composer column shifted a row against the page. It had: this parser matched a
+cell to the *first* row within tolerance rather than the *nearest*, with a
+tolerance of 4 against a row pitch of 8.5, so a cell that fell between two rows
+went to the upper one. Fixing it moved nine cells across four more pages, and
+the readers of two of those pages confirmed the correction independently
+without being told what it was.
+
+**Two marks of the book's own.** A blank cell is not a gap in the reading — the
+index heads itself *(Blanks indicate untraceable sources)*, so a blank is the
+book saying it could not trace one, and 17 hymns have neither name. And `†`
+stands where an author would be on 34 hymns; its legend is printed once, under
+the table on the last page, and reads *(† indicates compiler)*. The table keeps
+the page's mark. A hymn file gets the word `compiler` instead, because a dagger
+belongs to no writing system and `auto-lang` has nothing to tag it as — the
+same problem [the meter has](#why-the-meter-names-its-languages-and-nothing-else-does),
+except that here the book supplies the wording itself: hymn 473's author is
+printed `vv.2-5, compiler`.
+
+**Scope, stated rather than hidden.** The index covers hymns 1 to 764. The
+English back matter's supplement has a table of contents, a first-lines index,
+a subject index and the list of Chinese-only hymns, and no authors — so the 84
+supplement hymns have no credits, and `apply-authors` removes any they somehow
+acquired. The names are English-only: the Chinese edition credits nobody.
+
+`pixi run apply-authors` writes both names into every `data/N.md`; `pixi run
+check-authors` reports the same without writing. They are shown on the hymn
+page at the end of the meta line, each marked with the character a Chinese
+hymnal heads that credit with — 曲 for the music, 詞 for the words — because two
+personal names side by side are the first pair on that line a reader could not
+tell apart from the text alone. Like the meter and the tune, they are not on a
+slide.
+
 ## The metrical index
 
 `site/metrical.md` is the fifth projection: meter, then tune, then the hymns
@@ -840,6 +913,8 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   `data/titles.tsv`, and also fails if a row names a hymn that is not there.
 - `scripts/apply_tunes.py --check` (`pixi run check-tunes`) does the same for
   `data/tunes.tsv`.
+- `scripts/apply_authors.py --check` (`pixi run check-authors`) does the same
+  for `data/authors.tsv`.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.

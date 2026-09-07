@@ -26,7 +26,8 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `meter` | 848 | 382 name both, 466 print alike | D1 done; every hymn now has one |
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
-| `author` | 4 | 0 both — all English-only | see D2 |
+| `author` | 704 | 0 both — all English-only | §5 done; 1–764 only, the supplement is not indexed |
+| `composer` | 708 | 0 both — all English-only | §5 done; new field, same scope |
 | `title` | 778 | 0 both — all English-only | D12 done; 31 scripture portions and 39 Chinese-only hymns have no name in the book |
 | `tune` | 764 | n/a — the Chinese edition names no tune | §6b done; 765 pairs, hymns 1–764, one hymn with two |
 
@@ -34,8 +35,10 @@ So: **no, not every field is bilingual.** `category` is, now. `meter` is:
 466 hymns print the same notation in both editions and carry one scalar, and
 the other 382 name their two halves in the front matter, which is what lets a
 page that says `Irregular Meter` sit beside one that counts. But
-`author`, `ref` and six of the `note`s are single-language, and three hymns are
-missing an entire language of lyrics.
+`author`, `composer`, `ref` and six of the `note`s are single-language, and
+three hymns are missing an entire language of lyrics. The first two are
+single-language because their source is: the index they come from is the
+English edition's, and the Chinese edition credits nobody.
 
 ### Structure is clean
 
@@ -84,7 +87,7 @@ half-lines described under D7), 761 (an antiphonal stanza transcribed as one
 block) and 799 (`9.9.9.8.` against lyrics that count `9.9.9.7.`) — each a
 finding about the *text*, now that the meter is known.
 
-### D2 — `author` is populated on 4 hymns out of 848
+### D2 — `author` is populated on 4 hymns out of 848 — **done, 704 now**
 
 416 Graham Kendrick, 439 Thomas O. Chisholm, 453 Dennis Cleveland, 749 Bob
 McGee. All English-only, and all four are copyright-bearing songs — which is
@@ -93,6 +96,12 @@ composer's names, except for copyright-bearing songs, are listed numerically in
 an index at the rear of the book"). So these four came off the hymn page
 itself, and the other ~760 are sitting in an index nobody has read yet. That is
 proposal §5.
+
+**§5 read it.** All four turn out to be *in* the index as well, so the preface's
+rule is not one the book keeps. Three agree with it letter for letter. The
+fourth does not: the index prints hymn 439's author `Thomas D. Chisholm` where
+the hymn's own page prints `Thomas O. Chisholm`, and its composer `Carl H.
+Lowden` where the page prints `C. Harold Lowden`. That is D15.
 
 ### D3 — `ref` is inconsistent, monolingual, and partly redundant
 
@@ -403,6 +412,67 @@ cannot pair, and 480 ranks 311th of 847 on line similarity, squarely mid-pack.
 Finding others means reading pages by eye. This is the one defect class in the
 collection with no cheap detector.
 
+### D15 — the author index disagrees with the hymn pages on 17 hymns
+
+**A second source turned up after §5 was called sourceless.** The English
+preface says author and composer names are in the index at the back "except for
+copyright-bearing songs" — and it is exactly those songs that carry the names
+*over the hymn instead*, at the top of the page, author left and composer
+right. That is a second printing of the same fact. It does not cover the
+collection: reading the top of all 605 hymns that begin their own page finds a
+credit on both sides for only 71 cells, most pages printing neither. But those
+71 are a real check, and 21 agree outright.
+
+**Of the rest, most are the same person written two ways**, which is the book
+being loose rather than wrong, and the index's form is kept:
+
+| hymn | the index | the hymn's own page |
+| --- | --- | --- |
+| 11 | `F. M. Lehman` | `Frederick M. Lehman` |
+| 118 | `Dave Fellingham` | `David Fellingham` |
+| 128 | `Jack Hayford` | `Jack W. Hayford` |
+| 144 | `Jennie E. Hussey` | `Jennie Hussey` |
+| 234 | `Debby Kerner` | `Debby Kerner Rettino` |
+| 286 | `Alfred H. Ackley`, `Bentley D. Ackley` | `A. H. Ackley`, `B. D. Ackley` |
+| 363 | `George O. Webster`, `Charles H. Gabriel` | `Geo. O. Webster`, `Chas. H. Gabriel` |
+| 430 | `A. B. Simpson` | `A. Simpson` |
+| 571 | `Jean Sibelius, arr. for The Hymnal` | `Jean Sibelius` |
+
+**Nine are substantive**, and on these the two pages name different people or
+credit a different number of them. Nothing here decides which is right, so the
+index's reading stands in `data/` and the disagreement is recorded instead:
+
+| hymn | the index | the hymn's own page |
+| --- | --- | --- |
+| 54 | `Nalda Hearn` (both) | `Naida Hearn` (both) |
+| 216 | `Graham Kendrick and Chris Rolinson` | `Graham Kendrick` |
+| 219 | `Morris Chapman and Tom Coomes` | `Tommy Coomes` |
+| 266 | `Michael Ryan` | `Dale Garratt` |
+| 378 | `Homer Hammontree` | `W. H. Hammontree` |
+| 430 | `I. H. Meredith` | `George Stebbins` |
+| 439 | `Thomas D. Chisholm`, `Carl H. Lowden` | `Thomas O. Chisholm`, `C. Harold Lowden` |
+| 492 | `John W. Peterson, Alfred B. Smith` | `Alfred B. Smith` |
+| 505 | `Danny Daniels` | `Randy Rigby` |
+
+**439 is the one that costs something.** `data/` had `Thomas O. Chisholm` from
+the hymn's own page — one of D2's four — and applying the table replaced it
+with the index's `Thomas D. Chisholm`. The same index prints `Thomas O.
+Chisholm` at hymn 397, so it contradicts itself as well as the page. The table
+is a transcription of the index and keeps what the index prints; whether
+`data/` should prefer the hymn's own page where one exists is a policy question
+this defect exists to raise, and it applies to all nine substantive rows at
+once rather than to 439 alone.
+
+**How reliable this is.** The reader that produced the page column is a
+coordinate heuristic over the text extraction, not a reading pass: it takes the
+bottom line on each margin above the first staff, having removed the subject
+heading, the meter and the hymn number. On about thirty cells it returned scan
+speckle (`r--,`, `13\o/`) or grabbed the wrong line (`chorus`, `First tune.`),
+and those were discarded rather than reported. So this table is a floor, not a
+census — there may be disagreements it did not see, and the two rows checked by
+eye on the page images, 54 and 439, both held.
+
+
 ### D8 — the category is single-valued, but the book's index is not
 
 The subject index files some hymns under several subjects. Hymn 13 is under
@@ -614,56 +684,80 @@ a long page (244 KB), but it is one document — the browser's find works on it,
 it prints, it needs no JavaScript, and it is in the search index one entry per
 section, so a subject can be searched for by name in either language.
 
-## 5. Index of authors and composers
+## 5. Index of authors and composers — **done**
 
 **Source.** `en/879`–`en/894`, sixteen pages, printed 821–836. Three columns:
-`Hymn | Author, Translator, Source | Composer, Arranger, Source`. Roughly 764
-rows — one per hymn 1–764, many with one or both cells blank (the preface says
-copyright-bearing songs are omitted, which is why we already have exactly those
-four on the hymn pages, D2).
+`Hymn | Author, Translator, Source | Composer, Arranger, Source`, one row per
+hymn 1–764.
 
-**The supplement has no author index.** The English back matter's supplement
-(`en/916`–`en/923`) carries a table of contents, a first-lines index, a subject
-index and the list of Chinese-only hymns — and no authors. The Chinese back
-matter (`zh/923`–`zh/933`) is a first-line stroke-count index and nothing else.
-So authors are available for 1–764 and for no hymn above that, and they are
-English-only. Both of those are fine and should be stated on the page rather
-than looking like gaps.
+**What was built.** `data/authors.tsv`, 764 rows — 704 authors, 708 composers,
+747 hymns that gain at least one name where `data/` had four — plus
+`authors.py`, `apply-authors` / `check-authors` under the same contract as the
+categories, the titles and the tunes, and a `composer` field on the hymn, which
+is new. Both names show on the hymn page at the end of the meta line, marked 曲
+for the music and 詞 for the words, because two personal names side by side are
+the first pair on that line a reader could not tell apart.
 
-**Why this needs a reading pass, not a parser.** The OCR loses the column
-structure completely — `en/879` extracts as a bare list of hymn numbers with
-the two text columns dropped, and `en/881` and `en/887` do the same. Where the
-columns do survive, the numbers are corrupt in the usual ways (`IOI` for `101`,
-`I 16` for `116`, `Naida Heam` for `Naida Hearn`, `Carl Gottholf Glaser` for
-`Gottlob`). The `.json` extraction carries per-line bounding boxes, which is
-what made the two-column English subject index tractable before; the same trick
-should work here, with the page image read visually as the check.
+**The plan expected a reading pass, and got a parse plus a proofread.** The
+premise was right that `en/879.txt` extracts as a bare list of hymn numbers
+with both text columns dropped, and that two more pages do the same. What it
+missed is that the `.json` beside each page carries every line's x and y, which
+say which column a line is in and which row it is on. That recovered the whole
+table's structure — 764 rows, 1 to 764, no gaps, no duplicates — and left only
+the characters to read. The readers then proofread a page each against its
+scan, correcting rather than transcribing, which is a far more reliable job.
 
-**Self-verification.** Unlike the category work, there is no second source to
-cross-check against — no hymn-number-set matching, no Chinese counterpart. The
-verification available is weaker and must be built in deliberately:
+**The numbering is positional, not transcribed.** Five printed numbers are
+corrupt — `IOI`, `Ill`, `I 16`, `I 17`, `31 I` — so each page's first hymn is
+decided by a vote among its legible ones, and a corrupt one is outvoted instead
+of believed. Every page's start then landed on the previous page's end plus one
+unprompted: sixteen independent agreements.
 
-- every hymn 1–764 appears exactly once, in ascending order, no gaps;
-- names recur across the book (Charles Wesley, Isaac Watts, M. E. Barber,
-  Watchman Nee), so a name appearing once with an odd spelling is a flag;
-- composer names cross-check against the alphabetical index of tunes (§6),
-  which lists the same repertoire from a different page;
-- the four authors already in `data/` must survive unchanged — a free spot check
-  on four rows, and a conflict there means the extraction is wrong.
+**A reader caught a bug in the parser.** The page-881 reader reported the
+composer column shifted a row against the page. It was: cells were matched to
+the *first* row within tolerance rather than the *nearest*, with a tolerance of
+4 against a row pitch of 8.5, so a cell falling between two rows went to the
+upper one. Fixing it moved nine cells across four more pages, and the readers
+of two of those confirmed the correction without being told what it was. This
+is the single best thing the reading pass bought, and it argues for giving a
+reader a draft to attack rather than a blank page.
 
-Given that, I would extract per page with an explicit "unsure" marker rather
-than a confident guess, and review the flagged rows by hand.
+**Self-verification, which had to be built.** §5's own worry was right — there
+is no twin index the way the tunes had two. Four checks were built instead:
+every hymn appears exactly once in ascending order, guaranteed by the parse;
+page starts agree with the previous page's ends; the characters were read off
+the images; and a name appearing once that is a letter from a name appearing
+often was looked at by eye. That last found five of 509 one-off names. Four are
+the book's own inconsistencies, kept as printed — `G. C. Martin` beside `W. C.
+Martin`, `Williams G. Tomer` beside `William G. Tomer`, `E. Mary Grimes` beside
+`E. May Grimes`, `Thomas D. Chisholm` beside `Thomas O. Chisholm` — and one was
+a misreading, now fixed.
 
-**Where it lives.** `data/authors.tsv` — `hymn`, `author`, `composer` — read
-and applied by a module beside `categories.py`, under the same contract: the
-table is the rebuildable input, `data/N.md` is what the site is built from, an
-idempotent `apply-authors` writes one into the other, and `check-authors` in CI
-fails when they drift apart. Two new fields on the hymn (`author` exists;
-`composer` does not) plus the rendering on the hymn page and the deck.
+**A fifth check turned up that this section said did not exist**, and it is
+D15: the copyright-bearing songs print their credits over the hymn, which is a
+second printing of the same fact. It reaches only 71 cells of the 764 rows, but
+21 of those agree outright and the rest are recorded.
 
-**Cost.** The largest of the four. Sixteen dense pages, ~1,500 names, weak
-verification, and a model change. But it is also the one that adds the most to
-each individual hymn page.
+**Two marks of the book's own.** A blank is not a gap in the reading — the
+index heads itself *(Blanks indicate untraceable sources)* — and 17 hymns have
+neither name. `†` stands where an author would be on 34 hymns; its legend is
+printed once, under the table on the last page, and reads *(† indicates
+compiler)*. The table keeps the mark; a hymn file gets the word `compiler`,
+because a dagger belongs to no writing system and `auto-lang` has nothing to
+tag it as. The book supplies that wording itself: hymn 473's author is printed
+`vv.2-5, compiler`.
+
+**The supplement has none, as expected.** The English back matter's supplement
+carries a table of contents, a first-lines index, a subject index and the list
+of Chinese-only hymns, and no authors. The Chinese back matter is a first-line
+stroke-count index and nothing else. So credits run 1–764, they are
+English-only, and `apply-authors` removes any a supplement hymn acquires.
+
+**Cost, as it turned out.** Far less than budgeted. The estimate assumed
+sixteen dense pages read cold; the bounding boxes did the structure for the
+cost of one script, and the sixteen readers spent their attention on characters
+instead of columns. What the estimate got right is that the verification is the
+hard part and had to be deliberate.
 
 ---
 
@@ -838,20 +932,25 @@ committed table itself rather than in a commit message.
 5. ~~**§6 tunes**~~ Done, both halves: `data/tunes.tsv`, 765 pairs over hymns
    1–764, applied to `data/`, with `site/tune.md` and `site/metrical.md`
    generated back out. §6b turned up **D13**, which unblocked §6a.
-6. **§5 authors** — biggest, weakest verification, most valuable per hymn.
-   Last because everything before it makes the tooling better, and everything
-   before it is now done, so this is **next**. Its sixteen source pages are
-   not in `scan/`, which is the argument for taking §7's option 2 in the same
-   pass rather than after it: see item 9.
-7. **D2/D3/D4/D6** — the small consistency fixes, folded into whichever pass
-   is already touching those pages.
+6. ~~**§5 authors** — biggest, weakest verification, most valuable per hymn.~~
+   Done: `data/authors.tsv`, 764 rows, applied to `data/`, with `composer` as
+   a new field. It cost far less than budgeted, because the text extraction's
+   bounding boxes gave the table's structure and left only the characters to
+   read. It turned up **D15**, and it did not need `scan/` extending after all
+   — though item 9 still stands on its own argument.
+7. **D3/D4/D6** — the small consistency fixes, folded into whichever pass is
+   already touching those pages. ~~D2~~ is closed by §5.
+   **This is now what is next**, along with **D7**'s remaining syllable
+   disagreements and **D15**'s question of whether `data/` should prefer a
+   hymn's own page over the index where the two name different people.
 8. ~~**D12 titles**~~ Done: `data/titles.tsv`, 778 names, applied to `data/`.
 9. **§7's option 2 — carry the front and back matter in `scan/`** (~70 pages,
    ~1.7 MB). Every extraction so far — the categories, the titles, the tunes,
    both prefaces — was read off pages this repository does not hold, so none
    of them can be checked here the way a hymn can be checked against
-   `scan/{en,zh}/N.png`. §5 is the largest of them and the one with no second
-   source to cross-check against, which is the case for doing this first.
+   `scan/{en,zh}/N.png`. §5 is the largest of them, and D15 shows the shape of
+   the problem: the check that found the index disagreeing with the hymn pages
+   could only run because the *hymn* pages are here. The index pages are not.
 10. **The TOC** (`en/002`, `zh/002`) — cheap, and it would let §4's tree show
     the hymn-number ranges the book prints. Fold it into whichever pass is
     already reading the front matter.

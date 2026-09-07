@@ -298,6 +298,11 @@ class Hymn:
     category: LocalizedText
     stanzas: list[Stanza]
     author: LocalizedText | None = None
+    #: Who set the hymn to music, as the *Index of Authors and Composers*
+    #: credits it -- a name, an arranger, or the collection a melody came out
+    #: of.  Localized like ``author`` because it is written the same way, and
+    #: English-only for the same reason: the index is the English edition's.
+    composer: LocalizedText | None = None
     meter: str | LocalizedText | None = None
     note: LocalizedText | None = None
     ref: LocalizedText | None = None
@@ -323,7 +328,7 @@ class Hymn:
                 raise ValueError("tune must be a name or a list of names")
             if len(tunes) != len(set(tunes)):
                 raise ValueError("a hymn cannot be set to one tune twice")
-        for name in ("author", "note", "ref", "title"):
+        for name in ("author", "composer", "note", "ref", "title"):
             value = getattr(self, name)
             if value is not None and not isinstance(value, LocalizedText):
                 raise ValueError(f"{name} must be localized text")
@@ -333,7 +338,10 @@ class Hymn:
         """Validate and construct a hymn from a YAML-compatible mapping."""
 
         mapping = _mapping(value, "hymn")
-        allowed = {"author", "category", "meter", "note", "ref", "stanza", "title", "tune"}
+        allowed = {
+            "author", "category", "composer", "meter",
+            "note", "ref", "stanza", "title", "tune",
+        }
         unknown = set(mapping) - allowed
         missing = {"category", "stanza"} - set(mapping)
         if unknown:
@@ -371,6 +379,7 @@ class Hymn:
             category=LocalizedText.from_dict(mapping["category"], "category"),
             stanzas=[Stanza.from_yaml(name, lines) for name, lines in stanza_mapping.items()],
             author=optional_text("author"),
+            composer=optional_text("composer"),
             meter=meter,
             note=optional_text("note"),
             ref=optional_text("ref"),
@@ -385,6 +394,8 @@ class Hymn:
         if self.author is not None:
             result["author"] = self.author.to_dict()
         result["category"] = self.category.to_dict()
+        if self.composer is not None:
+            result["composer"] = self.composer.to_dict()
         if self.meter is not None:
             result["meter"] = (
                 self.meter.to_dict()
@@ -422,6 +433,8 @@ class Hymn:
         if self.author is not None:
             metadata["author"] = _localized_metadata(self.author)
         metadata["category"] = _localized_metadata(self.category)
+        if self.composer is not None:
+            metadata["composer"] = _localized_metadata(self.composer)
         if self.meter is not None:
             metadata["meter"] = (
                 _meter_metadata(self.meter)
@@ -478,6 +491,7 @@ class Hymn:
             "auto-lang",
             "author",
             "category",
+            "composer",
             "meter",
             "note",
             "ref",
@@ -499,6 +513,11 @@ class Hymn:
         metadata["category"] = _localized_from_metadata(
             document.metadata["category"], "category"
         ).to_dict()
+
+        if "composer" in document.metadata:
+            metadata["composer"] = _localized_from_metadata(
+                document.metadata["composer"], "composer"
+            ).to_dict()
 
         if "meter" in document.metadata:
             meter = _meter_from_metadata(document.metadata["meter"])

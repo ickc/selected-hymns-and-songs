@@ -358,7 +358,7 @@ def to_markdown(hymn: Hymn, number: int, limit: int = LINES_PER_SLIDE) -> str:
         f"lang: {document_language(hymn)}",
         f"category: {_yaml_scalar(_localized_inline(hymn.category.translations))}",
     ]
-    for name in ("author", "ref", "note"):
+    for name in ("author", "composer", "ref", "note"):
         value = getattr(hymn, name)
         if value is not None:
             metadata.append(
