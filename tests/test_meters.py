@@ -3,10 +3,12 @@
 from unittest import TestCase
 
 from hymn_projection.meters import (
+    chorus_disagreements,
     disagreements,
     implied,
     notation,
     printed,
+    shape,
     syllables,
 )
 from hymn_projection.model import Hymn
@@ -17,6 +19,17 @@ def hymn(meter: str | None, *stanzas: list[str]) -> Hymn:
     body = "".join(
         f"\n# {index}\n\n" + "".join(f"line {index}\n{line}\n" for line in lines)
         for index, lines in enumerate(stanzas, start=1)
+    )
+    return Hymn.from_markdown(f"---\ncategory: 甲——乙\n{front}---\n{body}")
+
+
+def chorused(meter: str | None, *stanzas: tuple[str, list[str]]) -> Hymn:
+    """Build a hymn whose stanzas are named, so a chorus can be one of them."""
+
+    front = f"meter: {meter}\n" if meter else ""
+    body = "".join(
+        f"\n# {name}\n\n" + "".join(f"line\n{line}\n" for line in lines)
+        for name, lines in stanzas
     )
     return Hymn.from_markdown(f"---\ncategory: 甲——乙\n{front}---\n{body}")
 
@@ -120,10 +133,20 @@ class IrregularTest(TestCase):
     def test_an_irregular_meter_states_no_lengths(self) -> None:
         self.assertIsNone(printed("Irregular Meter特"))
 
-    def test_a_hymn_the_hymnal_calls_irregular_is_not_reported(self) -> None:
+    def test_verses_that_agree_are_not_reported(self) -> None:
+        # An irregular meter is the hymnal declining to name a pattern no
+        # other tune shares, not a hymn that cannot be counted.
+        even = hymn("Irregular Meter特", ["一二三四五六", "一二三"], ["六五四三二一", "三二一"])
+
+        self.assertEqual(disagreements([(1, even)]), [])
+
+    def test_verses_that_do_not_agree_still_are(self) -> None:
+        # The only check these 93 hymns can have: the verses against each other.
         ragged = hymn("Irregular Meter特", ["一二三四五六", "一二三"], ["一二三四五"])
 
-        self.assertEqual(disagreements([(1, ragged)]), [])
+        found = disagreements([(1, ragged)])
+
+        self.assertEqual([d.kind for d in found], ["verses disagree with each other"])
 
     def test_a_hymn_with_no_meter_at_all_still_is(self) -> None:
         found = disagreements([(1, hymn(None, ["一二三四五六"], ["一二三"]))])
@@ -154,3 +177,44 @@ class DoubledMeterTest(TestCase):
         found = disagreements([(1, Hymn.from_markdown(with_chorus))])
 
         self.assertEqual(len(found), 1)
+
+
+class ShapeTest(TestCase):
+    """The count a hymn always has, whatever the hymnal prints over it."""
+
+    def test_the_shape_counts_the_chorus_too(self) -> None:
+        sung = chorused(
+            None, ("1", ["一二三四"]), ("1-chorus", ["一二三"]), ("2", ["五六七八"])
+        )
+
+        self.assertEqual(
+            shape(sung), [(1, [4]), ("1-chorus", [3]), (2, [4])]
+        )
+
+
+class ChorusTest(TestCase):
+    """Every chorus is sung to the same strain, so all of them scan alike."""
+
+    def test_choruses_of_one_length_are_not_reported(self) -> None:
+        sung = chorused(
+            None, ("1", ["一二三四"]), ("1-chorus", ["一二三"]),
+            ("2", ["五六七八"]), ("2-chorus", ["四五六"]),
+        )
+
+        self.assertEqual(chorus_disagreements([(1, sung)]), [])
+
+    def test_a_chorus_a_syllable_out_is_reported(self) -> None:
+        sung = chorused(
+            None, ("1", ["一二三四"]), ("1-chorus", ["一二三"]),
+            ("2", ["五六七八"]), ("2-chorus", ["四五六七"]),
+        )
+
+        found = chorus_disagreements([(1, sung)])
+
+        self.assertEqual([f.number for f in found], [1])
+        self.assertEqual(found[0].choruses, [("1-chorus", [3]), ("2-chorus", [4])])
+
+    def test_a_hymn_with_one_chorus_has_nothing_to_compare(self) -> None:
+        sung = chorused(None, ("1", ["一二三四"]), ("1-chorus", ["一二三"]))
+
+        self.assertEqual(chorus_disagreements([(1, sung)]), [])

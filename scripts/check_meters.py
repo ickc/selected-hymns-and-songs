@@ -17,7 +17,7 @@ import argparse
 from pathlib import Path
 
 from hymn_projection.converter import numbered_markdown_files
-from hymn_projection.meters import disagreements, read
+from hymn_projection.meters import chorus_disagreements, disagreements, read, shape
 
 
 def main() -> None:
@@ -29,9 +29,21 @@ def main() -> None:
     parser.add_argument(
         "--strict", action="store_true", help="exit non-zero if any hymn disagrees"
     )
+    parser.add_argument(
+        "--shape",
+        action="store_true",
+        help="print every hymn's line lengths, chorus included, and stop",
+    )
     arguments = parser.parse_args()
 
     files = numbered_markdown_files(arguments.data)
+    if arguments.shape:
+        for number, hymn in (read(path) for path in files):
+            for name, counts in shape(hymn):
+                lengths = ".".join(str(count) for count in counts)
+                print(f"{number:>3}  {str(name):>8}  {lengths}")
+        return
+
     found = disagreements(read(path) for path in files)
     if arguments.kind:
         found = [d for d in found if arguments.kind in d.kind]
@@ -53,10 +65,19 @@ def main() -> None:
             if counts != disagreement.expected:
                 print(f"     stanza {name}: {'.'.join(str(c) for c in counts)}")
 
+    choruses = chorus_disagreements(read(path) for path in files)
+    for finding in choruses:
+        printed = "  ".join(
+            f"{name} {'.'.join(str(count) for count in counts)}"
+            for name, counts in finding.choruses
+        )
+        print(f"{finding.number:>3}  choruses do not scan alike\n     {printed}")
+
     print(f"\n{len(found)} of {len(files)} hymns disagree with their meter")
     for kind, count in sorted(kinds.items(), key=lambda item: -item[1]):
         print(f"  {count:>4}  {kind}")
-    if arguments.strict and found:
+    print(f"{len(choruses)} of {len(files)} hymns have choruses that do not scan alike")
+    if arguments.strict and (found or choruses):
         raise SystemExit(1)
 
 

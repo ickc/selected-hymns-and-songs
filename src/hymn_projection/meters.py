@@ -91,6 +91,29 @@ def stanza_counts(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
     ]
 
 
+def shape(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
+    """Return every stanza's line lengths, choruses included, in printed order.
+
+    The count a hymn can always be given, whatever the hymnal says over it.
+    Nothing writes this into `data/N.md`: a meter is what the book prints, and
+    a second, derived one beside it would be a second thing to keep true. It is
+    computed where it is used, which is here and in `pixi run meter-report
+    --shape`.
+    """
+
+    return [(stanza.name, _counts(stanza)) for stanza in hymn.stanzas]
+
+
+def chorus_counts(hymn: Hymn) -> list[tuple[str, list[int]]]:
+    """Return the line lengths of each chorus the hymn prints."""
+
+    return [
+        (stanza.name, _counts(stanza))
+        for stanza in hymn.stanzas
+        if isinstance(stanza.name, str)
+    ]
+
+
 def sung_counts(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
     """Return each verse's line lengths with those of the chorus it takes.
 
@@ -164,16 +187,48 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
     for number, hymn in hymns:
         counts = stanza_counts(hymn)
         text = _meter_text(hymn)
-        if text is not None and printed(text) is None:
-            # `Irregular Meter` / `特` states no lengths, so there is nothing
-            # to count it against. The hymnal says as much and that is that.
-            continue
         expected = printed(text or "")
-        if expected is not None and _scans(hymn, counts, expected):
+        if text is None:
+            pass  # A hymn with no meter at all is a finding in itself.
+        elif expected is None:
+            # `Irregular Meter` / `特` states no lengths, so there is nothing
+            # to count the verses against -- but they can still be counted
+            # against each other, which is the whole check on the 93 hymns the
+            # hymnal declines to give a meter.
+            if implied(hymn) is not None:
+                continue
+        elif _scans(hymn, counts, expected):
             continue
         found.append(
             Disagreement(number, _meter_text(hymn), expected, counts, implied(hymn))
         )
+    return found
+
+
+@dataclass
+class ChorusDisagreement:
+    """One hymn whose choruses do not scan alike."""
+
+    number: int
+    choruses: list[tuple[str, list[int]]]
+
+
+def chorus_disagreements(
+    hymns: Iterable[tuple[int, Hymn]],
+) -> list[ChorusDisagreement]:
+    """Return every hymn whose choruses differ in length, in number order.
+
+    A hymn that writes a chorus out under each stanza sings all of them to the
+    same strain, so their line lengths have to agree even though the words do
+    not. The meter says nothing about this -- it describes the verse -- so
+    nothing else in the collection can catch a syllable lost from a chorus.
+    """
+
+    found = []
+    for number, hymn in hymns:
+        choruses = chorus_counts(hymn)
+        if len({tuple(counts) for _, counts in choruses}) > 1:
+            found.append(ChorusDisagreement(number, choruses))
     return found
 
 

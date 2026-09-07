@@ -326,11 +326,17 @@ Three things it taught us about the data:
   simply a typo. Its page prints `8.6.8.6.6.6.7.5. 和`; fixed, along with 772,
   whose page prints `8.8.8.8.7.` and which `data/` had as `8.8.8.8.8.`.
 
-**128 hymns still disagree**: 89 where every verse agrees on some other meter
-than the one stored, 38 whose verses disagree with each other, and 1 a single
-syllable out. The "no meter" class is gone — see D1. Three of the 128 arrived
-in the D13 pass, as hymns that used to say `Irregular Meter` and so could not
-be checked at all.
+**139 hymns still disagree**: 89 where every verse agrees on some other meter
+than the one stored, 49 whose verses disagree with each other, and 1 a single
+syllable out. The "no meter" class is gone — see D1.
+
+**Nothing goes unchecked now.** The 93 hymns the hymnal calls irregular used to
+be skipped, because `Irregular Meter` names no lengths to count against; their
+verses are now counted against *each other*, which 11 of them fail (242, 393,
+476, 477, 632, 706, 709, 755, 830, 834, 840). And every chorus a hymn prints is
+sung to the same strain, so the choruses of one hymn have to scan alike — one
+hymn's do not, 480, and its page agrees with the transcription, so the odd
+syllable is the book's. `pixi run meter-report --shape` prints the counts.
 
 **D13 changed what these are evidence of.** 108 of them are hymns ≤764, and
 **89 of those carry a meter the book's own metrical index independently

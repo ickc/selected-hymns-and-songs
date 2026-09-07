@@ -770,9 +770,20 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   a heuristic: where the two disagree, either a character has gone missing from
   the text or the meter was mistyped, and the report's classification says
   which shape the disagreement has. It is still a report and not a gate --
-  `--strict` makes it one -- because 128 hymns disagree. On 89 of the 108 that
+  `--strict` makes it one -- because 139 hymns disagree. On 89 of the 108 that
   are hymns 1--764, the metrical index confirms the meter independently, so the
   disagreement is a finding about the lyrics; see [PLAN.md](PLAN.md).
+
+  Two counts have no meter to check against and are checked anyway. Where the
+  hymnal prints `Irregular Meter` it names no lengths, but the verses can still
+  be counted against each other, which is the only check the 93 irregular hymns
+  can have -- 11 of them fail it. And a hymn that writes a chorus out under
+  every stanza sings all of them to one strain, so their lines have to agree
+  even where the words do not; nothing else in the collection would catch a
+  syllable lost from a chorus. `--shape` prints the counts themselves, hymn by
+  hymn and stanza by stanza. None of them is written into `data/N.md`: the
+  meter there is what the book prints, and a derived one beside it would be a
+  second thing to keep true.
 
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`
