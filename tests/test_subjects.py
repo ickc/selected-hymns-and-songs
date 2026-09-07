@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from hymn_projection.categories import Subject
 from hymn_projection.model import Hymn
-from hymn_projection.subjects import _roman, to_markdown
+from hymn_projection.subjects import _ranges, _roman, to_markdown
 
 
 def hymn(category: str, first: str) -> Hymn:
@@ -33,6 +33,26 @@ class NumeralTest(TestCase):
             [_roman(number) for number in (1, 4, 5, 9, 10, 14, 18)],
             ["I", "IV", "V", "IX", "X", "XIV", "XVIII"],
         )
+
+
+class RangeTest(TestCase):
+    """What each section covers, as the book's table of contents states it."""
+
+    def test_a_run_of_numbers_is_stated_as_its_ends(self) -> None:
+        self.assertEqual(_ranges([1, 2, 3, 4, 5, 6, 7]), "1\u20137")
+
+    def test_a_section_the_supplement_added_to_states_both_runs(self) -> None:
+        # Every section but four is in this case: the 84 supplement hymns were
+        # filed into the same eighteen, so the contents page prints two runs.
+        self.assertEqual(
+            _ranges([171, 172, 173, 776]), "171\u2013173, 776"
+        )
+
+    def test_a_section_of_one_hymn_states_that_hymn(self) -> None:
+        self.assertEqual(_ranges([816]), "816")
+
+    def test_the_numbers_need_not_arrive_in_order(self) -> None:
+        self.assertEqual(_ranges([3, 1, 2]), "1\u20133")
 
 
 class IndexTest(TestCase):
@@ -84,6 +104,20 @@ class IndexTest(TestCase):
         self.assertIn("(#subject-2)", page)
         # One entry per section, not one per subject under it.
         self.assertEqual(page.count("(#subject-1)"), 1)
+
+    def test_the_strip_states_what_each_section_covers(self) -> None:
+        # The book's own contents page does, and these come from the hymns
+        # filed below rather than from a second table that could disagree.
+        page = to_markdown(self.subjects, self.entries)
+
+        self.assertIn("[1, 8\u20139]{.subject-range}", page)
+        self.assertIn("[178]{.subject-range}", page)
+
+    def test_a_section_no_hymn_is_filed_under_states_no_numbers(self) -> None:
+        page = to_markdown(self.subjects, self.entries[:1])
+
+        self.assertIn("(#subject-2)", page)
+        self.assertEqual(page.count("{.subject-range}"), 1)
 
     def test_every_hymn_reaches_the_page_exactly_once(self) -> None:
         page = to_markdown(self.subjects, self.entries)

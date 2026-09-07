@@ -560,6 +560,47 @@ Two ways it is honestly less than the book, and the page says both:
   both *His Love* and *His Sonship* — and a single-valued `category` cannot
   hold that. Each hymn appears once, under the subject its own page prints.
 
+### The strip of sections, and the third source that checks it
+
+The eighteen top headings are offered as a strip to jump by, and each carries
+the hymns it covers — `V. The Church Life 教會生活 220–280, 779–789`. The
+numbers are **computed** from the hymns filed below, not stored, so the strip
+cannot come to disagree with the entries it sits above.
+
+That computation is worth stating because the book prints the same fact in a
+third place, and it agrees. Both editions open with a table of contents —
+`en/002` *TABLE OF CONTENTS*, `zh/002` 分類目錄 — which is the eighteen
+sections against the hymns filed under each, and nothing else. Neither page
+was used to build anything here; both were read afterwards, against a
+computation already made. All eighteen agree, in both editions, for all 848
+hymns. Two sections are expanded into their subheadings on both pages — I into
+its three and V into its six — and those nine agree too.
+
+That is a real check and not a tautology. The categories came from the two
+**subject** indexes, and the level‑1 assignment of the 84 supplement hymns in
+particular rested on the Chinese one alone; the contents page states it
+independently, and states it as ranges, so a hymn filed one section out would
+show as a range that does not close. The English contents page prints only the
+main body, `1`–`764`, which is the English edition's extent; the Chinese one
+prints both runs and is what the supplement halves were checked against.
+
+Two things the reading found, neither of which changes anything here:
+
+- **The Chinese contents page loses its eighteenth heading.** It prints the
+  range `734-764` against an empty name. The English page prints `XVIII. Psalms
+  and Scripture Portions`; the Chinese subject index prints the subject too.
+  The omission is the book's, on that page only.
+- **One subject is named differently in the index from on the hymn.** The
+  Chinese contents page and the Chinese subject index both call V.6 神的醫治;
+  hymns 279 and 280 print 醫病 over themselves. `data/N.md` is the authority on
+  what the Chinese page says, so the table keeps 醫病, and this is the same
+  shape of disagreement as [D15](PLAN.md)'s — recorded, not reconciled.
+
+The contents page's own punctuation is not kept. Both editions separate the two
+runs with a full stop — `220-280. 779-789` — which reads as a decimal point
+beside figures; the strip uses a comma and an en dash. The numbers are the
+book's.
+
 ## The index of tunes
 
 `site/tune.md` is the fourth projection, and the second about the collection

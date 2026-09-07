@@ -124,6 +124,22 @@ td {
   margin: 0;
 }
 
+// A section and the hymns it covers are one item of the strip: the strip wraps
+// between sections, never between a section's name and its numbers.
+.subject-entry {
+  display: inline-block;
+}
+
+// What the book's own table of contents prints against each section. Set back
+// so the strip still reads as a row of names.
+.subject-range {
+  margin-left: 0.35rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85em;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
 // A subject's hymns: one entry a line, number then the line the hymn opens
 // with, set in columns as the book's index is. `columns` rather than a grid
 // because the entries are of one kind and any number of them, so the browser

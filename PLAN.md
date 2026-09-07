@@ -763,12 +763,14 @@ hymn there is nothing in this repository to check the transcription against.
 This is the strongest case yet for §7's option 2 — carry the front and back
 matter in `scan/` too.
 
-**Still open: the TABLE OF CONTENTS.** The book's front matter also has
-*TABLE OF CONTENTS* (`en/002`, `zh/002`) and *INDEX OF INDEXES* (`en/003`).
-The TOC is the source of the title-cased level‑1 and level‑2 subject names
-already in `data/categories.tsv`; transcribing it would be cheap and would let
-§4's tree show the hymn-number ranges the book prints. The index of indexes is
-about the paper book's page numbers and is worthless here.
+**~~Still open: the TABLE OF CONTENTS.~~ Done — as a check, not a table.**
+*TABLE OF CONTENTS* (`en/002`, `zh/002` 分類目錄) is the eighteen sections
+against the hymns filed under each, and nothing else. It was read on both
+pages and used to check the level‑1 assignment of all 848 hymns, which it
+confirms; §4's tree now states each section's hymn numbers, computed from the
+hymns rather than stored, so the two cannot drift apart. See §4 and
+`DEVELOPER.md`. *INDEX OF INDEXES* (`en/003`) is about the paper book's page
+numbers and is worthless here.
 
 **Cost, as it turned out.** As advertised — two pages, one reading pass each —
 plus the navbar bug the pass exposed, which was not free and was worth the
@@ -782,6 +784,14 @@ finding.
 category on every `data/N.md`, and reachable from the navbar. 18 sections, 232
 subheadings, 57 third-level subjects, 848 hymn numbers each appearing exactly
 once, in the order the book prints them.
+
+**A third source now checks it.** Both editions' *TABLE OF CONTENTS* pages
+(`en/002`, `zh/002`) print the eighteen sections against the hymns filed under
+each. They were read after the fact and agree with `data/` on all 848 hymns,
+and on the nine subheadings the pages expand — the only independent
+confirmation the supplement's 84 sections have. The page's heading strip now
+carries those ranges, computed from the hymns so they cannot drift from the
+entries below. See item 10 of §8.
 
 All three of the things this section said were missing were dealt with:
 
@@ -1077,9 +1087,15 @@ committed table itself rather than in a commit message.
    `scan/{en,zh}/N.png`. §5 is the largest of them, and D15 shows the shape of
    the problem: the check that found the index disagreeing with the hymn pages
    could only run because the *hymn* pages are here. The index pages are not.
-10. **The TOC** (`en/002`, `zh/002`) — cheap, and it would let §4's tree show
-    the hymn-number ranges the book prints. Fold it into whichever pass is
-    already reading the front matter.
+10. ~~**The TOC** (`en/002`, `zh/002`)~~ Done, and cheap as advertised. It is
+    not a table: the ranges it prints are exactly what the hymns already say,
+    so §4's tree computes them and the two pages became a check instead. All
+    eighteen sections agree in both editions, and the nine subheadings the
+    pages expand agree too — which is the only independent confirmation the 84
+    supplement hymns' sections have, those having rested on the Chinese
+    subject index alone. It turned up two small things: the Chinese contents
+    page prints its eighteenth range against no heading at all, and both
+    Chinese indexes call V.6 神的醫治 where hymns 279 and 280 print 醫病.
 
 **What is next.** Three things are open and each is a different size.
 **D15**'s policy question is the smallest and needs a decision rather than
@@ -1089,4 +1105,4 @@ disagreements are the middle one, and D13 turned most of them into questions
 about the lyrics rather than the meter. **D16** is the largest, a two-edition
 transcription of the page annotations, and it is what would finally settle what
 the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
-for carrying the front and back matter in `scan/`, and item 10's TOC.
+for carrying the front and back matter in `scan/`.

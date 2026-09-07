@@ -23,6 +23,13 @@ number, which is what the collection can be ordered by without reading the
 index again. And the hymnal cross-lists a few hymns under a second subject,
 which a single-valued category cannot hold, so each hymn appears once -- under
 the subject its own page prints.
+
+**The strip of section headings carries the hymn numbers each covers**, which
+is the one thing the book prints in a third place. Both editions open with a
+table of contents -- ``en/002``, ``zh/002`` -- that is the eighteen sections
+and nothing else, each against the hymns filed under it. Those ranges are not
+stored: they are computed from the hymns, and the computation was checked
+against both printed pages. See ``DEVELOPER.md`` for what that check found.
 """
 
 from __future__ import annotations
@@ -82,6 +89,33 @@ def _heading(subject: Subject, level: int) -> str:
     return (
         f"{'#' * (level + 1)} {_label(number)} {_localized_inline(names)} "
         f"{{#{_identifier(number)}}}"
+    )
+
+
+#: How the table of contents joins two runs of hymn numbers. Both editions
+#: print a full stop there -- `220-280. 779-789` -- which reads as a decimal
+#: point beside figures, so the page uses a comma and an en dash instead. The
+#: numbers themselves are the book's.
+RANGE_SEPARATOR = ", "
+
+
+def _ranges(numbers: Sequence[int]) -> str:
+    """Return a run of hymn numbers as the contents page states them.
+
+    A section is not one run: the 84-hymn supplement was filed into the same
+    eighteen sections, so most of them are printed as a main-body range and a
+    supplement range. This collapses whatever runs there are rather than
+    assuming two, and a section that is one hymn states that hymn alone.
+    """
+
+    runs: list[tuple[int, int]] = []
+    for number in sorted(numbers):
+        if runs and number == runs[-1][1] + 1:
+            runs[-1] = (runs[-1][0], number)
+        else:
+            runs.append((number, number))
+    return RANGE_SEPARATOR.join(
+        str(first) if first == last else f"{first}\u2013{last}" for first, last in runs
     )
 
 
@@ -149,16 +183,31 @@ def to_markdown(subjects: Sequence[Subject], entries: Sequence[tuple[int, Hymn]]
         "",
     ]
 
+    # What each section covers, which is what the contents page states beside
+    # its name. Taken from the hymns rather than from the table, so it cannot
+    # disagree with the entries printed below it.
+    covered: dict[int, list[int]] = {}
+    for subject in subjects:
+        for number, _ in filed[subject.chinese]:
+            covered.setdefault(subject.number[0], []).append(number)
+
     seen: set[int] = set()
     contents = []
     for subject in subjects:
         if subject.number[0] not in seen:
             seen.add(subject.number[0])
             names = {"en": subject.en[0], "zh": subject.zh[0]}
-            contents.append(
-                f"[{_label(subject.number[:1])} {_localized_inline(names)}]"
-                f"(#{_identifier(subject.number[:1])})"
+            section = subject.number[:1]
+            hymns = covered.get(subject.number[0])
+            entry = (
+                f"[{_label(section)} {_localized_inline(names)}]"
+                f"(#{_identifier(section)})"
             )
+            if hymns:
+                entry += f" [{_ranges(hymns)}]{{.subject-range}}"
+            # The name and its numbers are one item of the strip, so a wrap
+            # cannot come between them.
+            contents.append(f"[{entry}]{{.subject-entry}}")
     lines += ["::: {.subject-contents}", " ".join(contents), ":::", ""]
 
     # The headings a subject sits under are printed once, not once per subject:
