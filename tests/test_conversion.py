@@ -63,12 +63,16 @@ def make_site(root: Path, hymns: int) -> tuple[Path, Path]:
 
 
 def make_table(markdown: Path) -> Path:
-    """Write the subject index beside the hymns, which the site projection reads.
+    """Write the source files the site projection reads beside the hymns.
 
-    The fixture files every hymn under one subject; the table is what says
-    where that subject comes in the book and what the English edition calls it.
+    The subject index the fixture files every hymn under -- the table is what
+    says where that subject comes in the book and what the English edition
+    calls it -- and the two editions' prefaces the projection stacks onto one
+    page.
     """
 
+    (markdown / "preface.en.markdown").write_text("# PREFACE\n\nEnglish preface.\n", encoding="utf-8")
+    (markdown / "preface.zh.markdown").write_text("# 編者的話\n\n中文序。\n", encoding="utf-8")
     path = markdown / "categories.tsv"
     path.write_text(
         "\t".join(HEADER) + "\n" + "\t".join(("1", "1", "", "分類", "測試", "", "Category", "Test", "")) + "\n",

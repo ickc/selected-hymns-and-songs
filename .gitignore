@@ -8,6 +8,7 @@
 # generates it.
 site/slide/
 site/hymn/
+site/preface.md
 site/subject.md
 site/tune.md
 site/metrical.md

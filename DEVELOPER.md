@@ -35,8 +35,9 @@ flowchart LR
   tune["site/tune.md"]
   metrical["site/metrical.md"]
   index["site/index.md<br/>written, in git"]
+  preface["site/preface.md"]
   chorus["site/chorus.md<br/>developer mode"]
-  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, subject index,<br/>index of tunes, metrical index,<br/>search.json"]
+  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, preface,<br/>subject index, index of tunes,<br/>metrical index, search.json"]
   pages["GitHub Pages"]
 
   cats -- "apply-categories" --> md
@@ -47,6 +48,7 @@ flowchart LR
   md -- "md-to-site" --> slide
   md -- "md-to-site" --> page
   md -- "md-to-site" --> chorus
+  md -- "md-to-site" --> preface
   md -- "md-to-site" --> subject
   md -- "md-to-site" --> tune
   md -- "md-to-site" --> metrical
@@ -57,6 +59,7 @@ flowchart LR
   subject -- "build" --> built
   tune -- "build" --> built
   index -- "build" --> built
+  preface -- "build" --> built
   chorus -- "build" --> built
   scan -- "hard-linked after the render" --> built
   built -- "check-slides" --> checked{{"no deck overflows"}}
@@ -164,6 +167,14 @@ belongs to the collection is the range the number box accepts, and the collectio
 book of 848 hymns: `hymns: 848` in `_quarto.yml`, `max="{{< meta hymns >}}"` in
 the page, and `goto.html` reads the range off the field. A constant kept where
 the site is configured, named once.
+
+`preface.md` is generated for the opposite reason to `index.md`: it carries no
+form and no constant, only prose, and that prose is
+`data/preface.en.markdown` and `data/preface.zh.markdown` — the source of
+record, edited there like a hymn. `md-to-site` stacks the two onto one page,
+English above Chinese, each wrapped in a `lang` div so a reader's font stack
+and a screen reader switch at the boundary. The navbar links it as
+**Preface 編者的話**.
 
 ## The split from `selected-hymns`
 
@@ -571,6 +582,7 @@ flowchart TD
   idx["index.md<br/>written, in git"]
 
   subgraph gen["written by md-to-site"]
+    prf["preface.md<br/>the two editions' front matter"]
     sub["subject.md<br/>the book's outline"]
     tun["tune.md<br/>the index of tunes"]
     met["metrical.md<br/>the metrical index"]
@@ -592,6 +604,7 @@ flowchart TD
   end
 
   idx --> fmt_html
+  prf --> fmt_html
   sub --> fmt_html
   tun --> fmt_html
   met --> fmt_html
@@ -707,8 +720,8 @@ and its page go to the same worker: they are two renders of one hymn, and a
 worker's share is then one contiguous idea rather than two partitions that
 could disagree. After all workers succeed, it combines the disjoint output,
 verifies shared assets are identical, and merges their per-slide search
-entries. Worker 1 also builds the landing page and developer-only chorus
-report. Nothing partial replaces `site/_site` until every worker and the merge
+entries. Worker 1 also builds the landing page, the preface, the subject,
+tune and metrical indexes, and the developer-only chorus report. Nothing partial replaces `site/_site` until every worker and the merge
 have succeeded.
 
 `scan/` is not in the copies. It is 45 MB of PNG, and inside the project each
@@ -735,7 +748,9 @@ flowchart LR
   projection --> chorus["chorus.md<br/>developer mode"]
   slides --> split{{"round-robin split<br/>by hymn"}}
   pages --> split
+  projection --> preface["preface.md"]
   index["index.md"] --> w1
+  preface --> w1
   chorus --> w1
   split --> w1["isolated worker 1"]
   split --> w2["isolated worker 2"]

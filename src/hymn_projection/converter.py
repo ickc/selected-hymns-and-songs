@@ -14,6 +14,7 @@ from .categories import read_table
 from .environment import PRODUCTION, available_cpu_count, build_mode
 from .model import Hymn
 from .pages import Collection, to_markdown as page_markdown
+from .preface import to_markdown as preface_markdown
 from .scans import missing_images, read_editions
 from .subjects import to_markdown as subject_markdown
 from .meterindex import to_markdown as metrical_markdown
@@ -32,6 +33,7 @@ SOURCE_REPO = "source-repo"
 # What each projection writes, relative to the Quarto project.
 SLIDE_DIRECTORY = "slide"
 PAGE_DIRECTORY = "hymn"
+PREFACE_PAGE = "preface.md"
 SUBJECT_PAGE = "subject.md"
 TUNE_PAGE = "tune.md"
 METRICAL_PAGE = "metrical.md"
@@ -193,6 +195,10 @@ def markdown_to_site(
         projections = list(
             executor.map(_projection, files, repeat(limit), repeat(collection))
         )
+
+    # The book's own front matter: the two editions' prefaces, stacked on one
+    # page. Prose about the collection, not a hymn, so one worker renders it.
+    (destination / PREFACE_PAGE).write_text(preface_markdown(source), encoding="utf-8")
 
     entries = [(number, hymn) for number, hymn, _, _ in projections]
     # Three projections about the collection rather than about a hymn: the
