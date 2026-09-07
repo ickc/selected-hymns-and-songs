@@ -20,17 +20,17 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | --- | --- | --- | --- |
 | `category` | 848 | yes, all 848 | done |
 | `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
-| `meter` | 848 | n/a — notation is shared | D1 done; every hymn now has one |
+| `meter` | 848 | 382 name both, 466 print alike | D1 done; every hymn now has one |
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
 | `author` | 4 | 0 both — all English-only | see D2 |
 | `title` | 778 | 0 both — all English-only | D12 done; 31 scripture portions and 39 Chinese-only hymns have no name in the book |
 | `tune` | 764 | n/a — the Chinese edition names no tune | §6b done; 765 pairs, hymns 1–764, one hymn with two |
 
-So: **no, not every field is bilingual.** `category` is, now. `meter` is
-effectively bilingual because the numeric notation is shared and the only
-worded parts (`with chorus` / `和`, `with repeat` / `重`) are already carried in
-both — 113 distinct localized meters, 0 with a Chinese half missing. But
+So: **no, not every field is bilingual.** `category` is, now. `meter` is:
+466 hymns print the same notation in both editions and carry one scalar, and
+the other 382 name their two halves in the front matter, which is what lets a
+page that says `Irregular Meter` sit beside one that counts. But
 `author`, `ref` and six of the `note`s are single-language, and three hymns are
 missing an entire language of lyrics.
 
@@ -261,30 +261,37 @@ After this **759 of the 764 agree with the metrical index**, and the five that
 do not are the four above plus 391, all understood. That is what §6a was waiting
 for.
 
-**Two things the field cannot hold, found here and left alone.**
+**The field now holds both editions, and eighteen hymns needed it to.** A
+localized meter used to be flattened into one front-matter scalar and cut apart
+again by writing system, which a meter is the one field that cannot survive:
+its figures belong to no script. It is written as a mapping now — see
+[DEVELOPER.md](DEVELOPER.md#why-the-meter-names-its-languages-and-nothing-else-does)
+— and two things follow.
 
-- `(A)` and `(I)` — anapestic and iambic — are the English edition's alone; the
-  Chinese pages of 264, 281, 493, 496 and 598 print the figures without them.
-  A localized meter is flattened into the front matter by concatenation and
-  recovered by script, so two all-Latin halves cannot be told apart again. The
-  marker therefore stays on one scalar, which is what `data/` already did for
-  493, 496 and 598.
-- **Eleven Chinese pages count a meter the English edition calls irregular**:
-  363 `10.10.10.8.5.和`, 370 and 464 `10.9.10.9.和`, 457 `6.6.8.8.6.6.`, 462
-  `7.7.7.9.`, 495 `8.6.8.6.8.8.8.3.`, 669 `7.6.7.6.7.7.7.6.`, 737 `8.5.8.8.和`,
-  and for three of the copyright four 194 `7.6.7.6.7.6.7.4.和`, 241 and 480
-  `13.13.13.11.和`. `Irregular Meter` shares no notation with a figure, so the
-  pair is unrepresentable in the same way. The field keeps the English analysis
-  and writes it the Chinese way, `特` / `特.和`, as it already does for the 44
-  hymns where the two editions count a doubled chorus differently. The counts
-  above were checked against the Chinese lyrics and all eleven scan. This is the
-  one place in the pass where `data/` says something neither page prints: these
-  eleven Chinese pages do not print `特`. Extending the meter codec -- writing
-  the field as a mapping when its two halves cannot be told apart by script --
-  would let both analyses be kept, and would also let `(A)` and `(I)` sit on the
-  English half alone.
+`(A)` and `(I)`, anapestic and iambic, are the English edition's alone: the
+Chinese pages of 264, 281, 493, 496 and 598 print the figures without them.
+Those five now say so.
 
-### D7 — the meter against the lyrics — **tooling done, 125 left, and now mostly about the text**
+And **the English edition files 111 hymns as `Irregular Meter` where, on
+eighteen of them, the Chinese page prints an actual count.** Both editions'
+pages were read for all 111, and the eighteen are 64, 175, 194, 241, 274, 363,
+370, 457, 462, 464, 480, 495, 564, 669, 680, 720, 727 and 737. A count is a
+better statement than a refusal to count, so it is now what both halves carry,
+translated by the table the hymnal itself uses — 雙 is `D.`, 和 a chorus, 重 a
+repeat. Hymn 175's English page prints no meter at all; hymn 64's prints
+`Irregular Meter` over lyrics that count 9.10.11.10 in every verse.
+
+Fifteen of the eighteen scan exactly as the Chinese page says. The three that
+do not — 194, 274 and 564 — are the joined half-lines described under D7: 564's
+verse is stored as eight lines of 6.5 where the page counts four of 11. So the
+change also puts three more hymns in front of the one check that can find them.
+
+The cost is that these eighteen no longer agree with the metrical index, which
+files them under `Irregular Meters` by construction: 741 of the 764 agree now
+rather than 759. That is the index being less specific than the page, not the
+two disagreeing.
+
+### D7 — the meter against the lyrics — **tooling done, 128 left, and now mostly about the text**
 
 The Chinese page for 779 (`zh/838.txt`) reads `6. 4. 6. 4 雙`; `data/779.md`
 says `8.6.8.6.D.`.
@@ -319,14 +326,18 @@ Three things it taught us about the data:
   simply a typo. Its page prints `8.6.8.6.6.6.7.5. 和`; fixed, along with 772,
   whose page prints `8.8.8.8.7.` and which `data/` had as `8.8.8.8.8.`.
 
-**125 hymns still disagree**: 87 where every verse agrees on some other meter
-than the one stored, 37 whose verses disagree with each other, and 1 a single
-syllable out. The "no meter" class is gone — see D1.
+**128 hymns still disagree**: 89 where every verse agrees on some other meter
+than the one stored, 38 whose verses disagree with each other, and 1 a single
+syllable out. The "no meter" class is gone — see D1. Three of the 128 arrived
+in the D13 pass, as hymns that used to say `Irregular Meter` and so could not
+be checked at all.
 
-**D13 changed what these 125 are evidence of.** 105 of them are hymns ≤764, and
-**104 of those carry a meter the book's own metrical index independently
-confirms** (the exception is 616, where the index adds a chorus the two pages
-and the hymn itself deny). On those the meter is right twice over, so the
+**D13 changed what these are evidence of.** 108 of them are hymns ≤764, and
+**89 of those carry a meter the book's own metrical index independently
+confirms**; of the rest, 18 are the hymns whose count comes from the Chinese
+page against an index that only says `Irregular Meters`, and one is 616, where
+the index adds a chorus the two pages and the hymn itself deny. On the 89 the
+meter is right twice over, so the
 disagreement is a finding about the **lyrics** — a dropped character, or a
 lineation the transcription joined — not about the meter. That is a different
 job from reading 175 pages, and a much better defined one: the remaining 20 are

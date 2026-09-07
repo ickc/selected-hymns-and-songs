@@ -89,7 +89,7 @@ class HymnConversionTest(TestCase):
         self.assertNotIn("{lang=", markdown)
         self.assertNotIn("auto-lang:", markdown)
         self.assertIn("category: 分類——測試", markdown)
-        self.assertIn("meter: 8.6.8.6. with chorus和", markdown)
+        self.assertIn("meter:\n  en: 8.6.8.6. with chorus\n  zh: 8.6.8.6. 和\n", markdown)
         self.assertIn("A “quoted” line—with punctuation.\n第一行。", markdown)
         self.assertIn("第一行。\n　　保留全形空格。\n", markdown)
         self.assertIn("note: Keep *meaningful* Markdown", markdown)
@@ -102,7 +102,7 @@ class HymnConversionTest(TestCase):
 
         self.assertEqual(recovered.meter, "C.M.")
 
-    def test_double_meter_notation_is_shared_between_languages(self) -> None:
+    def test_a_localized_meter_names_its_two_languages(self) -> None:
         meter = {
             "en": "7.7.7.7.D. with repeat",
             "zh": "7.7.7.7.D. 重",
@@ -110,8 +110,31 @@ class HymnConversionTest(TestCase):
         hymn = Hymn.from_dict(dict(HYMN_DATA, meter=meter))
         markdown = hymn.to_markdown()
 
-        self.assertIn("meter: 7.7.7.7.D. with repeat重", markdown)
+        self.assertIn(
+            "meter:\n  en: 7.7.7.7.D. with repeat\n  zh: 7.7.7.7.D. 重\n", markdown
+        )
         self.assertEqual(Hymn.from_markdown(markdown).meter.to_dict(), meter)
+
+    def test_two_all_latin_halves_survive_the_round_trip(self) -> None:
+        # The reason the field is a mapping. Run together these would be one
+        # string with no boundary to cut at, and the pair would be lost.
+        meter = {"en": "8.8.8.8.D. (A)", "zh": "8.8.8.8.D."}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, meter=meter))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertEqual(recovered.meter.to_dict(), meter)
+
+    def test_halves_that_share_no_notation_survive_the_round_trip(self) -> None:
+        # The other reason: the English edition calls a meter irregular where
+        # the Chinese page prints a count, and the figures between them belong
+        # to neither writing system.
+        meter = {"en": "Irregular Meter", "zh": "10.10.10.8.5. 和"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, meter=meter))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertEqual(recovered.meter.to_dict(), meter)
 
     def test_directory_round_trip_is_byte_exact(self) -> None:
         source_yaml = yaml.safe_dump([HYMN_DATA], allow_unicode=True, sort_keys=False)
@@ -290,12 +313,14 @@ class HymnConversionTest(TestCase):
             Hymn.from_dict(invalid)
 
 
-class IrregularMeterTest(TestCase):
-    """A meter whose two languages share no notation to factor out."""
+class LocalizedMeterTest(TestCase):
+    """A meter whose two editions do not print the same thing."""
 
     SOURCE = """---
 category: 甲——乙
-meter: Irregular Meter特.和
+meter:
+  en: Irregular Meter
+  zh: 特.和
 ---
 
 # 1
@@ -304,24 +329,37 @@ A line
 一二三
 """
 
-    def test_an_irregular_meter_reads_as_localized_text(self) -> None:
+    def test_a_named_pair_reads_as_localized_text(self) -> None:
         hymn = Hymn.from_markdown(self.SOURCE)
 
         self.assertEqual(
             hymn.meter.to_dict(), {"en": "Irregular Meter", "zh": "特.和"}
         )
 
-    def test_an_irregular_meter_round_trips(self) -> None:
+    def test_a_named_pair_round_trips(self) -> None:
         hymn = Hymn.from_markdown(self.SOURCE)
 
         self.assertEqual(hymn.to_markdown(), self.SOURCE)
 
-    def test_a_numeric_localized_meter_still_factors_its_notation(self) -> None:
-        source = self.SOURCE.replace("Irregular Meter特.和", "8.6.8.6. with chorus和")
+    def test_a_numeric_pair_round_trips(self) -> None:
+        source = self.SOURCE.replace(
+            "  en: Irregular Meter\n  zh: 特.和",
+            "  en: 8.6.8.6. with chorus\n  zh: 8.6.8.6. 和",
+        )
 
         hymn = Hymn.from_markdown(source)
 
         self.assertEqual(
             hymn.meter.to_dict(), {"en": "8.6.8.6. with chorus", "zh": "8.6.8.6. 和"}
         )
+        self.assertEqual(hymn.to_markdown(), source)
+
+    def test_a_meter_both_editions_print_alike_stays_a_scalar(self) -> None:
+        source = self.SOURCE.replace(
+            "meter:\n  en: Irregular Meter\n  zh: 特.和", "meter: 8.6.8.6."
+        )
+
+        hymn = Hymn.from_markdown(source)
+
+        self.assertEqual(hymn.meter, "8.6.8.6.")
         self.assertEqual(hymn.to_markdown(), source)

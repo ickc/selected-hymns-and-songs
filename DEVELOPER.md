@@ -117,6 +117,34 @@ which is how the same lines render interleaved, or as two aligned columns — th
 deck with `?grid` on the URL, the page whenever its pane is wide enough for
 them.
 
+### Why the meter names its languages and nothing else does
+
+Localized metadata is written into the front matter as one scalar, the English
+half then the Chinese, and cut apart again on the way back in by writing
+system: `category: The Word of God—Loving the Word神的話——愛慕神的話` is one
+line, and the boundary is where Latin stops and Han starts. That works for
+every field whose Chinese half is Han.
+
+A meter is mostly figures, and a figure belongs to no writing system, so there
+are two ways the cut goes wrong. `8.8.8.8.D. (A)` beside `8.8.8.8.D.` — the
+English edition marks the anapestic setting and the Chinese page does not — is
+Latin and digits throughout, with no boundary to cut at: run together, the pair
+would come back as one string. And `Irregular Meter` beside `10.10.10.8.5. 和`
+has a boundary, in the wrong place: the figures go to the Latin run on their
+left, and what comes back is `Irregular Meter10.10.10.8.5.` and `和`.
+
+So a localized meter is written as a mapping instead, and nothing about it is
+inferred from its characters:
+
+```yaml
+meter:
+  en: 10.10.10.8.5. with chorus
+  zh: 10.10.10.8.5. 和
+```
+
+A meter both editions print alike stays a scalar — `meter: 8.7.8.7.D.` — which
+is 466 of the 848. The other 382 name their two halves.
+
 ### Why `chorus.md` is generated and `index.md` is not
 
 `chorus.md` *is* the resolution — which chorus each stanza of each hymn takes
@@ -172,6 +200,11 @@ What has been added here and is not there:
 - **hymn 772's `8.8.8.8.8.`**, which its page prints as `8.8.8.8.7.`, and
   **hymn 777's `.8.6.8.6.6.6.7.5.`**, whose leading dot was a typo and whose
   page marks a chorus `data/` had not;
+- **eighteen meters the English edition declines to count.** It files 111 hymns
+  under `Irregular Meter`; on eighteen of them the Chinese page prints figures,
+  and those figures are now what both halves carry. Fifteen of the eighteen
+  scan exactly as they say. `data.yml` has `Irregular Meter` on none of the 111
+  and no meter at all on most of them;
 - **eight more lines a syllable short**, found by counting rather than by
   reading: 412 (但願我能像馬利亞), 430 (祂的豐盛我能倚), 441 (背起十架跟耶穌),
   479 (將我恢復), 486 (主，我接受你作一切), 503 (我也禱告並立志), 704
@@ -737,9 +770,9 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   a heuristic: where the two disagree, either a character has gone missing from
   the text or the meter was mistyped, and the report's classification says
   which shape the disagreement has. It is still a report and not a gate --
-  `--strict` makes it one -- because 125 hymns disagree. On the 104 of those
-  that are hymns 1--764, the metrical index confirms the meter independently, so
-  the disagreement is a finding about the lyrics; see [PLAN.md](PLAN.md).
+  `--strict` makes it one -- because 128 hymns disagree. On 89 of the 108 that
+  are hymns 1--764, the metrical index confirms the meter independently, so the
+  disagreement is a finding about the lyrics; see [PLAN.md](PLAN.md).
 
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`

@@ -6,7 +6,6 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cache
-from os.path import commonprefix
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +22,6 @@ PANDOC_MARKDOWN = (
 LANGUAGES = frozenset(("en", "zh"))
 LANGUAGE_ORDER = {"en": 0, "zh": 1}
 STANZA_NAME = re.compile(r"[1-9][0-9]*-chorus")
-METER_PREFIX = re.compile(r"^(?:[0-9]+\.)+(?:D\.)?\s+")
 AUTO_LANG = {"Han": "zh", "Latin": "en"}
 FILTER_DIRECTORY = Path(__file__).with_name("filters")
 AUTO_LANG_FILTER = FILTER_DIRECTORY / "auto-lang.lua"
@@ -128,26 +126,25 @@ def _localized_from_metadata(value: pf.MetaValue, description: str) -> Localized
     return LocalizedText(translations)
 
 
-def _meter_metadata(value: LocalizedText) -> pf.MetaInlines:
-    """Factor a localized meter's shared notation out of its translations."""
+def _meter_metadata(value: LocalizedText) -> pf.MetaMap:
+    """Name the two halves of a localized meter instead of running them together.
+
+    Every other localized field is flattened into one scalar and cut apart
+    again by writing system, which works because its Chinese half is Han and
+    its English half is not. A meter is mostly figures, and a figure belongs to
+    no script: ``8.8.8.8.D. (A)`` beside ``8.8.8.8.D.`` offers no boundary to
+    cut at, and ``Irregular Meter`` beside ``10.10.10.8.5. 和`` offers one in
+    the wrong place. So the two languages are named, and nothing about a meter
+    is inferred from its characters.
+    """
 
     if len(value.translations) < 2:
         raise ValueError("a localized meter needs two languages to remain distinguishable")
-    shared = commonprefix(list(value.translations.values()))
-    if not METER_PREFIX.fullmatch(shared):
-        # An irregular meter shares nothing: the English page writes
-        # ``Irregular Meter`` and the Chinese one ``特``. Nothing needs
-        # factoring out, so it is stored as any other localized text is.
-        return _localized_metadata(value)
-    return pf.MetaInlines(
-        pf.Str(shared),
-        *(
-            pf.Span(
-                pf.RawInline(text[len(shared) :], format="markdown"),
-                attributes={"lang": language},
-            )
+    return pf.MetaMap(
+        **{
+            language: pf.MetaInlines(pf.RawInline(text, format="markdown"))
             for language, text in value.translations.items()
-        ),
+        }
     )
 
 
@@ -168,50 +165,18 @@ def _tune_from_metadata(value: pf.MetaValue) -> str | list[str]:
 
 
 def _meter_from_metadata(value: pf.MetaValue) -> str | LocalizedText:
-    """Recover a scalar meter or expand shared notation over its translations."""
+    """Recover a meter: one notation both editions print, or a named pair."""
 
-    if not isinstance(value, pf.MetaInlines):
-        return pf.stringify(value)
-
-    languages = [
-        language
-        for element in value.content
-        if (language := _language(element)) is not None
-    ]
-    if len(set(languages)) <= 1:
-        # A scalar meter such as ``C.M.`` may itself be tagged as Latin.  A
-        # localized meter in this collection always has both en and zh runs.
-        return pf.stringify(value)
-
-    rendered = _exact_text(value.content)
-    match = METER_PREFIX.match(rendered)
-    if not match:
-        # No shared notation to expand: an irregular meter, read back the way
-        # every other piece of localized metadata is.
-        return _localized_from_metadata(value, "meter")
-    shared = match.group()
-
-    translations: dict[str, str] = {}
-    offset = 0
-    for element in value.content:
-        text = _text_piece(element)
-        language = _language(element)
-        if language:
-            # ``D`` is Latin, so auto-lang may put the tail of a shared
-            # ``7.7.7.7.D.`` prefix inside the English span.  Keep only the
-            # part of each span which follows the shared prefix.
-            suffix = text[max(len(shared) - offset, 0) :]
-            if suffix:
-                translations[language] = translations.get(language, "") + suffix
-        elif offset + len(text) > len(shared):
-            raise ValueError("localized meter has untagged text after its shared prefix")
-        offset += len(text)
-
-    if set(translations) != set(languages):
-        raise ValueError("each localized meter language must have a distinct suffix")
-    return LocalizedText(
-        {language: shared + suffix for language, suffix in translations.items()}
-    )
+    if isinstance(value, pf.MetaMap):
+        return LocalizedText(
+            {
+                language: _exact_text(text.content).strip()
+                if isinstance(text, pf.MetaInlines)
+                else pf.stringify(text)
+                for language, text in value.content.items()
+            }
+        )
+    return pf.stringify(value)
 
 
 @dataclass
