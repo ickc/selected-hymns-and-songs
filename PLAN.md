@@ -1,9 +1,12 @@
 # Plan
 
-Proposals, not commitments. Nothing here is built. Each section says what the
-book actually contains, what `data/` already has, what is genuinely missing,
-and what it would cost — so the decision to build it can be made on evidence
-rather than on optimism.
+Proposals, not commitments, and the ones that were taken up say so in their
+own heading. Each section says what the book actually contains, what `data/`
+already has, what is genuinely missing, and what it would cost — so the
+decision to build it can be made on evidence rather than on optimism. What is
+done keeps its section rather than losing it, because the cost estimate and
+what the work actually turned up are the record of whether the estimate was
+any good.
 
 Page numbers below are **PDF page numbers** in
 [`selected-hymns-and-songs-pdf`](https://github.com/ickc/selected-hymns-and-songs-pdf)
@@ -513,7 +516,7 @@ and has 285 now. Corrected, and it names subjects rather than rows.
 
 ---
 
-## 3. The preface
+## 3. The preface — **done**
 
 **Source.** Two pages, one each: `en/001` (English *PREFACE*, ~2.6 kB of OCR)
 and `zh/001` (Chinese *編者的話*, ~1.1 kB).
@@ -525,35 +528,59 @@ Chinese edition was assembled *afterwards* — existing Chinese translations
 sought out and revised to match the English tune, meter and stanza count, the
 missing ones newly translated, and hymns 765–848 added because good Chinese
 hymns had no English counterpart. It even asks bilingual meetings to avoid
-choosing from that appendix. Two documents, one book. Present them as two, not
-as a bilingual pair.
+choosing from that appendix. Two documents, one book. They are presented as
+two, not as a bilingual pair.
 
 The Chinese preface is, incidentally, the primary-source explanation of the
-whole 765–848 structure this project keeps running into.
+whole 765–848 structure this project keeps running into. It also dates the
+Chinese edition — 一九九五年一月 — and names the publisher both editions share,
+生命樹出版社 / Tree of Life Publishers.
 
-**Why an LLM is the right tool.** The OCR is legible but corrupt in ways only a
-reader can repair: `aud` for `and`, `fonnat` for `format`, `sainL~.` for
+**Why an LLM was the right tool.** The OCR is legible but corrupt in ways only
+a reader can repair: `aud` for `and`, `fonnat` for `format`, `sainL~.` for
 `saints,`, `·111e` for `The`, `Tree of Lite Publishers` for `Tree of Life
 Publishers`. Every one of those is unambiguous *in context* and unfixable by
-rule. The job is: read the page image, read the OCR, emit the text, and flag
-anything the two disagree on rather than guessing.
+rule.
 
-**Where it lives.** Not in `data/N.md` — it is not a hymn.
-`data/preface.en.md` and `data/preface.zh.md`, plain Pandoc Markdown with the
-same YAML-front-matter habit, seems right; the site grows an `about` page
-rendering both. Consider recording the transcription's provenance in the front
-matter (which PDF page, which method) so a later reader knows it was
-reconstructed rather than typed from the paper book.
+**What was built.** `data/preface.en.markdown` and `data/preface.zh.markdown`
+— plain Pandoc Markdown, edited like a hymn — and `preface.py`, which stacks
+them into `site/preface.md`, English above Chinese, each edition's prose in a
+div carrying its language so a reader's font stack and a screen reader both
+switch at the boundary. The sources are the data; the page is generated,
+git-ignored and rebuilt in CI, like every other projection. It is in the
+navbar as **Preface 編者的話**. The English preface keeps the paragraph on the
+book's own indexes, which is the book describing the back matter §4, §5, §6a
+and §6b reproduce.
 
-**Open question.** The book's own front matter also contains the *TABLE OF
-CONTENTS* (`en/002`, `zh/002`) and *INDEX OF INDEXES* (`en/003`). The TOC is
-the source of the title-cased level‑1 and level‑2 subject names already in
-`data/categories.tsv`; transcribing it would be cheap and would let §4's tree
-show the hymn-number ranges the book prints. The index of indexes is about the
-paper book's page numbers and is worthless here.
+**It turned up a bug on every page but five.** The navbar entries used to name
+the Markdown they come from — `href: preface.md`. Quarto rewrites a `.md` href
+to its output only where that document is one of the *project's* render
+targets, and `build_site.py` gives the five collection-wide pages to worker 1
+alone; so on every page the other workers render — which is nearly all 1,696 of
+them — the href survived into the HTML as written and handed the reader the
+source file. A two-worker build over four hymns shows it plainly: hymn/1 and
+hymn/3 linked `../preface.html`, hymn/2 and hymn/4 `../preface.md`. All five
+entries now name the `.html`, which is made relative to the page it is on
+either way, and the active-page marking still lands.
 
-**Cost.** Small. Two pages, one reading pass each, a careful diff against the
-OCR. This is the one proposal that is nearly free.
+**Provenance is not recorded, and cannot be checked here.** The sources carry
+no front matter saying which PDF page they were read off or how. That is worse
+than it sounds for these two pages in particular: `en/001` and `zh/001` are
+front matter, and **front matter is not in `scan/`** (see §7), so unlike every
+hymn there is nothing in this repository to check the transcription against.
+This is the strongest case yet for §7's option 2 — carry the front and back
+matter in `scan/` too.
+
+**Still open: the TABLE OF CONTENTS.** The book's front matter also has
+*TABLE OF CONTENTS* (`en/002`, `zh/002`) and *INDEX OF INDEXES* (`en/003`).
+The TOC is the source of the title-cased level‑1 and level‑2 subject names
+already in `data/categories.tsv`; transcribing it would be cheap and would let
+§4's tree show the hymn-number ranges the book prints. The index of indexes is
+about the paper book's page numbers and is worthless here.
+
+**Cost, as it turned out.** As advertised — two pages, one reading pass each —
+plus the navbar bug the pass exposed, which was not free and was worth the
+finding.
 
 ---
 
@@ -773,7 +800,9 @@ the generated ones the way it does for hymns); or carry just the pages a
 generated page claims to reproduce. This decides whether a future reader can
 check our transcription without the private repo — which is the same argument
 `scan/README.md` already makes for the hymn pages, so option 2 is the
-consistent answer.
+consistent answer. §3 has since made this concrete rather than hypothetical:
+both prefaces are transcribed, committed and on the site, and there is nothing
+in this repository to check either of them against.
 
 **The model will need changes.** At minimum: `meter` must accommodate
 `Irregular Meter` / `特`, which breaks the shared-prefix representation (D1);
@@ -800,15 +829,29 @@ committed table itself rather than in a commit message.
    125 hymns left, and D13 turned it into a question about the *lyrics* rather
    than the meter on the 104 hymns whose meter the book's metrical index
    confirms.
-3. **§3 preface** — two pages, high value, nearly free. **Next**, now that
-   §6a is built.
+3. ~~**§3 preface** — two pages, high value, nearly free.~~ Done:
+   `data/preface.*.markdown` and `site/preface.md`. It also exposed a navbar
+   bug on every page but five, and left the *TABLE OF CONTENTS* still
+   untranscribed.
 4. ~~**D9 + §4** — widen the category table with levels and printed numbering,
    then generate the subject index page.~~ Done; it also turned up D11.
 5. ~~**§6 tunes**~~ Done, both halves: `data/tunes.tsv`, 765 pairs over hymns
    1–764, applied to `data/`, with `site/tune.md` and `site/metrical.md`
    generated back out. §6b turned up **D13**, which unblocked §6a.
-6. **§5 authors** — biggest, weakest verification, most valuable per hymn. Last
-   because everything before it makes the tooling better.
+6. **§5 authors** — biggest, weakest verification, most valuable per hymn.
+   Last because everything before it makes the tooling better, and everything
+   before it is now done, so this is **next**. Its sixteen source pages are
+   not in `scan/`, which is the argument for taking §7's option 2 in the same
+   pass rather than after it: see item 9.
 7. **D2/D3/D4/D6** — the small consistency fixes, folded into whichever pass
    is already touching those pages.
 8. ~~**D12 titles**~~ Done: `data/titles.tsv`, 778 names, applied to `data/`.
+9. **§7's option 2 — carry the front and back matter in `scan/`** (~70 pages,
+   ~1.7 MB). Every extraction so far — the categories, the titles, the tunes,
+   both prefaces — was read off pages this repository does not hold, so none
+   of them can be checked here the way a hymn can be checked against
+   `scan/{en,zh}/N.png`. §5 is the largest of them and the one with no second
+   source to cross-check against, which is the case for doing this first.
+10. **The TOC** (`en/002`, `zh/002`) — cheap, and it would let §4's tree show
+    the hymn-number ranges the book prints. Fold it into whichever pass is
+    already reading the front matter.
