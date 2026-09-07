@@ -6,8 +6,9 @@ character, so it can be counted rather than trusted. A disagreement is a
 finding either way round: a missing character in the lyrics, or a meter that
 was mistyped on the way into `data/`.
 
-A report, not a gate: 174 hymns still disagree and the hymnal's pages have to
-settle them one at a time. `--strict` turns it into a gate for when they do.
+A report, not a gate: 125 hymns still disagree and the hymnal's pages have to
+settle them one at a time. On the 104 of those that are hymns 1-764 the meter is
+confirmed by the book's own metrical index, so what disagrees is the text. `--strict` turns it into a gate for when they do.
 """
 
 from __future__ import annotations

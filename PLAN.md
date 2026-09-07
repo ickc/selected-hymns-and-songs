@@ -20,7 +20,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | --- | --- | --- | --- |
 | `category` | 848 | yes, all 848 | done |
 | `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
-| `meter` | 803 | n/a — notation is shared | 45 missing, see D1 |
+| `meter` | 848 | n/a — notation is shared | D1 done; every hymn now has one |
 | `note` | 25 | 19 both, 6 Chinese-only | see D4 |
 | `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
 | `author` | 4 | 0 both — all English-only | see D2 |
@@ -30,7 +30,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 So: **no, not every field is bilingual.** `category` is, now. `meter` is
 effectively bilingual because the numeric notation is shared and the only
 worded parts (`with chorus` / `和`, `with repeat` / `重`) are already carried in
-both — 105 distinct localized meters, 0 with a Chinese half missing. But
+both — 113 distinct localized meters, 0 with a Chinese half missing. But
 `author`, `ref` and six of the `note`s are single-language, and three hymns are
 missing an entire language of lyrics.
 
@@ -44,16 +44,12 @@ chorus resolution and its report). No structural defects found.
 
 ## 2. Defects beyond the title and the category
 
-### D1 — 138 hymns have no meter, and most of them should say "Irregular" — **93 done, 10 more read**
+### D1 — 138 hymns had no meter — **done, all 848 now have one**
 
 The English page prints `Irregular Meter` and the Chinese page prints `特`
-(`特和` when there is a chorus). 93 English pages contain the word
-`Irregular`; `data/` contains it zero times. Hymn 840 is typical: the Chinese
-page reads `特`, `data/840.md` has no `meter` at all.
-
-101 of the 138 are hymns ≤ 764, so the English metrical index (§6) can confirm
-them wholesale; 37 are in the Chinese-only appendix and must be read off the
-Chinese page.
+(`特和` when there is a chorus). 93 English pages contain the word `Irregular`;
+`data/` contained it zero times. Hymn 840 was typical: the Chinese page reads
+`特`, `data/840.md` had no `meter` at all.
 
 **This one had a model consequence**, now resolved. `_meter_metadata` factored
 a localized meter into a shared numeric prefix plus per-language suffixes and
@@ -62,20 +58,28 @@ share nothing. Both halves of the codec now fall back to storing a meter as
 plain localized text when there is no shared notation to factor out, which is
 what every other localized field already does.
 
-93 hymns are done: those with no meter where every page reading of either
-edition says irregular and none gives a number. 36 of them are `特.和`, the
-form the Chinese page prints when the chorus is sung to the same tune — the
-mark itself is the hymn having a chorus block, which agrees with the meter on
-227 of the 232 hymns where both are already present.
+The first 93 were the hymns with no meter where every page reading of either
+edition said irregular and none gave a number. 36 of them are `特.和`, the form
+the Chinese page prints when the chorus is sung to the same tune — the mark
+itself is the hymn having a chorus block, which agrees with the meter on 227 of
+the 232 hymns where both were already present.
 
-**45 hymns still have no meter**: 9 with no legible page reading at all, and
-the rest where the readings conflict or give numbers the lyrics do not scan as.
-`pixi run meter-report` lists them.
+That left 45 with no meter: 9 with no legible page reading at all, and the rest
+where the readings conflicted or gave numbers the lyrics do not scan as. All 45
+have now been read off the page and filled — 14 of them hymns ≤764, closed by
+[D13](#d13--the-metrical-index-against-both-editions-pages--done-59-meters-settled),
+and the other 31 read off the Chinese page one at a time, since only three of
+them (797, 824, 845) have an English page and that page prints no meter.
 
-Of those 45, **14 are hymns ≤ 764, and the tune extraction has now read every
-one of their pages** — see [D13](#d13--the-books-metrical-index-disagrees-with-30-hymns-meters--read-not-yet-applied).
-Ten of them print a meter and four print none at all, so applying D13 closes
-this defect for the English edition and leaves only the Chinese-only appendix.
+**Every hymn in the collection now carries a meter**, and `pixi run
+meter-report` no longer has a "no meter" class. Of the 31 supplement hymns just
+filled, 27 scan exactly as the meter read off the page says they should — a
+check of the reading that costs nothing, because the meter is a syllable count
+and Chinese is one syllable to the character. The four that do not are 766 and
+496 (a verse that disagrees with its fellows), 774 and 824 (the joined
+half-lines described under D7), 761 (an antiphonal stanza transcribed as one
+block) and 799 (`9.9.9.8.` against lyrics that count `9.9.9.7.`) — each a
+finding about the *text*, now that the meter is known.
 
 ### D2 — `author` is populated on 4 hymns out of 848
 
@@ -184,73 +188,98 @@ Note that D5 and D6 cancelled out numerically — 39 hymns lacked English text i
 nobody noticed the two sets were not the same 39. With D5 done the count no
 longer matches, and these three are what is left.
 
-### D13 — the book's metrical index disagrees with 30 hymns' meters — **read, not yet applied**
+### D13 — the metrical index against both editions' pages — **done, 59 meters settled**
 
 Extracting the tunes (§6b) meant extracting the *Metrical Index of Tunes*
 whole, and that index files every hymn 1–764 under a meter. Compared against
-the meter `data/N.md` already carries, **733 of the 764 agree**. The 31 that do
-not were each read off the hymn's own English page, and they fall into four
-kinds. Nothing here is applied yet: it is D1 and D7 work, and it belongs in a
-pass that re-runs the syllable count and decides each Chinese half.
+the meter `data/N.md` carried, **733 of the 764 agreed**. Each of the other 31
+was then read off **both** editions' pages — the English one, and the Chinese
+one, which nothing in this repository had looked at before.
 
-**Ten are D1 gaps the page can close.** `data/` has no meter and the page
-prints one:
+The Chinese page is the witness that decided it, and it turned three of the
+first reading's conclusions around. Its verdict is blunt: **on eleven of the
+twelve hymns where the index disagreed with `data/`, the Chinese page agrees
+with the index.** `data/`'s meters came from a decade-old OCR of the English
+page; the index and the Chinese page are two independent printings, and where
+all three can be compared the OCR is what is wrong.
 
-| hymns | what the page prints |
-|---|---|
-| 363, 370, 457, 462, 464, 495, 669, 737, 750 | `Irregular Meter` |
-| 749 | `8. 8. 8. 8.` |
+**Twelve `data/` defects, corrected:**
 
-**Four have no meter and should not.** 194, 241, 480 and 761 print no meter at
-all — instead *This hymn may be sung to the tune of hymn #467* (or #491), and
-the music is not printed, "due to copyright". `data/` is right to have none.
-The metrical index still files them, under the borrowed tune's meter, which is
-the index being helpful rather than the page being incomplete.
+| hymn | was | now | who says so |
+|---|---|---|---|
+| 6 | `8.6.8.6. with chorus` | `8.8.8.8.` | index, Chinese page, and the hymn itself |
+| 264 | `8.8.8.8.D.` | `8.8.8.8.D. (A)` | index and English page |
+| 281 | `8.7.8.7.D.` | `8.7.8.7.D. (I)` | index and English page |
+| 283 | `6.6.9.6.` | `6.6.8.6.` | all three |
+| 325 | `12.8.2.9. with chorus` | `12.8.12.9. with chorus` | index and English page |
+| 384 | `9.10.9.10.10.` | `11.11.12.11.` | all three |
+| 468 | `6.6.6.6.8.6.` | `8.6.8.6. with chorus` | all three |
+| 491 | `13.10.13.14. with chorus` | `13.10.13.4. with chorus` | all three |
+| 501 | `7.6.8.6.8.6.7.4.` | `Irregular Meter` | all three |
+| 560 | `8.7.8.7.3. with chorus` | `8.7.8.7. with chorus` | all three |
+| 700 | `9.9.9.7. with chorus` | `Irregular Meter` | all three |
+| 705 | `6.6.8.6. with chorus` | `8.5.8.5. with chorus` | all three |
 
-**Eleven are `data/` defects**, where the page and the index agree against it:
+384 is the shape of the whole class: `9.10.9.10.10.` is hymn **385**'s meter,
+printed at the top of the next page. The transcription took the wrong line.
 
-| hymn | `data/` | the page and the index |
+**Hymn 6 is a misprint in the book.** It is the Doxology, *Praise God, from
+whom all blessings flow*: one stanza, four lines of eight syllables, no chorus,
+set to `Old Hundredth`, which is Long Meter. `scan/en/20.png` prints
+`8. 6. 8. 6. with chorus` over it. The metrical index files it under
+`8. 8. 8. 8. (Long Meter)`, the Chinese page prints `8.8.8.8.`, and the hymn has
+one stanza and no chorus block. Three witnesses against one, and the repository's
+rule that the page wins is a rule about transcription, not about which of two
+printed statements is true.
+
+**Four where the index is the odd one out**, and `data/` keeps what it had:
+
+| hymn | the two pages | the index |
 |---|---|---|
-| 264 | `8.8.8.8.D.` | `8. 8. 8. 8. D. (A)` |
-| 281 | `8.7.8.7.D.` | `8. 7. 8. 7. D. (I)` |
-| 283 | `6.6.9.6.` | `6. 6. 8. 6.` |
-| 325 | `12.8.2.9. with chorus` | `12. 8. 12. 9. with chorus` |
-| 384 | `9.10.9.10.10.` | `11. 11. 12. 11.` |
-| 468 | `6.6.6.6.8.6.` | `8. 6. 8. 6. with chorus` |
-| 491 | `13.10.13.14. with chorus` | `13. 10. 13. 4. with chorus` |
-| 501 | `7.6.8.6.8.6.7.4.` | `Irregular Meter` |
-| 560 | `8.7.8.7.3. with chorus` | `8. 7. 8. 7. with chorus` |
-| 700 | `9.9.9.7. with chorus` | `Irregular Meter` |
-| 705 | `6.6.8.6. with chorus` | `8. 5. 8. 5. with chorus` |
+| 278 | `8.8.8.6.` | `8.8.8.6. with Chorus` — but the hymn has five stanzas and no chorus |
+| 296 | `6.6.6.6. with chorus` | `6.6.12. with Chorus` — the same 24 syllables, analysed twice |
+| 616 | `6.5.6.5.D.` | `6.5.6.5.D. with Chorus` — two stanzas, no chorus |
+| 738 | `11.11.7.6.11.` | — |
 
-`(A)` and `(I)` are the book's own notation — anapestic and iambic — and it
-already appears on other hymns in `data/` (493, 496, 598), so the two above are
-droppings, not a foreign convention.
+738 was never a disagreement: the index's heading above it reads
+`II. II. 7. 6. It.` in the scan, whose trailing `11.` the parser could not
+recognise, so the hymn inherited the heading above that one. Both pages print
+`11. 11. 7. 6. 11.` and the index does too. (Hymn 391 is the one hymn 1–764 the
+metrical index extraction never files at all; its `7.7.7.7.7.7.` is confirmed by
+the Chinese page.)
 
-**Four are the book disagreeing with itself.** The page and the index print
-different meters, and neither is a scanning error:
+**Fourteen hymns ≤764 had no meter, and now every one does.** Ten print
+`Irregular Meter` on the English page (363, 370, 457, 462, 464, 495, 669, 737,
+750) or `8. 8. 8. 8.` (749). The other four — 194, 241, 480, 761 — print no meter
+at all on the English page, only *This hymn may be sung to the tune of hymn
+#467* (or #491) and *Not printed here due to copyright*. **Their Chinese pages
+print a meter**, which is what closed them; the index files them under the
+borrowed tune's heading, and for 761 that heading, `13. 10. 13. 4. with Chorus`,
+is character for character what the Chinese page prints.
 
-| hymn | the page | the index |
-|---|---|---|
-| 6 | `8. 6. 8. 6. with chorus` | `8. 8. 8. 8. (Long Meter)` |
-| 278 | `8. 8. 8. 6.` | `8. 8. 8. 6. with Chorus` |
-| 296 | `6. 6. 6. 6. with chorus` | `6. 6. 12. with Chorus` |
-| 616 | `6. 5. 6. 5. D.` | `6. 5. 6. 5. D. with Chorus` |
+After this **759 of the 764 agree with the metrical index**, and the five that
+do not are the four above plus 391, all understood. That is what §6a was waiting
+for.
 
-Hymn 6 is the interesting one, and the index is right: it is the Doxology,
-*Praise God, from whom all blessings flow*, four lines of eight syllables with
-no chorus, set to `Old Hundredth`, which is Long Meter. `scan/en/20.png` prints
-`8. 6. 8. 6. with chorus` over it — the meter of hymn 7 below it, one line
-down. **This is a misprint in the book**, and the repo's standing rule that the
-page wins is a rule about transcription, not about which of two printed
-statements is true. 296 is not an error at all: `6. 6. 12.` and `6. 6. 6. 6.`
-are the same 24 syllables analysed two ways.
+**Two things the field cannot hold, found here and left alone.**
 
-**This closes D1 for hymns 1–764.** After the ten above, every hymn the English
-edition prints has a meter or is one of the four that print none. What is left
-of D1 is the Chinese-only appendix.
+- `(A)` and `(I)` — anapestic and iambic — are the English edition's alone; the
+  Chinese pages of 264, 281, 493, 496 and 598 print the figures without them.
+  A localized meter is flattened into the front matter by concatenation and
+  recovered by script, so two all-Latin halves cannot be told apart again. The
+  marker therefore stays on one scalar, which is what `data/` already did for
+  493, 496 and 598.
+- **Nine Chinese pages count a meter the English edition calls irregular**:
+  363 `10.10.10.8.5.和`, 370 and 464 `10.9.10.9.和`, 457 `6.6.8.8.6.6.`, 462
+  `7.7.7.9.`, 495 `8.6.8.6.8.8.8.3.`, 669 `7.6.7.6.7.7.7.6.`, 737 `8.5.8.8.和`,
+  and for the copyright four 194 `7.6.7.6.7.6.7.4.和`, 241 and 480
+  `13.13.13.11.和`. `Irregular Meter` shares no notation with a figure, so the
+  pair is unrepresentable in the same way. The field keeps the English analysis
+  and writes it the Chinese way, `特` / `特.和`, as it already does for the 44
+  hymns where the two editions count a doubled chorus differently. The counts
+  above were checked against the Chinese lyrics and all nine scan.
 
-### D7 — one hymn's meter may disagree with its page — **tooling done, 175 left**
+### D7 — the meter against the lyrics — **tooling done, 125 left, and now mostly about the text**
 
 The Chinese page for 779 (`zh/838.txt`) reads `6. 4. 6. 4 雙`; `data/779.md`
 says `8.6.8.6.D.`.
@@ -271,20 +300,33 @@ Three things it taught us about the data:
   plus a chorus on the other. (The Chinese also writes `6.6.6.5.雙.和` where it
   wants to say both.) 44 of the apparent disagreements were only this, and
   `data/`'s scalar `X.D.` on those hymns is the English form, correct as it
-  stands.
+  stands. Hymn 453 is the same thing carried one step further: the English page
+  and the index both print `6. 6. 11. 6. 6. 10.` and the Chinese page prints
+  `6.6.11.雙`, because the Chinese last line has the syllable the English one
+  does not. Neither is an error, and `data/` keeps the English form.
 - **Some Chinese verses were transcribed with two printed lines joined into
   one.** Hymn 69's page reads `6.6.6.5.雙.和` and prints eight half-lines two to
   a row; `data/` has four lines of 12.11.12.11 and a meter to match. Hymn 824,
-  re-lineated in D5, was the same thing. This is a lineation question rather
+  re-lineated in D5, was the same thing, and 774 (`7.6.7.6.D.` against lyrics
+  that count `13.13.13.13.`) is another. This is a lineation question rather
   than a meter one, and the meter is how to find the rest of them.
-- **`data/777.md`'s meter is `.8.6.8.6.6.6.7.5.`**, with a leading dot that is
-  simply a typo.
+- **`data/777.md`'s meter was `.8.6.8.6.6.6.7.5.`**, with a leading dot that was
+  simply a typo. Its page prints `8.6.8.6.6.6.7.5. 和`; fixed, along with 772,
+  whose page prints `8.8.8.8.7.` and which `data/` had as `8.8.8.8.8.`.
 
-**175 hymns still disagree**: 92 where every verse agrees on some other meter
-than the one stored, 45 with no meter, 36 whose verses disagree with each
-other, and 2 a single syllable out (453, whose page says `6.6.11.雙`, and 772,
-whose page says `8.8.8.8.7.` — both meter errors, not text ones). Each needs a
-page read.
+**125 hymns still disagree**: 87 where every verse agrees on some other meter
+than the one stored, 37 whose verses disagree with each other, and 1 a single
+syllable out. The "no meter" class is gone — see D1.
+
+**D13 changed what these 125 are evidence of.** 105 of them are hymns ≤764, and
+**104 of those carry a meter the book's own metrical index independently
+confirms** (the exception is 616, where the index adds a chorus the two pages
+and the hymn itself deny). On those the meter is right twice over, so the
+disagreement is a finding about the **lyrics** — a dropped character, or a
+lineation the transcription joined — not about the meter. That is a different
+job from reading 175 pages, and a much better defined one: the remaining 20 are
+in the supplement, where there is no index to corroborate and the Chinese page
+is the only witness.
 
 ### D8 — the category is single-valued, but the book's index is not
 
@@ -526,7 +568,7 @@ each individual hymn page.
 
 ---
 
-## 6. Indexes of tunes — **6b done, 6a still blocked**
+## 6. Indexes of tunes — **6b done, 6a now unblocked**
 
 **6b is done**: `data/tunes.tsv` carries 765 (hymn, tune) pairs over hymns
 1–764, applied into a `tune` field on every one of them, and `site/tune.md` is
@@ -552,13 +594,15 @@ index.
 
 **So there are two proposals here, and they should not be confused.**
 
-**6a. Metrical index of tunes** — **still to do**, and now buildable properly:
-with `tune` on every hymn it would be the book's own three-level page (meter,
-tune, hymns), not the poorer meter-to-numbers page this section first proposed.
-Still blocked, though, and by a smaller thing than before: 30 of the 764 hymns
-do not yet agree with the book about their meter, so the page would file them
-wrong. That is [D13](#d13--the-books-metrical-index-disagrees-with-30-hymns-meters--read-not-yet-applied),
-and it is read but not applied. Do it, then this.
+**6a. Metrical index of tunes** — **still to do, and no longer blocked.** With
+`tune` on every hymn it is the book's own three-level page (meter, tune,
+hymns), not the poorer meter-to-numbers page this section first proposed, and
+it needs no new table: both levels are already fields on the hymn. What blocked
+it was that 30 of the 764 hymns did not agree with the book about their meter
+and would have been filed wrong. [D13](#d13--the-metrical-index-against-both-editions-pages--done-59-meters-settled)
+has settled them; 759 of the 764 now agree with the metrical index, and the
+five that do not (278, 296, 616, 738 and 391) are each understood and
+documented there. This is the next thing to build.
 
 **6b. Tune names** — **done.** An extraction, and a good one. Sources:
 
@@ -579,7 +623,7 @@ localised and few, rather than a confidence estimate over the whole extraction.
 to be the scan misreading a name the two indexes print alike — settled by
 cropping the printed line off both pages and reading it. What came out covers
 exactly hymns 1 to 764, no hymn missing and none past the end, which is a shape
-neither index states. The meter half of the cross-check is [D13](#d13--the-books-metrical-index-disagrees-with-30-hymns-meters--read-not-yet-applied).
+neither index states. The meter half of the cross-check is [D13](#d13--the-metrical-index-against-both-editions-pages--done-59-meters-settled).
 
 It also pays for D1 for free: `Irregular Meters` is a heading in the metrical
 index (`en/904`), so that index says which hymns are irregular, and D7's meter
@@ -653,16 +697,18 @@ committed table itself rather than in a commit message.
 
 1. ~~**D5** — transcribe the missing English for 797, 824, 845.~~ Done; it also
    turned up a whole-hymn swap between 797 and 798.
-2. **D7 + D1** — ~~audit meters~~ done as a syllable count rather than a page
-   read, and ~~the model change~~ made; 93 irregulars filled, 175 hymns still
-   disagree and need the page. **D13 has now read 31 of them off the page**, so
-   this is the next thing to apply, and it unblocks §6a.
+2. ~~**D1**~~ Done: every hymn in the collection now carries a meter, the last
+   45 read off the page in the D13 pass. **D7** remains as a syllable audit with
+   125 hymns left, and D13 turned it into a question about the *lyrics* rather
+   than the meter on the 104 hymns whose meter the book's metrical index
+   confirms.
 3. **§3 preface** — two pages, high value, nearly free. **Next.**
 4. ~~**D9 + §4** — widen the category table with levels and printed numbering,
    then generate the subject index page.~~ Done; it also turned up D11.
 5. ~~**§6b tunes**~~ Done: `data/tunes.tsv`, 765 pairs over hymns 1–764,
    applied to `data/`, and `site/tune.md` generated back out. It also turned up
-   **D13**, which is what **6a** now waits on.
+   **D13**, now done, which unblocks **6a** — the metrical index page, buildable
+   from the hymns alone.
 6. **§5 authors** — biggest, weakest verification, most valuable per hymn. Last
    because everything before it makes the tooling better.
 7. **D2/D3/D4/D6** — the small consistency fixes, folded into whichever pass

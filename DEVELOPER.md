@@ -155,10 +155,23 @@ What has been added here and is not there:
   has), the removal of `（參720）` from 840's, which is not printed on its page,
   and a missing syllable in 845 (從未曾拒絕人來信, eight as its 8.8.8.5. meter
   wants);
-- **93 hymns given the meter the hymnal prints and `data/` had lost**,
-  `Irregular Meter` / `特` — 36 of them `特.和`, which is what the Chinese page
-  writes when the chorus is sung to the same tune. `data.yml` has no meter at
-  all on any of them;
+- **138 hymns given the meter the hymnal prints and `data/` had lost.** The
+  first 93 were `Irregular Meter` / `特` — 36 of them `特.和`, which is what the
+  Chinese page writes when the chorus is sung to the same tune. The last 45 were
+  read one at a time off the page that prints them, which for 31 of them is the
+  Chinese page and nothing else. `data.yml` has no meter at all on any of the
+  138, and every hymn in the collection now carries one;
+- **twelve meters corrected against the book's own metrical index**, which
+  files every hymn 1–764 under a meter and so is a second printing of the same
+  fact. Where it disagreed with `data/`, the Chinese page was read as the third
+  witness, and on eleven of the twelve it sided with the index: `data/`'s meters
+  came from an old OCR of the English page. Hymn 384 had hymn **385**'s meter,
+  taken from the top of the next page. Hymn 6, the Doxology, is the one place
+  the *book* is wrong — its English page prints `8. 6. 8. 6. with chorus` over
+  four lines of eight with no chorus. See [D13](PLAN.md);
+- **hymn 772's `8.8.8.8.8.`**, which its page prints as `8.8.8.8.7.`, and
+  **hymn 777's `.8.6.8.6.6.6.7.5.`**, whose leading dot was a typo and whose
+  page marks a chorus `data/` had not;
 - **eight more lines a syllable short**, found by counting rather than by
   reading: 412 (但願我能像馬利亞), 430 (祂的豐盛我能倚), 441 (背起十架跟耶穌),
   479 (將我恢復), 486 (主，我接受你作一切), 503 (我也禱告並立志), 704
@@ -392,9 +405,11 @@ which is where a hymnal reader looks for it: the two together are what say
 whether one text can be sung to another's music. It is not on a slide, for the
 same reason the meter is not.
 
-**What this cost.** The metrical index also files each hymn under a meter, so
-it is a third opinion on the meter `data/N.md` already carries — see
-[D13](PLAN.md), which is what that comparison turned up.
+**What this paid for.** The metrical index also files each hymn under a meter,
+so it is a second opinion on the meter `data/N.md` already carries. 733 of the
+764 agreed; the other 31 were read off both editions' pages and settled, and
+759 now agree. That is [D13](PLAN.md), and it closed D1 as well: every hymn in
+the collection carries a meter.
 
 ## The subject index
 
@@ -722,8 +737,9 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   a heuristic: where the two disagree, either a character has gone missing from
   the text or the meter was mistyped, and the report's classification says
   which shape the disagreement has. It is still a report and not a gate --
-  `--strict` makes it one -- because 175 hymns disagree and each one needs a
-  page read to settle it; see [PLAN.md](PLAN.md).
+  `--strict` makes it one -- because 125 hymns disagree. On the 104 of those
+  that are hymns 1--764, the metrical index confirms the meter independently, so
+  the disagreement is a finding about the lyrics; see [PLAN.md](PLAN.md).
 
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`
