@@ -129,7 +129,7 @@ which is how the same lines render interleaved, or as two aligned columns — th
 deck with `?grid` on the URL, the page whenever its pane is wide enough for
 them.
 
-### Why the meter names its languages and nothing else does
+### Why the meter and the reference name their languages
 
 Localized metadata is written into the front matter as one scalar, the English
 half then the Chinese, and cut apart again on the way back in by writing
@@ -156,6 +156,24 @@ meter:
 
 A meter both editions print alike stays a scalar — `meter: 8.7.8.7.D.` — which
 is 466 of the 848. The other 382 name their two halves.
+
+A scripture reference is mostly figures for the same reason, and one of the two
+ways the cut goes wrong reaches it. `Psalm 133` beside `詩133` happens to cut
+where it should. `1 John 1:5-7` beside `約壹1:5-7` does not: the reference
+*begins* with a figure, the cut lands after the `1`, and the English half comes
+back without its book number. Three of the 41 are numbered books — 759, 761 and
+762 — so the field is written the same way, and cannot be broken by the next
+citation somebody adds:
+
+```yaml
+ref:
+  en: 1 John 1:5-7
+  zh: 約壹1:5-7
+```
+
+A reference only one edition prints has nothing to cut apart and stays a scalar
+— `ref: 以西結書第四十七章`, which `auto-lang` tags as Chinese from its
+characters, as it does every other single-language field.
 
 ### Why `chorus.md` is generated and `index.md` is not
 
@@ -266,6 +284,30 @@ What has been added here and is not there:
   do. The subject index lists 583 in the run under 因着信靠主 and prints no
   such second subject, so the table had carried two rows that flattened to one
   English heading;
+- **the scripture reference every page prints under its meter**, on 41
+  hymns. `data/` had eleven of them, six English and five Chinese and none
+  both; it now has both halves wherever both editions print one. Ten are
+  ordinary hymns that versify a passage — 108–112 (*Psalm 45 - Part 1* /
+  詩篇第四十五篇(上), and four more), 189, 245–248 — and the other 31 are the
+  whole of *Psalms and Scripture Portions*, 734–764, where `data/` had the
+  reference only for 749. The citations `data/` did have were abbreviated
+  rather than transcribed: 啟三章 for the page's 啟示錄第三章, 以西結書第47章 for
+  以西結書第四十七章. Two things are worth knowing about the values. The
+  section's 31 are printed twice — once under the meter, once as the subject
+  the book's own index files the hymn under — and the two printings differ in
+  small ways, so the page's wording is what `ref` carries and the index's is
+  what `category` carries: the page writes `Psalm 16:5,8,9,11` where the index
+  writes `Psalm 16:5, 8, 9, 11`, and for 764 the page writes `Revelation
+  19:6,7` where the index and the Chinese page both write `19:6-7`. And where
+  the Chinese page encloses the line in parentheses (189 alone) or letter-spaces
+  the abbreviation from the figures, the parentheses and the spacing are the
+  page's own punctuation of that slot, not part of the citation, so neither is
+  carried;
+- **the repeat mark on hymn 470's Chinese meter**, `特.重` where `data/` had
+  `特`. Its page prints the mark; the English page prints `Irregular Meter` and
+  no `with repeat`, so the two editions differ, and both are now as printed.
+  This one was found because 470 also carries a `note` — 57 other hymns carry a
+  bare `特` and have not been checked for a trailing `.重` or `.和`;
 - **one normalisation that departs from `scan/`**: hymn 822's subject is
   `因著祂足夠的恩典` here, though its page prints `足彀`. The other four hymns
   under that subject print `足夠`, and a reader searching for one spelling
@@ -273,6 +315,19 @@ What has been added here and is not there:
   holds everywhere else, `彀` included: the Chinese-only appendix uses it in
   the lyrics of 814 and 817, where the body of the book would write `夠`, and
   those are left as printed.
+
+What is kept here although the hymnal does not print it:
+
+- **the English lyrics of 779, 789 and 840**, three of the 39 hymns the English
+  edition's own list of Chinese-only hymns names. `scan/en.csv` gives them no
+  page, their Chinese pages carry no English line, and `data.yml` has full
+  English for each. Somebody supplied the original these Chinese texts were
+  translated from, and it is worth having, so it stays — but it is the one
+  place the hymn page shows English with no English scan beside it to check it
+  against. 840's is traceable: it is hymn **720**'s English, *There were ninety
+  and nine that safely lay*, differing only in where two lines break and one
+  closing quotation mark. 779's and 789's appear nowhere else in the
+  collection.
 
 `md-to-yaml` still works and is still lossless — that is a property of the
 projection, not a claim that the two repositories agree. **`yaml-to-md` is the

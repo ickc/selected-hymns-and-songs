@@ -24,8 +24,8 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `category` | 848 | yes, all 848 | done |
 | `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
 | `meter` | 848 | 382 name both, 466 print alike | D1 done; every hymn now has one |
-| `note` | 25 | 19 both, 6 Chinese-only | see D4 |
-| `ref` | 11 | 0 both — 6 English-only, 5 Chinese-only | see D3 |
+| `note` | 25 | 19 both, 6 Chinese-only | D4 done — the six are Chinese-only in the book too; see D16 |
+| `ref` | 41 | 36 both, 5 Chinese-only | D3 done; every page that prints one now has it |
 | `author` | 704 | 0 both — all English-only | §5 done; 1–764 only, the supplement is not indexed |
 | `composer` | 708 | 0 both — all English-only | §5 done; new field, same scope |
 | `title` | 778 | 0 both — all English-only | D12 done; 31 scripture portions and 39 Chinese-only hymns have no name in the book |
@@ -35,10 +35,12 @@ So: **no, not every field is bilingual.** `category` is, now. `meter` is:
 466 hymns print the same notation in both editions and carry one scalar, and
 the other 382 name their two halves in the front matter, which is what lets a
 page that says `Irregular Meter` sit beside one that counts. But
-`author`, `composer`, `ref` and six of the `note`s are single-language, and
-three hymns are missing an entire language of lyrics. The first two are
-single-language because their source is: the index they come from is the
-English edition's, and the Chinese edition credits nobody.
+`author` and `composer` are single-language, five of the 41 `ref`s and six of
+the 25 `note`s are, and three hymns are missing an entire language of lyrics.
+`author` and `composer` are single-language because their source is: the index
+they come from is the English edition's, and the Chinese edition credits nobody.
+The five `ref`s and the six `note`s are single-language because the book is —
+those are the ones only the Chinese edition prints.
 
 ### Structure is clean
 
@@ -103,9 +105,9 @@ fourth does not: the index prints hymn 439's author `Thomas D. Chisholm` where
 the hymn's own page prints `Thomas O. Chisholm`, and its composer `Carl H.
 Lowden` where the page prints `C. Harold Lowden`. That is D15.
 
-### D3 — `ref` is inconsistent, monolingual, and partly redundant
+### D3 — `ref` is inconsistent, monolingual, and partly redundant — **done, 41 now**
 
-All eleven of them:
+`data/` had eleven references, six English and five Chinese and none both:
 
 ```
 108 Psalm 45 - Part 1     245 啟一章
@@ -116,39 +118,98 @@ All eleven of them:
 749 "Isaiah 7:14"
 ```
 
-Six English, five Chinese, none both. Three different citation styles in the
-Chinese alone (`啟一章`, `啟二、三章`, `以西結書第47章`). And 749's `ref` is a
-verbatim duplicate of the scripture reference already inside its own category,
-`Psalms and Scripture Portions—Isaiah 7:14 / 詩篇與經文片段——賽7:14`.
+**The pages answered the question the section could not.** Both editions print
+the reference in the same place — one line under the meter, above the first
+staff — so it is a page annotation, which was the second of the two readings.
+The section's other worries mostly dissolved on being looked at:
 
-Decide what `ref` is *for* before filling it in. Two coherent readings:
+- **The three Chinese citation styles were ours, not the book's.** The Chinese
+  edition is uniform — book name, then 第N章 — and `data/` had been
+  abbreviating: `啟示錄第三章` had become `啟三章`, `以西結書第四十七章` had
+  become `以西結書第47章` with the chapter in Arabic figures. All five are now
+  as printed.
+- **749's quotation marks were YAML, not data.** `Isaiah 7:14` contains a
+  colon, so the emitter quotes it.
+- **The five English references had a Chinese half all along**, and it is not a
+  translation of the English one: `詩篇第四十五篇(上)` and `(下)` for *Part 1*
+  and *Part 2*, and `詩篇第一百一十篇`, `詩篇第八篇`, `詩篇第六十八篇` for the
+  other three. The five Chinese ones have no English half — the English pages
+  for 189 and 245–248 print the meter and then the music.
 
-- **It is the scripture a hymn versifies.** Then hymns 734–764 have it in
-  their category already and `ref` should be derived from there, not duplicated
-  beside it; and 108–112, 189, 245–248 are the handful outside that section
-  that also carry one.
-- **It is a note printed on the page.** Then it should be read off all 848
-  pages, in whichever language prints it, and left absent where nothing is
-  printed.
+**And thirty more were missing.** *Psalms and Scripture Portions*, hymns
+734–764, is thirty-one hymns that each versify one passage, and every one of
+their pages prints the citation in both editions. `data/` had it for 749 alone.
+That is what made the field look arbitrary: it was not that eleven hymns had a
+reference, it was that forty-one did and thirty had lost it.
 
-My reading is the second — `Psalm 45 - Part 1` is a page annotation, not a
-category — but either way the field currently means neither thing
-consistently. Cheapest honest fix: audit those eleven pages, normalise the
-citation style within each language, and fill the missing half where the other
-edition prints one.
+**Where the verification came from.** These thirty-one are printed twice —
+under the meter, and as the subject the book's index files the hymn under — and
+`data/categories.tsv` already carries the index's copy from §4. So every page
+reading had a second witness. They agree on all thirty-one, down to the
+chapter and verse, with two classes of difference in how the citation is set:
 
-### D4 — six `note`s have lost their English half
+- the page writes no space after a comma where the index does, `Psalm
+  16:5,8,9,11` against `Psalm 16:5, 8, 9, 11`;
+- hymn **764** alone differs in substance-adjacent punctuation: its English page
+  prints `Revelation 19:6,7`, while the index and the Chinese page both print
+  `19:6-7`.
+
+`ref` carries the page's wording, `category` the index's, which is why the two
+now disagree in small ways on those thirty-one hymns.
+
+**One model change came out of it.** A reference is mostly figures, so it hits
+the same problem the meter has, and one case hits it fatally: `1 John 1:5-7`
+beside `約壹1:5-7` *begins* with a figure, the cut by writing system lands after
+the `1`, and the English half comes back without its book number. Three of the
+forty-one are numbered books. So a two-language reference now names its halves
+the way a meter does; a one-language one stays flat. See
+[DEVELOPER.md](DEVELOPER.md#why-the-meter-and-the-reference-name-their-languages).
+
+**Left open.** On those thirty-one the hymn page now prints the citation twice
+— once inside the category, once as the reference — and punctuated differently,
+`約壹1:5–7` beside `約壹1:5-7`, because the two come from different printings.
+That is the book duplicating itself and the projection showing both, but it
+reads as a stutter, and whether the page should suppress one is a design
+question nobody has answered.
+
+### D4 — six `note`s have lost their English half — **done: the English edition prints no note**
 
 470, 584, 611, 659, 705, 720 carry Chinese only (`最後一句唱兩遍`,
-`重唱每節最後一行`). All six are ≤ 764, so an English page exists for each. The
-other nineteen are bilingual and say the same thing in English
-(`Repeat the last line of each stanza`). The OCR of those six English pages is
-too poor to settle whether the English edition prints the note or not — it has
-to be read off the page image.
+`重唱每節最後一行`). All six are ≤ 764, so an English page exists for each, and
+this section assumed the English half had been lost. **It had not. All six
+English pages were read, and not one of them prints a note.** In every case the
+repetition the Chinese note describes is already in the English setting: the
+music writes the repeated phrase out under the staff (470, 611, 659, 720), or
+the meter line says `with repeat` (584), or both.
 
-While there: the English wording is not normalised either — `Repeat the last
-two lines` (71, 76) vs `Repeat the last 2 lines` (282, 290), and
-`Repeat last two lines of each stanza` (638) without the leading article.
+Then the same question was put to the other nineteen, whose notes are
+bilingual. A sweep of the text layer of all 764 English hymn pages finds
+`Repeat the last …` on exactly **three** pages — and those three are hymns
+**242, 666 and 678**, which carry no `note` in `data/` at all. So the English
+half of every bilingual note in `data/` is on no English page either.
+
+Nor is the Chinese half always on a Chinese page. Four were checked against
+the image:
+
+| hymn | Chinese page | what it prints |
+| --- | --- | --- |
+| 705 | `zh/761` | `（第三至第六節,用第二節和詩）` at the foot — the note, with a comma `data/` dropped |
+| 470 | `zh/492` | nothing; the meter line reads `特.重` |
+| 584 | `zh/623` | nothing; the meter line reads `6.6.8.6.重` |
+| 638 | `zh/680` | nothing; the meter line reads `8.8.8.8.8.8.重` |
+
+So `note` is a mixed inheritance from `data.yml`: some of it transcribes the
+Chinese page, some of it is on neither page, and its English is editorial
+throughout. **That is why the wording was left alone.** Normalising `Repeat the
+last 2 lines` to `Repeat the last two lines` would be imposing consistency on
+text whose source is unknown, and the variation may yet turn out to be
+somebody's, so it stays until [D16](#d16--neither-editions-page-annotations-are-carried)
+settles where the field's contents come from.
+
+**One fix did come out of it.** Hymn 470's Chinese meter is `特.重` on the page
+and was `特` in `data/`; the `重` is the mark that made the note redundant in
+the first place. 57 other hymns carry a bare `特` and have not been checked for
+a dropped `.重` or `.和`.
 
 ### D5 — three hymns are missing their English lyrics entirely — **done**
 
@@ -180,7 +241,7 @@ against the English edition's one are carried by the projection's existing rule
 `data/` is now Chinese-only for exactly 36 hymns, and the remaining difference
 from the book's 39 is D6.
 
-### D6 — three hymns carry English the book does not print
+### D6 — three hymns carry English the book does not print — **done, kept and documented**
 
 **779, 789, 840.** All three are in the English edition's own list of
 Chinese-only hymns, both scans agree (`scan/en.csv` has both bounds empty), and
@@ -194,6 +255,17 @@ the hymn page shows English with no English scan beside it to check it
 against. Either document it as a deliberate addition (a fourth entry in
 DEVELOPER.md's list of departures from the scan) or drop it. I would keep it
 and say so.
+
+**Kept, and said so** — DEVELOPER.md now has a "What is kept here although the
+hymnal does not print it" list beside the list of what was added, and this is
+its first entry.
+
+One of the three is not a mystery. **840's English is hymn 720's**, *There were
+ninety and nine that safely lay*, which the English edition does print; the two
+differ only in where two lines break and in one closing quotation mark. So 840
+is a second Chinese translation of a hymn already in the book, and whoever built
+`data.yml` carried 720's English across to it. 779's and 789's English appears
+nowhere else in the collection and remains unsourced.
 
 Note that D5 and D6 cancelled out numerically — 39 hymns lacked English text in
 `data/` and 39 are absent from the English edition — which is exactly why
@@ -472,6 +544,56 @@ and those were discarded rather than reported. So this table is a floor, not a
 census — there may be disagreements it did not see, and the two rows checked by
 eye on the page images, 54 and 439, both held.
 
+
+### D16 — neither edition's page annotations are carried
+
+D3 and D4 both ran into the same thing from different sides. Besides the
+subject, the meter, the number and the scripture reference, a page can carry a
+short parenthetical line — how to sing it, which tune to borrow, what a word
+means, how the other edition's text differs. `data/` carries 25 of these as
+`note`, and D4 showed that set is neither complete nor sourced. **Both editions
+print a great many more, and the two editions' sets are different.**
+
+A sweep of the text layer of all 848 pages of each edition finds, at minimum:
+
+**English** — about twenty, in Times-Italic under the last staff or beside the
+meter, in four families:
+
+- *"This hymn may be sung to the tune of hymn #467"* — ten pages, plus
+  *"Alternate: Tune of hymn #624 without chorus"* and one that names a tune
+  rather than a number, *"Pass It On"*;
+- *"(Repeat the last two lines of each stanza)"* on three pages — hymns 242,
+  666 and 678, none of which has a `note` in `data/`;
+- *"(Do not repeat chorus)"*, and *"(Do not repeat chorus after the last
+  verse.)"*;
+- glosses: *"Meaning, married (Isa. 62:4)"*, *"(“Truth” in the first stanza
+  refers to Christ)"*, and seven of *"(The Chinese version has 5 stanzas)"* in
+  the supplement.
+
+**Chinese** — about thirty, in fullwidth parentheses, and mostly *not* the same
+hymns:
+
+- 調用第四百九十一首 — borrow another hymn's tune — on seven pages;
+- 第四節末兩行重唱一遍, 回頭再唱正歌一遍, 第二節不唱和歌, and the long one on
+  `zh/152`, 唱第二調時第二至六節，每節首行末句重唱一遍，次行末句重唱兩遍;
+- 英詩無第二節 and 英詩僅有一、二、五等三節 — the mirror of the English
+  edition's *"The Chinese version has 5 stanzas"*, and pointing the other way;
+- glosses and provenance: 蓋恩夫人獄中之詩 (Madame Guyon's prison poem),
+  第四節「靉靉」意思是雲層籠罩的樣子, 基督，可唱作耶穌, 第二節的明亮晨星指基督.
+
+(Those are PDF page numbers, not hymn numbers; the sweep did not resolve them
+to hymns.)
+
+**Why this is worth doing, and why it is not small.** Three of the four families
+are checkable against something `data/` already holds — a stanza count, a tune
+name, a chorus rule — so they are verification, not just decoration; the
+*"Chinese version has N stanzas"* lines in particular are a printed statement
+about exactly the thing D5 and D6 were about. But it is a two-edition
+transcription of about fifty short lines in two scripts, positioned all over
+the page rather than in one slot, which is why the text layer can only give a
+lower bound. Realistically it is a §-sized piece of work like §5 or §6, and it
+should decide at the same time what the existing 25 `note`s are and where they
+came from.
 
 ### D8 — the category is single-valued, but the book's index is not
 
@@ -938,11 +1060,15 @@ committed table itself rather than in a commit message.
    bounding boxes gave the table's structure and left only the characters to
    read. It turned up **D15**, and it did not need `scan/` extending after all
    — though item 9 still stands on its own argument.
-7. **D3/D4/D6** — the small consistency fixes, folded into whichever pass is
-   already touching those pages. ~~D2~~ is closed by §5.
-   **This is now what is next**, along with **D7**'s remaining syllable
-   disagreements and **D15**'s question of whether `data/` should prefer a
-   hymn's own page over the index where the two name different people.
+7. ~~**D3/D4/D6** — the small consistency fixes~~ Done, and they were not
+   small in the way the section expected. **D3** turned out to be thirty
+   missing references rather than eleven inconsistent ones: `ref` is now on 41
+   hymns, both halves wherever both editions print one, and the field names its
+   two languages the way a meter does. **D4**'s premise was wrong — the English
+   edition prints no note on any of the six, and none of the nineteen bilingual
+   notes is on an English page either. **D6** is kept and documented, and 840's
+   English turned out to be hymn 720's. Between them they turned up **D16** and
+   one dropped `.重` on hymn 470's Chinese meter. ~~D2~~ is closed by §5.
 8. ~~**D12 titles**~~ Done: `data/titles.tsv`, 778 names, applied to `data/`.
 9. **§7's option 2 — carry the front and back matter in `scan/`** (~70 pages,
    ~1.7 MB). Every extraction so far — the categories, the titles, the tunes,
@@ -954,3 +1080,13 @@ committed table itself rather than in a commit message.
 10. **The TOC** (`en/002`, `zh/002`) — cheap, and it would let §4's tree show
     the hymn-number ranges the book prints. Fold it into whichever pass is
     already reading the front matter.
+
+**What is next.** Three things are open and each is a different size.
+**D15**'s policy question is the smallest and needs a decision rather than
+work: whether `data/` should prefer a hymn's own page over the author index on
+the nine hymns where the two name different people. **D7**'s remaining syllable
+disagreements are the middle one, and D13 turned most of them into questions
+about the lyrics rather than the meter. **D16** is the largest, a two-edition
+transcription of the page annotations, and it is what would finally settle what
+the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
+for carrying the front and back matter in `scan/`, and item 10's TOC.

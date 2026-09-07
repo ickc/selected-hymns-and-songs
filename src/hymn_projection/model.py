@@ -126,20 +126,32 @@ def _localized_from_metadata(value: pf.MetaValue, description: str) -> Localized
     return LocalizedText(translations)
 
 
-def _meter_metadata(value: LocalizedText) -> pf.MetaMap:
-    """Name the two halves of a localized meter instead of running them together.
+def _named_metadata(value: LocalizedText, description: str) -> pf.MetaMap:
+    """Name the halves of a localized value instead of running them together.
 
-    Every other localized field is flattened into one scalar and cut apart
-    again by writing system, which works because its Chinese half is Han and
-    its English half is not. A meter is mostly figures, and a figure belongs to
-    no script: ``8.8.8.8.D. (A)`` beside ``8.8.8.8.D.`` offers no boundary to
-    cut at, and ``Irregular Meter`` beside ``10.10.10.8.5. 和`` offers one in
-    the wrong place. So the two languages are named, and nothing about a meter
-    is inferred from its characters.
+    Most localized fields are flattened into one scalar and cut apart again by
+    writing system, which works because their Chinese half is Han and their
+    English half is not. Two fields are mostly figures, and a figure belongs to
+    no script.
+
+    A meter: ``8.8.8.8.D. (A)`` beside ``8.8.8.8.D.`` offers no boundary to cut
+    at, and ``Irregular Meter`` beside ``10.10.10.8.5. 和`` offers one in the
+    wrong place.
+
+    A scripture reference: ``Psalm 133`` beside ``詩133`` happens to cut in the
+    right place, but ``1 John 1:5-7`` beside ``約壹1:5-7`` begins with a figure,
+    so the cut lands after ``1`` and the English half loses its book number.
+    Three of the forty-one references are numbered books, and the field would
+    be one imported citation away from breaking again.
+
+    So both name their languages, and nothing about either is inferred from its
+    characters.
     """
 
     if len(value.translations) < 2:
-        raise ValueError("a localized meter needs two languages to remain distinguishable")
+        raise ValueError(
+            f"a localized {description} needs two languages to remain distinguishable"
+        )
     return pf.MetaMap(
         **{
             language: pf.MetaInlines(pf.RawInline(text, format="markdown"))
@@ -164,19 +176,19 @@ def _tune_from_metadata(value: pf.MetaValue) -> str | list[str]:
     return pf.stringify(value).strip()
 
 
-def _meter_from_metadata(value: pf.MetaValue) -> str | LocalizedText:
-    """Recover a meter: one notation both editions print, or a named pair."""
+def _named_from_metadata(value: pf.MetaValue) -> LocalizedText | None:
+    """Recover a named pair, or nothing when the value is a plain scalar."""
 
-    if isinstance(value, pf.MetaMap):
-        return LocalizedText(
-            {
-                language: _exact_text(text.content).strip()
-                if isinstance(text, pf.MetaInlines)
-                else pf.stringify(text)
-                for language, text in value.content.items()
-            }
-        )
-    return pf.stringify(value)
+    if not isinstance(value, pf.MetaMap):
+        return None
+    return LocalizedText(
+        {
+            language: _exact_text(text.content).strip()
+            if isinstance(text, pf.MetaInlines)
+            else pf.stringify(text)
+            for language, text in value.content.items()
+        }
+    )
 
 
 @dataclass
@@ -437,14 +449,20 @@ class Hymn:
             metadata["composer"] = _localized_metadata(self.composer)
         if self.meter is not None:
             metadata["meter"] = (
-                _meter_metadata(self.meter)
+                _named_metadata(self.meter, "meter")
                 if isinstance(self.meter, LocalizedText)
                 else pf.MetaInlines(pf.RawInline(self.meter, format="markdown"))
             )
         if self.note is not None:
             metadata["note"] = _localized_metadata(self.note)
         if self.ref is not None:
-            metadata["ref"] = _localized_metadata(self.ref)
+            # One language has nothing to cut apart, so it is written flat like
+            # every other localized field; two are named.
+            metadata["ref"] = (
+                _named_metadata(self.ref, "reference")
+                if len(self.ref.translations) > 1
+                else _localized_metadata(self.ref)
+            )
         if self.title is not None:
             metadata["title"] = _localized_metadata(self.title)
         if self.tune is not None:
@@ -520,15 +538,25 @@ class Hymn:
             ).to_dict()
 
         if "meter" in document.metadata:
-            meter = _meter_from_metadata(document.metadata["meter"])
-            metadata["meter"] = meter.to_dict() if isinstance(meter, LocalizedText) else meter
+            meter = _named_from_metadata(document.metadata["meter"])
+            metadata["meter"] = (
+                meter.to_dict()
+                if meter is not None
+                else pf.stringify(document.metadata["meter"])
+            )
         if "tune" in document.metadata:
             metadata["tune"] = _tune_from_metadata(document.metadata["tune"])
-        for name in ("note", "ref"):
-            if name in document.metadata:
-                metadata[name] = _localized_from_metadata(
-                    document.metadata[name], name
-                ).to_dict()
+        if "note" in document.metadata:
+            metadata["note"] = _localized_from_metadata(
+                document.metadata["note"], "note"
+            ).to_dict()
+        if "ref" in document.metadata:
+            reference = _named_from_metadata(document.metadata["ref"])
+            metadata["ref"] = (
+                reference.to_dict()
+                if reference is not None
+                else _localized_from_metadata(document.metadata["ref"], "ref").to_dict()
+            )
 
         stanza: dict[int | str, list[dict[str, str]]] = {}
         current_name: int | str | None = None

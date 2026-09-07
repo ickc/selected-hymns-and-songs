@@ -140,6 +140,36 @@ class HymnConversionTest(TestCase):
 
         self.assertEqual(recovered.meter.to_dict(), meter)
 
+    def test_a_localized_reference_names_its_two_languages(self) -> None:
+        reference = {"en": "Psalm 45 - Part 1", "zh": "詩篇第四十五篇(上)"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, ref=reference))
+        markdown = hymn.to_markdown()
+
+        self.assertIn(
+            "ref:\n  en: Psalm 45 - Part 1\n  zh: 詩篇第四十五篇(上)\n", markdown
+        )
+        self.assertEqual(Hymn.from_markdown(markdown).ref.to_dict(), reference)
+
+    def test_a_reference_opening_on_a_figure_survives_the_round_trip(self) -> None:
+        # The reason the field is a mapping. Run together, the cut by writing
+        # system lands after the leading 1 and the English half loses its book
+        # number.
+        reference = {"en": "1 John 1:5-7", "zh": "約壹1:5-7"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, ref=reference))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertEqual(recovered.ref.to_dict(), reference)
+
+    def test_a_reference_one_edition_prints_stays_a_scalar(self) -> None:
+        # Nothing to cut apart, so it is written flat and `auto-lang` tags it.
+        reference = {"zh": "以西結書第四十七章"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, ref=reference))
+        markdown = hymn.to_markdown()
+
+        self.assertIn("ref: 以西結書第四十七章\n", markdown)
+        self.assertEqual(Hymn.from_markdown(markdown).ref.to_dict(), reference)
+
     def test_directory_round_trip_is_byte_exact(self) -> None:
         source_yaml = yaml.safe_dump([HYMN_DATA], allow_unicode=True, sort_keys=False)
         with TemporaryDirectory() as temporary_directory:
