@@ -335,8 +335,8 @@ be skipped, because `Irregular Meter` names no lengths to count against; their
 verses are now counted against *each other*, which 11 of them fail (242, 393,
 476, 477, 632, 706, 709, 755, 830, 834, 840). And every chorus a hymn prints is
 sung to the same strain, so the choruses of one hymn have to scan alike — one
-hymn's do not, 480, and its page agrees with the transcription, so the odd
-syllable is the book's. `pixi run meter-report --shape` prints the counts.
+hymn's do not, 480, and reading its page to find out whose the odd syllable was
+turned up D14. `pixi run meter-report --shape` prints the counts.
 
 **D13 changed what these are evidence of.** 108 of them are hymns ≤764, and
 **89 of those carry a meter the book's own metrical index independently
@@ -349,6 +349,56 @@ lineation the transcription joined — not about the meter. That is a different
 job from reading 175 pages, and a much better defined one: the remaining 20 are
 in the supplement, where there is no index to corroborate and the Chinese page
 is the only witness.
+
+### D14 — half of hymn 480's Chinese was not the text on its page — **fixed**
+
+480 is the one hymn the chorus check reports: its first chorus counts
+`10.15.10.14` where its other two count `10.14.10.14`. Reading the Chinese page
+(`zh/506`) to see whether that syllable was ours or the book's answered a
+larger question — **twelve of the hymn's twenty-four Chinese lines were not
+what the page prints.**
+
+| stanza/line | `data/` had | the page prints |
+|---|---|---|
+| 1 L2 | 藉此祂作我主人，並且**內住於我** | 藉此祂作我主人，並且**內住我心** |
+| 1 L4 | 故祂這榮耀**主人，取代了我** | 故祂這榮耀**的人，安家我心** |
+| 1-chorus L2 | 我接受**你作我主人，作我的完全真體** | 我接受**你，以你為主，從我活出你自己** |
+| 2 L2 | 作為那說話的靈，**祂不停地說話** | 作為那說話的靈，**祂今說話不停** |
+| 2 L3 | **祂的說話如水在裡面將我沖刷** | **祂說話如水將我裡面洗滌無瑕** |
+| 2 L4 | 清除我所有老舊，**並分賜祂** | 清除我所有老舊，**並來更新** |
+| 2-chorus L1 | 哦主，哦主，**儘量**向我說話 | 哦主，哦主，**求你**向我說話 |
+| 2-chorus L3 | 哦主，哦主，**說、洗我的各部** | 哦主，哦主，**說話洗我各部** |
+| 2-chorus L4 | **藉新陳代謝的變化**，安家在我心裡 | **藉這新陳代謝變化**，安家在我心裡 |
+| 3 L2 | **藉從我們裡面將教會榮耀發表** | **從我們裡面出來使教會得榮耀** |
+| 3-chorus L1 | 哦主，哦主，**借著你的經營** | 哦主，哦主，**藉著你的運行** |
+| 3-chorus L2 | 將你榮耀**徹底滿溢**、浸透我們全人 | 將你榮耀**滿溢我們**、浸透我們全人 |
+
+**Every pair has the same syllable count**, which is why nothing else in the
+collection could have found this. The meter is a checksum, and all twelve lines
+pass it both ways.
+
+The temptation was to read the divergence as a *different printing* rather than
+a defect: `data/480.md`'s English matches `en/516.txt` word for word, and its
+Chinese tracks that English more closely than the page's Chinese does — 經營 is
+"economy", where the page's 運行 is not. But this repository's rule is that the
+page wins, and the page is the only Chinese witness there is. The twelve lines
+are now the page's, in the collection's own orthography: `data/` writes 你 and
+著 on all 848 hymns and 祢 and 着 on none, so the page's 祢 and 着 are left as
+the typographic variants they are, and only the wording changed.
+
+**The odd syllable was the book's after all.** The page prints fifteen in the
+first chorus's second line (我接受你，以你為主，從我活出你自己) and fourteen in
+the other two, so 480 is still the one hymn `meter-report` reports for its
+choruses — but the three verses now scan `13.13.13.11` against the
+`13.13.13.11. 和` its page prints, which they did before only by coincidence.
+
+Whether other hymns have drifted the same way is **not known**, and cannot be
+settled cheaply: the Chinese PDF's text layer is too noisy for automated line
+matching — the median hymn matches it 91.9% character for character even where
+the text is surely identical, 778 of the 848 have at least one line the matcher
+cannot pair, and 480 ranks 311th of 847 on line similarity, squarely mid-pack.
+Finding others means reading pages by eye. This is the one defect class in the
+collection with no cheap detector.
 
 ### D8 — the category is single-valued, but the book's index is not
 

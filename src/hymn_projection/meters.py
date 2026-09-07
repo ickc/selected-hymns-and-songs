@@ -29,7 +29,6 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
-from os.path import commonprefix
 from pathlib import Path
 
 from .model import Hymn, Stanza
@@ -249,9 +248,12 @@ def _meter_text(hymn: Hymn) -> str | None:
         return None
     if isinstance(hymn.meter, str):
         return hymn.meter
-    translations = list(hymn.meter.translations.values())
-    shared = commonprefix(translations)
-    return shared + "".join(text[len(shared):] for text in translations)
+    # Both halves state the same lengths -- only the qualifier is written in
+    # two languages -- so either parses alike, and the English one is the
+    # analysis `data/` stores. Running them together, as this used to, printed
+    # a meter neither edition has.
+    translations = hymn.meter.translations
+    return translations.get("en") or next(iter(translations.values()))
 
 
 def read(path: Path) -> tuple[int, Hymn]:

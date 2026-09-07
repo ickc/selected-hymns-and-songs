@@ -173,7 +173,7 @@ What has been added here and is not there:
 
 - **the English half of every category**, from
   [the category table](#the-category-table);
-- **hymn 570's meter**, `8.6.8.6. with chorus和`, which the publisher's English
+- **hymn 570's meter**, `8.6.8.6. with chorus` / `8.6.8.6. 和`, which the publisher's English
   source had dropped along with the whole header line — leaving a placeholder
   an editor had typed in its place sitting in the `title` field, the only
   `title` in the collection and not a title at all. The hymnal prints no hymn
@@ -226,6 +226,17 @@ What has been added here and is not there:
   The Chinese is now broken at its own commas into the same seven, character
   for character unchanged, so that the two languages pair line by line as they
   do in every other bilingual stanza in the collection;
+- **twelve of hymn 480's twenty-four Chinese lines**, which were not the text
+  its page prints. Every one of them scans, so no syllable count could have
+  found them: 故祂這榮耀主人，取代了我 for the page's 故祂這榮耀的人，安家我心，
+  and 哦主，哦主，借著你的經營 for 哦主，哦主，藉著你的運行. What found them
+  was the chorus check — 480 is the one hymn whose choruses do not scan alike,
+  and reading the page to see whether the odd syllable was ours or the book's
+  showed the whole hymn had drifted. The odd syllable *is* the book's: the page
+  prints fifteen in the first chorus's second line and fourteen in the other
+  two, so 480 is still reported, and now for the right reason. The wording is
+  the page's; the orthography stays the collection's, which writes 你 and 著
+  everywhere and 祢 and 着 nowhere;
 - **hymn 365's first line**, which had `Love Divine, all love excelling` where
   its page prints `all loves ex-cel-ling`. The subject index names the hymn
   *Love Divine, all loves excelling*, and the disagreement between that name
