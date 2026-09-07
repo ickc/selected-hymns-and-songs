@@ -269,15 +269,20 @@ for.
   recovered by script, so two all-Latin halves cannot be told apart again. The
   marker therefore stays on one scalar, which is what `data/` already did for
   493, 496 and 598.
-- **Nine Chinese pages count a meter the English edition calls irregular**:
+- **Eleven Chinese pages count a meter the English edition calls irregular**:
   363 `10.10.10.8.5.和`, 370 and 464 `10.9.10.9.和`, 457 `6.6.8.8.6.6.`, 462
   `7.7.7.9.`, 495 `8.6.8.6.8.8.8.3.`, 669 `7.6.7.6.7.7.7.6.`, 737 `8.5.8.8.和`,
-  and for the copyright four 194 `7.6.7.6.7.6.7.4.和`, 241 and 480
+  and for three of the copyright four 194 `7.6.7.6.7.6.7.4.和`, 241 and 480
   `13.13.13.11.和`. `Irregular Meter` shares no notation with a figure, so the
   pair is unrepresentable in the same way. The field keeps the English analysis
   and writes it the Chinese way, `特` / `特.和`, as it already does for the 44
   hymns where the two editions count a doubled chorus differently. The counts
-  above were checked against the Chinese lyrics and all nine scan.
+  above were checked against the Chinese lyrics and all eleven scan. This is the
+  one place in the pass where `data/` says something neither page prints: these
+  eleven Chinese pages do not print `特`. Extending the meter codec -- writing
+  the field as a mapping when its two halves cannot be told apart by script --
+  would let both analyses be kept, and would also let `(A)` and `(I)` sit on the
+  English half alone.
 
 ### D7 — the meter against the lyrics — **tooling done, 125 left, and now mostly about the text**
 
