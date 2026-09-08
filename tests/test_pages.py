@@ -82,7 +82,7 @@ class StructureTest(TestCase):
         # the hymnal, so each gets its own class rather than one shared one.
         value = hymn(
             {1: [{"en": "One"}]},
-            note={"en": "Repeat the last two lines"},
+            note=[{"en": "Repeat the last two lines"}],
             **{"credit-note": {"en": "The page prints A, the index B."}},
         )
 
@@ -95,13 +95,13 @@ class StructureTest(TestCase):
     def test_a_hymn_whose_credit_needed_no_choice_carries_no_note(self) -> None:
         self.assertNotIn("hymn-credit-note", page(hymn({1: [{"en": "One"}]})))
 
-    def test_a_singing_instruction_leaves_the_lyric_line(self) -> None:
-        value = hymn({1: [{"en": "Sing^[Repeat the last two lines]"}]})
+    def test_a_gloss_leaves_the_lyric_line(self) -> None:
+        value = hymn({1: [{"en": "Sing^[The hymnal's word about this word]"}]})
 
         markdown = page(value)
 
         self.assertIn("[Sing]{lang=en}", markdown)
-        self.assertIn("singing-note", markdown)
+        self.assertIn(".gloss", markdown)
 
 
 class ResolutionTest(TestCase):

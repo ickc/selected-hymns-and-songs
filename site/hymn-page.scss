@@ -271,7 +271,7 @@ body.hymn-page div.quarto-container {
   line-height: 1.45;
 }
 
-.hymn-text .singing-note {
+.hymn-text .gloss {
   margin-top: 0.5rem;
   font-size: 0.82rem;
   opacity: 0.65;
@@ -294,7 +294,7 @@ body.hymn-page div.quarto-container {
 // are what the hymnal says this hymn is, and only the category is written in
 // Chinese: hiding it would leave the separator in front of a meter with
 // nothing before it.
-$hymn-sung: ".lyrics, .hymn-title, .singing-note, .hymn-note";
+$hymn-sung: ".lyrics, .hymn-title, .gloss, .hymn-note";
 
 // `[lang|=]` and not `:lang()`. `:lang()` matches an element that *inherits*
 // the language too, and every paragraph here inherits the document's -- so on

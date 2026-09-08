@@ -23,7 +23,7 @@ HYMN_DATA = {
     "category": {"zh": "分類——測試"},
     "credit-note": {"en": "The page prints one name, the index another."},
     "meter": {"en": "8.6.8.6. with chorus", "zh": "8.6.8.6. 和"},
-    "note": {"en": "Keep *meaningful* Markdown"},
+    "note": [{"en": "Keep *meaningful* Markdown"}],
     "stanza": {
         1: [
             {"en": "A “quoted” line—with punctuation.", "zh": "第一行。"},
@@ -97,7 +97,7 @@ class HymnConversionTest(TestCase):
         self.assertIn("meter:\n  en: 8.6.8.6. with chorus\n  zh: 8.6.8.6. 和\n", markdown)
         self.assertIn("A “quoted” line—with punctuation.\n第一行。", markdown)
         self.assertIn("第一行。\n　　保留全形空格。\n", markdown)
-        self.assertIn("note: Keep *meaningful* Markdown", markdown)
+        self.assertIn("- Keep *meaningful* Markdown", markdown)
         self.assertIn(
             "credit-note: The page prints one name, the index another.", markdown
         )

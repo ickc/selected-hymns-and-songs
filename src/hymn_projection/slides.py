@@ -25,10 +25,16 @@ LINES_PER_SLIDE = 4
 # becomes the specific tag a renderer can act on: CSS ``:lang()`` matches it by
 # prefix, and Pandoc's LaTeX writer maps it to babel's ``chinese-hant``.
 BCP47 = {"en": "en", "zh": "zh-Hant"}
-# A Pandoc inline note, ``^[...]``, holding one level of nested brackets.  In
-# this collection these are singing instructions rather than annotations of the
-# text, so a slide shows them beside the stanza instead of as a footnote.
-INLINE_NOTE = re.compile(r"\^\[([^\[\]]*(?:\[[^\]]*\][^\[\]]*)*)\]")
+# A Pandoc inline note, ``^[...]``, holding one level of nested brackets.  What
+# is written this way is a gloss: a word of the hymnal's own about a word of the
+# hymn -- what ``Beulah`` means, that ``基督`` may be sung as ``耶穌`` -- printed
+# at the foot of the page it is on.  A direction about singing is not written
+# here: it governs the whole stanza, the page sets it apart from the stanza, and
+# `data/` keeps it in the front matter under ``note``.
+#
+# A screen has no foot to put a footnote at, so a slide shows the gloss beside
+# the stanza the glossed word is in.
+GLOSS = re.compile(r"\^\[([^\[\]]*(?:\[[^\]]*\][^\[\]]*)*)\]")
 # Punctuation a lyric line ends with which a title should not. `!` and `？`
 # are not here: a hymn named "Christ is risen!" keeps it. A full stop is only
 # ever the end of the sentence the line happens to be, in either script.
@@ -60,7 +66,7 @@ class Slide:
     identifier: str
     label: str
     lines: list[LyricLine]
-    notes: list[tuple[str, str]] = field(default_factory=list)
+    glosses: list[tuple[str, str]] = field(default_factory=list)
 
 
 def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
@@ -148,19 +154,21 @@ def split_lines(
     return divided
 
 
-def _extract_notes(lines: list[LyricLine]) -> tuple[list[LyricLine], list[tuple[str, str]]]:
-    """Lift inline singing instructions out of the lyric lines they sit in."""
+def _extract_glosses(
+    lines: list[LyricLine],
+) -> tuple[list[LyricLine], list[tuple[str, str]]]:
+    """Lift the glosses out of the lyric lines they are anchored in."""
 
-    notes: list[tuple[str, str]] = []
+    glosses: list[tuple[str, str]] = []
     stripped: list[LyricLine] = []
     for line in lines:
         translations: dict[str, str] = {}
         for language, text in line.translations.items():
-            for note in INLINE_NOTE.findall(text):
-                notes.append((language, note))
-            translations[language] = INLINE_NOTE.sub("", text).strip()
+            for gloss in GLOSS.findall(text):
+                glosses.append((language, gloss))
+            translations[language] = GLOSS.sub("", text).strip()
         stripped.append(LyricLine(translations))
-    return stripped, notes
+    return stripped, glosses
 
 
 def _parts(
@@ -170,15 +178,15 @@ def _parts(
 
     divided = split_lines(lines, limit)
     for index, part in enumerate(divided, start=1):
-        text, notes = _extract_notes(part)
+        text, glosses = _extract_glosses(part)
         if len(divided) == 1:
-            yield Slide(identifier, label, text, notes)
+            yield Slide(identifier, label, text, glosses)
         else:
             yield Slide(
                 f"{identifier}-{index}",
                 f"{label} ({index}/{len(divided)})",
                 text,
-                notes,
+                glosses,
             )
 
 
@@ -212,7 +220,7 @@ def title(hymn: Hymn) -> dict[str, str]:
 
     named = hymn.title.translations if hymn.title is not None else {}
     first = {
-        language: INLINE_NOTE.sub("", text).strip().rstrip(TITLE_TRAILING)
+        language: GLOSS.sub("", text).strip().rstrip(TITLE_TRAILING)
         for language, text in hymn.stanzas[0].lines[0].translations.items()
     }
     languages = sorted(set(named) | set(first), key=LANGUAGE_ORDER.__getitem__)
@@ -241,14 +249,14 @@ def _lyric_block(slide: Slide) -> str:
     return "::: lyrics\n" + "\n\n".join(paragraphs) + "\n:::"
 
 
-def _note_block(slide: Slide) -> str:
-    """Render the singing instructions found in one slide's lyric lines."""
+def _gloss_block(slide: Slide) -> str:
+    """Render the glosses anchored in one slide's lyric lines."""
 
-    if not slide.notes:
+    if not slide.glosses:
         return ""
-    ordered = sorted(slide.notes, key=lambda note: LANGUAGE_ORDER[note[0]])
+    ordered = sorted(slide.glosses, key=lambda gloss: LANGUAGE_ORDER[gloss[0]])
     body = "\\\n".join(span(text, language) for language, text in ordered)
-    return f"\n\n::: singing-note\n{body}\n:::"
+    return f"\n\n::: gloss\n{body}\n:::"
 
 
 def chorus_shape(hymn: Hymn) -> str:
@@ -358,17 +366,25 @@ def to_markdown(hymn: Hymn, number: int, limit: int = LINES_PER_SLIDE) -> str:
         f"lang: {document_language(hymn)}",
         f"category: {_yaml_scalar(_localized_inline(hymn.category.translations))}",
     ]
-    for name in ("author", "composer", "ref", "note", "credit_note"):
+    for name in ("author", "composer", "ref", "credit_note"):
         value = getattr(hymn, name)
         if value is not None:
             metadata.append(
                 f"{name.replace('_', '-')}: "
                 f"{_yaml_scalar(_localized_inline(value.translations))}"
             )
+    # A list, and looped over by `title-slide.html`: the hymnal prints one note
+    # under another rather than running them together.
+    if hymn.note:
+        metadata.append("note:")
+        metadata.extend(
+            f"  - {_yaml_scalar(_localized_inline(value.translations))}"
+            for value in hymn.note
+        )
 
     body = [
         f"## {slide.label} {{#{slide.identifier}}}\n\n"
-        f"{_lyric_block(slide)}{_note_block(slide)}"
+        f"{_lyric_block(slide)}{_gloss_block(slide)}"
         for slide in slides(hymn, limit)
     ]
     return "---\n" + "\n".join(metadata) + "\n---\n\n" + "\n\n".join(body) + "\n"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -158,6 +158,13 @@ def _named_metadata(value: LocalizedText, description: str) -> pf.MetaMap:
             for language, text in value.translations.items()
         }
     )
+
+
+def _notes_from_metadata(value: pf.MetaValue) -> list[LocalizedText]:
+    """Recover the hymn's notes, in the order the page prints them."""
+
+    items = value.content if isinstance(value, pf.MetaList) else [value]
+    return [_localized_from_metadata(item, "note") for item in items]
 
 
 def _tune_metadata(value: str | list[str]) -> pf.MetaValue:
@@ -324,7 +331,17 @@ class Hymn:
     #: English-only, like the credits it is about.
     credit_note: LocalizedText | None = None
     meter: str | LocalizedText | None = None
-    note: LocalizedText | None = None
+    #: What the hymnal says about singing this hymn, in its own words: which
+    #: lines to repeat, which stanza leaves the chorus out, which stanzas the
+    #: other edition does not have.  A list, because the book prints more than
+    #: one on a hymn -- 355 carries a direction under each of its two stanzas.
+    #:
+    #: A note is set apart from the stanza on the page and governs how the hymn
+    #: is sung, which is why it is here and not in the lyrics.  A note *about a
+    #: word* -- what `Beulah` means, that `Christ` may be sung as `Jesus` -- is
+    #: the other thing the book prints, and stays in the line as an inline
+    #: footnote, anchored where it belongs.
+    note: list[LocalizedText] = field(default_factory=list)
     ref: LocalizedText | None = None
     title: LocalizedText | None = None
     #: The tune the English edition sets the hymn to, and the second one where
@@ -348,10 +365,14 @@ class Hymn:
                 raise ValueError("tune must be a name or a list of names")
             if len(tunes) != len(set(tunes)):
                 raise ValueError("a hymn cannot be set to one tune twice")
-        for name in ("author", "composer", "credit_note", "note", "ref", "title"):
+        for name in ("author", "composer", "credit_note", "ref", "title"):
             value = getattr(self, name)
             if value is not None and not isinstance(value, LocalizedText):
                 raise ValueError(f"{name} must be localized text")
+        if not isinstance(self.note, list) or not all(
+            isinstance(value, LocalizedText) for value in self.note
+        ):
+            raise ValueError("note must be a list of localized text")
 
     @classmethod
     def from_dict(cls, value: object) -> Hymn:
@@ -395,6 +416,19 @@ class Hymn:
                 return None
             return LocalizedText.from_dict(mapping[name], name)
 
+        # The upstream collection carries at most one note per hymn and writes
+        # it as a bare mapping; the hymnal prints as many as it needs to.  One
+        # is read as a list of one so that nothing has to know which it was.
+        note_value = mapping.get("note", [])
+        notes = [
+            LocalizedText.from_dict(item, "note")
+            for item in (
+                note_value if isinstance(note_value, Sequence)
+                and not isinstance(note_value, (str, Mapping))
+                else [note_value]
+            )
+        ]
+
         return cls(
             category=LocalizedText.from_dict(mapping["category"], "category"),
             stanzas=[Stanza.from_yaml(name, lines) for name, lines in stanza_mapping.items()],
@@ -402,7 +436,7 @@ class Hymn:
             composer=optional_text("composer"),
             credit_note=optional_text("credit-note"),
             meter=meter,
-            note=optional_text("note"),
+            note=notes,
             ref=optional_text("ref"),
             title=optional_text("title"),
             tune=tune,
@@ -425,8 +459,8 @@ class Hymn:
                 if isinstance(self.meter, LocalizedText)
                 else self.meter
             )
-        if self.note is not None:
-            result["note"] = self.note.to_dict()
+        if self.note:
+            result["note"] = [value.to_dict() for value in self.note]
         if self.ref is not None:
             result["ref"] = self.ref.to_dict()
         result["stanza"] = {stanza.name: stanza.to_yaml() for stanza in self.stanzas}
@@ -466,8 +500,10 @@ class Hymn:
                 if isinstance(self.meter, LocalizedText)
                 else pf.MetaInlines(pf.RawInline(self.meter, format="markdown"))
             )
-        if self.note is not None:
-            metadata["note"] = _localized_metadata(self.note)
+        if self.note:
+            metadata["note"] = pf.MetaList(
+                *(_localized_metadata(value) for value in self.note)
+            )
         if self.ref is not None:
             # One language has nothing to cut apart, so it is written flat like
             # every other localized field; two are named.
@@ -565,9 +601,10 @@ class Hymn:
         if "tune" in document.metadata:
             metadata["tune"] = _tune_from_metadata(document.metadata["tune"])
         if "note" in document.metadata:
-            metadata["note"] = _localized_from_metadata(
-                document.metadata["note"], "note"
-            ).to_dict()
+            metadata["note"] = [
+                value.to_dict()
+                for value in _notes_from_metadata(document.metadata["note"])
+            ]
         if "ref" in document.metadata:
             reference = _named_from_metadata(document.metadata["ref"])
             metadata["ref"] = (

@@ -154,12 +154,14 @@ class ProjectionTest(TestCase):
 
         self.assertEqual(title(value), {"en": "A Title"})
 
-    def test_a_singing_instruction_leaves_the_lyric_line(self) -> None:
-        value = hymn({1: [{"en": "We rise, O Lord, to build! ^[Repeat the last four lines]"}]})
+    def test_a_gloss_leaves_the_lyric_line(self) -> None:
+        value = hymn({1: [{"en": "From Beulah Land.^[Meaning, married (Isa, 62:4).]"}]})
         slide = slides(value)[0]
 
-        self.assertEqual(slide.lines[0].translations["en"], "We rise, O Lord, to build!")
-        self.assertEqual(slide.notes, [("en", "Repeat the last four lines")])
+        self.assertEqual(slide.lines[0].translations["en"], "From Beulah Land.")
+        self.assertEqual(
+            slide.glosses, [("en", "Meaning, married (Isa, 62:4).")]
+        )
 
     def test_the_document_language_follows_a_monolingual_hymn(self) -> None:
         self.assertEqual(document_language(hymn({1: [{"zh": "一"}]})), "zh-Hant")
@@ -169,7 +171,7 @@ class ProjectionTest(TestCase):
         value = hymn(
             {1: [{"en": "One", "zh": "一"}], "1-chorus": [{"en": "Refrain"}]},
             meter="8.7.8.7.",
-            note={"en": "A note"},
+            note=[{"en": "A note"}],
             **{"credit-note": {"en": "Why the credit reads so"}},
         )
         markdown = to_markdown(value, 104)
@@ -177,7 +179,7 @@ class ProjectionTest(TestCase):
         self.assertIn("format: revealjs", markdown)
         self.assertIn("number: 104", markdown)
         self.assertNotIn("meter", markdown)
-        self.assertIn("note: '[A note]{lang=en}'", markdown)
+        self.assertIn("note:\n  - '[A note]{lang=en}'", markdown)
         # Hyphenated in the deck, as it is in `data/` and in the title-slide
         # template that prints it; the dataclass spells it with an underscore
         # because Python fields must.
