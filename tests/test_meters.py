@@ -115,7 +115,7 @@ class DisagreementTest(TestCase):
 
         found = disagreements([(1, other)])
 
-        self.assertEqual([d.kind for d in found], ["every verse says the same other meter"])
+        self.assertEqual([d.kind for d in found], ["syllables are missing or added"])
         self.assertEqual(found[0].implied, "5.5.")
 
     def test_verses_that_disagree_with_each_other_are_named_as_that(self) -> None:
@@ -123,8 +123,79 @@ class DisagreementTest(TestCase):
 
         found = disagreements([(1, ragged)])
 
-        self.assertEqual([d.kind for d in found], ["verses disagree with each other"])
+        self.assertEqual([d.kind for d in found], ["syllables are missing or added"])
         self.assertIsNone(found[0].implied)
+
+    def test_a_verse_the_chinese_does_not_have_is_not_a_short_verse(self) -> None:
+        # 840 prints five English stanzas over one Chinese one, and says so on
+        # its English page. Counting the four as zero made it the worst
+        # disagreement in the collection.
+        source = hymn("6.6.", ["一二三四五六", "一二三四五六"]).to_markdown()
+        english_only = source + "\n# 2\n\nEnglish alone\nMore English\n"
+
+        self.assertEqual(disagreements([(1, Hymn.from_markdown(english_only))]), [])
+
+
+class LineationTest(TestCase):
+    """Whether the syllables are all there, and whether the lines are the page's.
+
+    A verse is one run of syllables cut into lines, so a meter and a stanza
+    can differ in two quite different ways: on what they hold, which is a
+    finding about the text, or only on where they cut it, which is a finding
+    about nothing at all when the book itself cuts it both ways.
+    """
+
+    def test_lines_that_hold_the_meter_joined_are_not_a_missing_syllable(self) -> None:
+        # 617's page states `7.6.7.6.雙` over rows of thirteen characters.
+        joined = hymn("6.5.", ["一二三四五六七八九十甲"], ["一二三四五六七八九十甲"])
+
+        found = disagreements([(1, joined)])
+
+        self.assertEqual(
+            [d.kind for d in found],
+            ["the meter counts a break the lines do not print"],
+        )
+
+    def test_lines_that_cut_the_meter_finer_are_not_either(self) -> None:
+        # 137's page states `13.13.13.13.` over the same shape 617 calls 7.6.
+        split = hymn(
+            "11.11.",
+            ["一二三四五六", "七八九十甲", "一二三四五六", "七八九十甲"],
+            ["一二三四五六", "七八九十甲", "一二三四五六", "七八九十甲"],
+        )
+
+        found = disagreements([(1, split)])
+
+        self.assertEqual(
+            [d.kind for d in found],
+            ["the lines print a break the meter does not count"],
+        )
+
+    def test_a_break_in_neither_place_is_named_as_moved(self) -> None:
+        # The whole verse is present and cut where it cannot be sung, so one
+        # of the two readings of this verse is wrong.
+        moved = hymn("8.6.", ["一二三四五六七八", "一二三四五六"], ["一二三四五六", "七八九十甲乙丙丁"])
+
+        found = disagreements([(1, moved)])
+
+        self.assertEqual([d.kind for d in found], ["a line break is in a different place"])
+
+    def test_the_worst_of_several_is_the_one_named(self) -> None:
+        # A hymn may be several at once, and the missing syllable is the one
+        # worth reading a page over.
+        both = hymn(
+            "8.6.",
+            ["一二三四五六", "七八九十甲乙丙丁"],
+            ["一二三四五六七八", "一二三四五"],
+        )
+
+        found = disagreements([(1, both)])
+
+        self.assertEqual([d.kind for d in found], ["syllables are missing or added"])
+        self.assertEqual(
+            found[0].kinds,
+            ["syllables are missing or added", "a line break is in a different place"],
+        )
 
 
 class IrregularTest(TestCase):
@@ -146,7 +217,7 @@ class IrregularTest(TestCase):
 
         found = disagreements([(1, ragged)])
 
-        self.assertEqual([d.kind for d in found], ["verses disagree with each other"])
+        self.assertEqual([d.kind for d in found], ["syllables are missing or added"])
 
     def test_a_hymn_with_no_meter_at_all_still_is(self) -> None:
         found = disagreements([(1, hymn(None, ["一二三四五六"], ["一二三"]))])

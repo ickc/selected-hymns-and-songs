@@ -6,9 +6,17 @@ character, so it can be counted rather than trusted. A disagreement is a
 finding either way round: a missing character in the lyrics, or a meter that
 was mistyped on the way into `data/`.
 
-A report, not a gate: 128 hymns still disagree and the hymnal's pages have to
-settle them one at a time. On 89 of the 108 that are hymns 1-764 the meter is
-confirmed by the book's own metrical index, so what disagrees is the text. `--strict` turns it into a gate for when they do.
+A disagreement is not one thing. Of the 137 hymns reported, 81 hold fewer or
+more syllables than the meter asks for, which is a finding about the text; the
+other 56 hold exactly what it asks for and only cut it into different lines,
+which on 36 of them is the hymnal counting the tune's lines where the page
+prints two to a row. The report names which, because that is what says whether
+a page has to be read.
+
+A report, not a gate: the hymnal's pages have to settle them one at a time. On
+89 of the 108 that are hymns 1-764 the meter is confirmed by the book's own
+metrical index, so what disagrees is the text. `--strict` turns it into a gate
+for when they do.
 """
 
 from __future__ import annotations
@@ -17,7 +25,13 @@ import argparse
 from pathlib import Path
 
 from hymn_projection.converter import numbered_markdown_files
-from hymn_projection.meters import chorus_disagreements, disagreements, read, shape
+from hymn_projection.meters import (
+    chorus_disagreements,
+    compare,
+    disagreements,
+    read,
+    shape,
+)
 
 
 def main() -> None:
@@ -51,19 +65,21 @@ def main() -> None:
     kinds: dict[str, int] = {}
     for disagreement in found:
         kinds[disagreement.kind] = kinds.get(disagreement.kind, 0) + 1
+        reference = disagreement.reference or []
         expected = (
             ".".join(str(c) for c in disagreement.expected)
             if disagreement.expected
-            else "-"
+            else "the shape " + ".".join(str(c) for c in reference) + " most verses share"
         )
         print(
-            f"{disagreement.number:>3}  {disagreement.kind}\n"
+            f"{disagreement.number:>3}  {'; '.join(disagreement.kinds) or disagreement.kind}\n"
             f"     meter {disagreement.meter!r} expects {expected}; "
             f"the lyrics imply {disagreement.implied or 'no single meter'}"
         )
         for name, counts in disagreement.stanzas:
-            if counts != disagreement.expected:
-                print(f"     stanza {name}: {'.'.join(str(c) for c in counts)}")
+            if counts != reference:
+                said = compare(reference, counts)
+                print(f"     stanza {name}: {'.'.join(str(c) for c in counts)}  ({said})")
 
     choruses = chorus_disagreements(read(path) for path in files)
     for finding in choruses:

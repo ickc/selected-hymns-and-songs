@@ -22,6 +22,17 @@ too short for it.
 
 What a meter does not describe, and which is therefore not counted: the repeat
 a `重` asks for, which prints a line twice without counting it twice.
+
+A verse and a meter are two readings of one run of syllables, so they can
+differ in two ways that want quite different work. They can hold different
+syllables, which is a finding about the text and the only kind a page can
+settle in our favour. Or they can hold the same syllables and cut them in
+different places, which is often no finding at all: a meter names the lines of
+the *tune*, a page prints the lines of the *stanza*, and where the tune's lines
+are short the page prints two to a row. The hymnal does this both ways -- 617's
+page states `7.6.7.6.雙` over rows of thirteen characters and 137's states
+`13.13.13.13.` over the same shape -- so the report names the two apart rather
+than calling both a disagreement.
 """
 
 from __future__ import annotations
@@ -29,6 +40,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from itertools import accumulate
 from pathlib import Path
 
 from .model import Hymn, Stanza
@@ -80,13 +92,26 @@ def _counts(stanza: Stanza) -> list[int]:
     ]
 
 
+def _sung_in_chinese(stanza: Stanza) -> bool:
+    """Say whether this stanza is one the Chinese edition sings at all.
+
+    Some hymns print more stanzas in English than in Chinese -- 840 prints one
+    Chinese verse under five English ones, and says so on its English page.
+    A stanza with no Chinese line is not a verse that lost its syllables; it
+    is a verse the Chinese edition does not have, and counting it as zero made
+    three hymns look like the worst disagreements in the collection.
+    """
+
+    return any("zh" in line.translations for line in stanza.lines)
+
+
 def stanza_counts(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
     """Return the Chinese syllable count of each verse line, chorus aside."""
 
     return [
         (stanza.name, _counts(stanza))
         for stanza in hymn.stanzas
-        if not isinstance(stanza.name, str)
+        if not isinstance(stanza.name, str) and _sung_in_chinese(stanza)
     ]
 
 
@@ -100,7 +125,11 @@ def shape(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
     --shape`.
     """
 
-    return [(stanza.name, _counts(stanza)) for stanza in hymn.stanzas]
+    return [
+        (stanza.name, _counts(stanza))
+        for stanza in hymn.stanzas
+        if _sung_in_chinese(stanza)
+    ]
 
 
 def chorus_counts(hymn: Hymn) -> list[tuple[str, list[int]]]:
@@ -109,7 +138,7 @@ def chorus_counts(hymn: Hymn) -> list[tuple[str, list[int]]]:
     return [
         (stanza.name, _counts(stanza))
         for stanza in hymn.stanzas
-        if isinstance(stanza.name, str)
+        if isinstance(stanza.name, str) and _sung_in_chinese(stanza)
     ]
 
 
@@ -124,7 +153,7 @@ def sung_counts(hymn: Hymn) -> list[tuple[int | str, list[int]]]:
     choruses = {
         int(stanza.name.split("-")[0]): _counts(stanza)
         for stanza in hymn.stanzas
-        if isinstance(stanza.name, str)
+        if isinstance(stanza.name, str) and _sung_in_chinese(stanza)
     }
     sung = []
     for name, counts in stanza_counts(hymn):
@@ -148,6 +177,61 @@ def implied(hymn: Hymn) -> str | None:
     return notation(list(shapes.pop()))
 
 
+def breaks(counts: list[int]) -> set[int]:
+    """Return where a run of line lengths puts its line breaks.
+
+    A verse is one run of syllables cut into lines, so the count of every line
+    is the same thing as the set of places the run is cut. Written that way,
+    two readings of one verse can be compared on the two questions that have
+    different answers: whether they hold the same syllables, and whether they
+    cut them in the same places.
+    """
+
+    return set(accumulate(counts))
+
+
+#: The disagreement in which a syllable is actually unaccounted for. Every
+#: other kind below has the whole verse present and differs only on where its
+#: lines end, which is a question about the page's layout, not its text.
+MISCOUNTED = "syllables are missing or added"
+
+#: The classic shape of a dropped character: one verse adrift by one while
+#: its siblings scan.
+DROPPED = "one verse, one syllable out"
+
+#: The lines hold what the meter asks for, cut somewhere else entirely --
+#: which cannot be sung, so one of the two is wrong about this verse.
+MOVED = "a line break is in a different place"
+
+#: The two remaining kinds are the hymnal disagreeing with itself, not with
+#: us. A meter names the lines of the *tune*; a page prints the lines of the
+#: *stanza*, and where the tune's lines are short it prints two to a row. The
+#: book does both -- 617's page states `7.6.7.6.雙` over rows of thirteen
+#: characters and 137's states `13.13.13.13.` over the same shape -- so
+#: neither reading is an error and every syllable is present either way.
+JOINED = "the meter counts a break the lines do not print"
+SPLIT = "the lines print a break the meter does not count"
+
+#: Worst first: a missing syllable is a defect in the text, a moved break is a
+#: defect in one of the two readings of it, and a join or a split is neither.
+SEVERITY = (MISCOUNTED, DROPPED, MOVED, SPLIT, JOINED)
+
+
+def compare(expected: list[int], counts: list[int]) -> str | None:
+    """Name how one verse's lines differ from the lines asked of it."""
+
+    if counts == expected:
+        return None
+    if sum(counts) != sum(expected):
+        return MISCOUNTED
+    asked, printed_here = breaks(expected), breaks(counts)
+    if asked < printed_here:
+        return SPLIT
+    if printed_here < asked:
+        return JOINED
+    return MOVED
+
+
 @dataclass
 class Disagreement:
     """One hymn whose Chinese lyrics do not scan as its meter says."""
@@ -159,24 +243,52 @@ class Disagreement:
     implied: str | None
 
     @property
+    def reference(self) -> list[int] | None:
+        """Return the line lengths the verses are held against.
+
+        The meter, when it states any. When it does not -- `Irregular Meter`
+        over verses that disagree with each other -- the verses are held
+        against the shape most of them share, because the hymn is then its own
+        only witness and the majority is the best reading of it available.
+        """
+
+        if self.expected:
+            return self.expected
+        shapes = [tuple(counts) for _, counts in self.stanzas]
+        if not shapes:
+            return None
+        return list(max(set(shapes), key=shapes.count))
+
+    @property
+    def kinds(self) -> list[str]:
+        """Name every way this hymn's verses miss the lines asked of them."""
+
+        reference = self.reference
+        if reference is None:
+            return []
+        found = {compare(reference, counts) for _, counts in self.stanzas}
+        found.discard(None)
+        return [name for name in SEVERITY if name in found]
+
+    @property
     def kind(self) -> str:
-        """Name the shape of the disagreement, which is what decides its fix."""
+        """Name the worst of them, which is what decides how to fix the hymn."""
 
         if self.meter is None:
             return "no meter"
-        off = [counts for _, counts in self.stanzas if counts != self.expected]
-        # One verse a syllable adrift while the rest scan is the shape a
-        # dropped character makes; a meter that is simply wrong is wrong in
-        # every verse at once.
-        if len(off) == 1 and len(off[0]) == len(self.expected or []):
-            distance = sum(
-                abs(a - b) for a, b in zip(off[0], self.expected or [], strict=True)
-            )
-            if distance == 1:
-                return "one verse, one syllable out"
-        if self.implied is None:
-            return "verses disagree with each other"
-        return "every verse says the same other meter"
+        found = self.kinds
+        if not found:
+            return MISCOUNTED
+        if found[0] is MISCOUNTED and self._is_one_dropped_character():
+            return DROPPED
+        return found[0]
+
+    def _is_one_dropped_character(self) -> bool:
+        reference = self.reference or []
+        off = [counts for _, counts in self.stanzas if counts != reference]
+        if len(off) != 1 or len(off[0]) != len(reference):
+            return False
+        return sum(abs(a - b) for a, b in zip(off[0], reference, strict=True)) == 1
 
 
 def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
