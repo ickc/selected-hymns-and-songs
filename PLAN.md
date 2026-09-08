@@ -663,6 +663,115 @@ that is D8's and §4's business rather than an orthographic sweep's. And the
 comparison itself reached only 327 of 848 pages, because the other 521 put
 something other than the heading on the first line the reader recovered.
 
+### D18 — a variant dictionary, and where normalising is allowed to win
+
+D17 corrected `data/` **towards** the book: 着 not 著, 裏 not 裡, 爲 not 為, 藉
+not 借, 眞 not 真, 敎 not 教, 啓 not 啟. That is the right default and it should
+stay. But it is not the whole answer, because two questions are left over that
+a table of variant pairs would settle, and neither is answered by "the page
+wins".
+
+**The stake, which is that the category is an identifier and the lyrics are
+not.** Everything else `data/` holds is a quotation: a lyric, a meter, a
+scripture reference are only ever displayed, so the page's spelling is simply
+the right one. The category is the exception — it is a **key**.
+`categories.read_mapping` builds the Chinese-to-English correspondence keyed by
+the Chinese string and refuses a string that appears twice;
+`subjects._filed` groups the index page by that same string and refuses a hymn
+whose category is not in the table. So two spellings of one subject are two
+subjects: the tree splits, the English half cannot be found, and the build
+stops. **Consistency has to beat the literal page there, and only there.**
+
+That is already how one row works, and it should be written down as a rule
+rather than an exception. Hymn 822's page prints 因着祂足**彀**的恩典 —
+confirmed on `scan/zh/884.png`, not an extraction artefact — while the other
+four hymns under that subject print 足**夠**. `data/` carries 足夠 for all
+five, because a reader searching one spelling should not be shown four of the
+five. The book is inconsistent with itself there, and we follow its dominant
+form. The same character is left alone where it is a quotation: 814 and 817
+keep 彀 in their lyrics, as printed.
+
+**The inconsistency was worse before D17, and its shape says where it came
+from.** `data/categories.tsv` used to spell one word two ways, and the split
+fell along section boundaries:
+
+| the same phrase | one section | another |
+| --- | --- | --- |
+| 在信心裏 / 在信心裡 | 禱告 | 屬靈的爭戰 |
+| 在主的名裏 / 在主的名裡 | 禱告 | 屬靈的爭戰 |
+| 住我裏面 / 住在祂裡面 | 聖靈 | 經歷主 |
+| 在祂裏面喜樂 / 在主裡喜樂 | 讚美和敬拜 | 安慰與鼓勵 |
+
+Seven subjects used 裏 and thirteen used 裡, and 禱告, 聖靈, 救恩的喜樂 and
+尋求主 took one form while 經歷主, 屬靈的爭戰, 榮耀的盼望 and 安慰與鼓勵 took
+the other. That is what a text assembled section by section from several
+sources looks like. None of the four pairs actually collided, because each pair
+sits under a different parent — but they are one phrase printed two ways, and
+nothing but luck kept them from being one key printed two ways.
+
+**The second question: a modern-form reading of the whole text.** The book's
+orthography is now `data/`'s, which is right for fidelity and awkward for a
+reader. The site's search index is built from this text, so someone typing
+裡面, 你, 真 or 教會 — the forms a modern keyboard produces — will not match
+裏面, 祢, 眞 or 敎會. A variant dictionary would let the search fold both ways
+without touching what is stored, and would also make a modern-spelling edition
+possible later if it is ever wanted. Whether search should fold, and whether
+the folding belongs in the index or in the query, is undecided.
+
+**What the dictionary would hold.** Seven pairs are settled, each read off a
+page image rather than off the extraction's text layer, which is wrong about
+several of them:
+
+| the book | the modern form | verified at |
+| --- | --- | --- |
+| 着 | 著 | 570, 12 |
+| 裏 | 裡 | 455 |
+| 爲 | 為 | 214, 14 |
+| 藉 | 借 | 446 |
+| 眞 | 真 | 11 |
+| 敎 | 教 | 32 |
+| 啓 | 啟 | 28 |
+| 祢 | 你 | 55, 446 |
+| 夠 | 彀 | 822 (the book's own minority form) |
+
+**And two entries that prove the dictionary cannot be a plain substitution
+table.** Both were caught only by looking at the page:
+
+- Hymn 458 prints 比晨星更**著** — *zhù*, conspicuous — not the particle. Fold
+  it and the line changes meaning.
+- Hymn 556's 何必先**借**明天憂 is *borrow*, not 藉. The other twenty-four 借 in
+  `data/` were 借著 for the book's 藉着.
+
+So the pairs are not symmetric: 著→着 and 借→藉 are safe only in the contexts
+D17 checked, and any dictionary has to record the exception beside the rule.
+
+**Caveats, which are most of the work.**
+
+- **Coverage is a floor, not a census.** The heading comparison that found all
+  this reached 327 of 848 pages, because on the other 521 the first line the
+  reader recovered was not the heading. The lyrics have never been swept page
+  by page at all — D17's seven pairs were verified at nine places and then
+  applied everywhere, which is sound for a glyph but proves nothing about a
+  pair nobody has looked for.
+- **The text layer cannot be believed on exactly this question.** It reads 爲
+  as 為 more often than not, 裏 as 裹 four times in five, and 祢 as 妳 always.
+  Any candidate pair it suggests has to be confirmed on an image, and its
+  counts must never be used to decide a pair on their own.
+- **Unconfirmed candidates exist.** 冼 appears 70 times in the layer against
+  洗 51, which is almost certainly the layer misreading 洗 — but it has not
+  been checked, and it is the shape a real eighth pair would have.
+- **`你`/`祢` is not a glyph question** and cannot go in the same table without
+  a note: the book uses both, reserving 祢 for God, and choosing between them
+  is a reading of who is addressed. See D17.
+- **The preface is exempt.** `data/preface.zh.markdown` is a modern
+  publisher's note, and `zh/001` prints 為. Any dictionary applied across
+  `data/` has to know that not all of `data/` is the 1960s typesetting.
+
+**Size.** Small as a table and as a search change; large if it is taken as
+licence to re-sweep the lyrics, which is really D17's outstanding half. Worth
+doing as the table plus the search folding first, and leaving the sweep to
+whoever does 你/祢.
+
 ### D8 — the category is single-valued, but the book's index is not
 
 The subject index files some hymns under several subjects. Hymn 13 is under
@@ -1155,7 +1264,11 @@ committed table itself rather than in a commit message.
    `scan/{en,zh}/N.png`. §5 is the largest of them, and D15 shows the shape of
    the problem: the check that found the index disagreeing with the hymn pages
    could only run because the *hymn* pages are here. The index pages are not.
-10. ~~**The TOC** (`en/002`, `zh/002`)~~ Done, and cheap as advertised. It is
+10. **D18's variant dictionary** — the pairs are already known and written
+    down; what is open is whether the site's search folds them, so a reader
+    typing 裡面 or 你 finds 裏面 and 祢. Small, and it is the only thing
+    standing between the book's orthography and a reader's keyboard.
+11. ~~**The TOC** (`en/002`, `zh/002`)~~ Done, and cheap as advertised. It is
     not a table: the ranges it prints are exactly what the hymns already say,
     so §4's tree computes them and the two pages became a check instead. All
     eighteen sections agree in both editions, and the nine subheadings the
@@ -1166,9 +1279,11 @@ committed table itself rather than in a commit message.
     name that looked like an index-against-page disagreement and was not —
     **D17**, which is not small.
 
-**What is next.** Four things are open and each is a different size. **D17**'s
+**What is next.** Five things are open and each is a different size. **D17**'s
 orthography is corrected; what remains of it — 你 for 祢 across 557 files — is
-a reading pass and the largest single correction left in `data/`.
+a reading pass and the largest single correction left in `data/`. **D18** is
+the small one: the variant pairs are already known, and the open question is
+whether the search folds them.
 **D15**'s policy question is the smallest and needs a decision rather than
 work: whether `data/` should prefer a hymn's own page over the author index on
 the nine hymns where the two name different people. **D7**'s remaining syllable

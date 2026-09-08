@@ -309,12 +309,18 @@ What has been added here and is not there:
   This one was found because 470 also carries a `note` — 57 other hymns carry a
   bare `特` and have not been checked for a trailing `.重` or `.和`;
 - **one normalisation that departs from `scan/`**: hymn 822's subject is
-  `因著祂足夠的恩典` here, though its page prints `足彀`. The other four hymns
-  under that subject print `足夠`, and a reader searching for one spelling
-  should not be shown four of the five. The rule that the page wins still
-  holds everywhere else, `彀` included: the Chinese-only appendix uses it in
-  the lyrics of 814 and 817, where the body of the book would write `夠`, and
-  those are left as printed.
+  `因着祂足夠的恩典` here, though its page prints `足彀` — confirmed on
+  `scan/zh/884.png`, so it is the book and not the extraction. The other four
+  hymns under that subject print `足夠`, and a reader searching for one
+  spelling should not be shown four of the five. This is the one place
+  consistency is allowed to beat the page, and the reason is that **the
+  category is a key and a lyric is not**: `read_mapping` builds the
+  Chinese-to-English correspondence keyed by the Chinese string, and
+  `subjects._filed` groups the index page by it, so two spellings of one
+  subject would be two subjects. Everything else `data/` holds is a quotation
+  and takes the page's spelling — `彀` included, which the lyrics of 814 and
+  817 keep as printed. [D18](PLAN.md) is where this is written up as a rule,
+  with the variant pairs and the two that cannot be folded.
 
 What is kept here although the hymnal does not print it:
 
