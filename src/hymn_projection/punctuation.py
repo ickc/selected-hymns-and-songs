@@ -44,14 +44,17 @@ from .model import Hymn
 from .slides import GLOSS
 
 
-# The marks the Chinese edition sets.  The em dash is here singly because the
+# The marks the Chinese edition sets.  The corner brackets `「」` are not among
+# them: `data/` had 112 in hymns 670-768, and `zh/748`, `zh/756` and `zh/776`
+# print every one of those quotations with `“”`, which is what the edition
+# uses throughout.  The em dash is here singly because the
 # pages print one dash and `data/` writes it doubled, ``——``, as Chinese
 # typography asks; the doubling is a matter for the alphabet, not for this set.
 # The ellipsis is here for one line: 418 ends `不知如何方能重新…`, and
 # `zh/439` prints the three dots.  Chinese usually sets an ellipsis as six,
 # `……`, but the collection has no second one to be consistent with, and the
 # page is what `data/` transcribes.
-CHINESE_MARKS = "，。、；：！？“”「」（）—…"
+CHINESE_MARKS = "，。、；：！？“”（）—…"
 # The marks the English edition sets.  Straight ``'`` and ``"`` are absent on
 # purpose, and so is ``‘``: every one of the thirty-five this collection had
 # was an elision -- ``‘Tis``, ``‘Neath``, ``‘gainst`` -- and the hymnal quotes
@@ -72,11 +75,11 @@ CHINESE_SPACE = " "
 # the pages set it there -- `zh/49` prints hymn 43's `投靠祢；”——` at the end
 # of its half-line, and `zh/265` prints 247's `能關。”——` before `祂說了`,
 # where `data/` had begun the following line with it.
-BEGINS_CLOSING = "”」』）)，。、；：！？,;:.!?—"
-ENDS_OPENING = "“「『（("
+BEGINS_CLOSING = "”）)，。、；：！？,;:.!?—"
+ENDS_OPENING = "“（("
 
 # Marks that pair off within a hymn, and the edition each belongs to.
-PAIRS = {"zh": (("“", "”"), ("「", "」"))}
+PAIRS = {"zh": (("“", "”"),)}
 
 
 @dataclass(frozen=True)
