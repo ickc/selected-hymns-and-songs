@@ -22,11 +22,14 @@ def hymn(stanza: dict[object, list[dict[str, str]]], **fields: object) -> Hymn:
     return Hymn.from_dict({"category": {"zh": "分類"}, "stanza": stanza, **fields})
 
 
+SHORTENED = {"c": "chorus", "r": "repeat"}
+
+
 def labels(value: Hymn) -> list[str]:
-    """Return the label of each slide, with the chorus label shortened."""
+    """Return the label of each slide, with the bilingual ones shortened."""
 
     return [
-        "chorus" if slide.identifier.startswith("c") else slide.label
+        SHORTENED.get(slide.identifier[0], slide.label)
         for slide in slides(value)
     ]
 
@@ -108,6 +111,50 @@ class ChorusResolutionTest(TestCase):
 
         self.assertEqual(chorus.lines[0].translations, {"en": "A", "zh": "丙"})
         self.assertEqual(chorus.lines[1].translations, {"en": "B"})
+
+
+class RepeatTest(TestCase):
+    """A repeat the book states in words is sung on a slide of its own."""
+
+    STANZAS = {1: [{"en": "One"}, {"en": "Two"}], 2: [{"en": "Three"}, {"en": "Four"}]}
+
+    def test_a_hymn_with_no_repeat_shows_each_stanza_once(self) -> None:
+        value = hymn(self.STANZAS)
+
+        self.assertEqual(labels(value), ["1", "2"])
+
+    def test_the_repeat_follows_every_stanza_it_is_sung_in(self) -> None:
+        value = hymn(self.STANZAS, repeat={"lines": [2]})
+
+        self.assertEqual(labels(value), ["1", "repeat", "2", "repeat"])
+
+    def test_the_repeat_holds_the_lines_it_names_in_the_order_it_names_them(
+        self,
+    ) -> None:
+        # 57's shape: `en/71` sings the fourth line twice and then the third
+        # and fourth again, which is no tail of the stanza.
+        value = hymn(self.STANZAS, repeat={"lines": [2, 2, 1, 2]})
+
+        repeated = [slide for slide in slides(value) if slide.identifier == "r1"]
+        self.assertEqual(
+            [line.translations["en"] for line in repeated[0].lines],
+            ["Two", "Two", "One", "Two"],
+        )
+
+    def test_a_repeat_naming_stanzas_is_sung_in_those_alone(self) -> None:
+        value = hymn(self.STANZAS, repeat={"lines": [2], "stanzas": [2]})
+
+        self.assertEqual(labels(value), ["1", "2", "repeat"])
+
+    def test_the_repeat_is_sung_before_the_chorus_not_after_it(self) -> None:
+        # The hymnal prints the direction under the stanza, not under the
+        # chorus, so that is where the repeat belongs.
+        value = hymn(
+            {1: [{"en": "One"}, {"en": "Two"}], "1-chorus": [{"en": "Sing"}]},
+            repeat={"lines": [2]},
+        )
+
+        self.assertEqual(labels(value), ["1", "repeat", "chorus"])
 
 
 class StanzaDivisionTest(TestCase):

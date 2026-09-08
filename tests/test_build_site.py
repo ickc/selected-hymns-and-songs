@@ -129,6 +129,32 @@ class MergeTest(TestCase):
                 ["slide/1.html#v2", "slide/1.html#v10", "slide/2.html#v1"],
             )
 
+    def test_a_repeat_slide_is_left_out_of_the_merged_search(self) -> None:
+        with TemporaryDirectory() as temporary:
+            output = Path(temporary) / "worker"
+            output.mkdir()
+            (output / "index.html").write_text("index", encoding="utf-8")
+            (output / "search.json").write_text(
+                json.dumps(
+                    [
+                        {"objectID": "slide/57.html#v1", "href": "slide/57.html#v1"},
+                        {"objectID": "slide/57.html#r1", "href": "slide/57.html#r1"},
+                        {"objectID": "slide/57.html#c1", "href": "slide/57.html#c1"},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            destination = Path(temporary) / "combined"
+            count = _merge([output], destination)
+
+            self.assertEqual(count, 2)
+            entries = json.loads((destination / "search.json").read_text())
+            self.assertEqual(
+                [entry["objectID"] for entry in entries],
+                ["slide/57.html#v1", "slide/57.html#c1"],
+            )
+
     def test_the_chorus_report_cannot_enter_the_merged_search(self) -> None:
         with TemporaryDirectory() as temporary:
             output = Path(temporary) / "worker"

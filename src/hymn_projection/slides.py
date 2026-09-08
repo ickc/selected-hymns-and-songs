@@ -190,16 +190,39 @@ def _parts(
             )
 
 
+def repeated_lines(hymn: Hymn, stanza: Stanza) -> list[LyricLine]:
+    """Return the lines this stanza sings again, in the order it sings them.
+
+    The book says which by three different means and `data/` relates them in
+    ``repeat``; this is where a projection acts on it.  A page prints the
+    direction and leaves the singing to the singer, so ``pages.py`` does not
+    call this -- but a screen has already turned the page by then, which is the
+    whole reason the field exists.
+    """
+
+    if hymn.repeat is None or not hymn.repeat.sung_in(stanza.name):
+        return []
+    return [stanza.lines[number - 1] for number in hymn.repeat.lines]
+
+
 def slides(hymn: Hymn, limit: int = LINES_PER_SLIDE) -> list[Slide]:
     """Return the slides of one hymn, in the order it is sung."""
 
     chorus_label = f"{span('Chorus', 'en')} {span('副歌', 'zh')}"
+    repeat_label = f"{span('Repeat', 'en')} {span('重唱', 'zh')}"
     resolved = chorus_by_stanza(hymn.stanzas)
     result: list[Slide] = []
     for stanza in hymn.stanzas:
         if not isinstance(stanza.name, int):
             continue
         result.extend(_parts(stanza.lines, f"v{stanza.name}", str(stanza.name), limit))
+        # The repeat is the stanza's, and the hymnal prints its direction under
+        # the stanza rather than under the chorus, so it is sung before one.
+        repeated = repeated_lines(hymn, stanza)
+        if repeated:
+            result.extend(
+                _parts(repeated, f"r{stanza.name}", repeat_label, limit)
+            )
         chorus = merge_languages(resolved.get(stanza.name, {}))
         if chorus:
             result.extend(_parts(chorus, f"c{stanza.name}", chorus_label, limit))

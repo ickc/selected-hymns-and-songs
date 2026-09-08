@@ -22,6 +22,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import filecmp
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -143,6 +144,10 @@ def _copy_without_project_files(source: Path, destination: Path) -> None:
             shutil.copy2(path, target)
 
 
+# The fragment `slides.py` gives a repeat slide: `slide/57.html#r1`.
+REPEAT_SLIDE = re.compile(r"\.html#r[1-9][0-9]*$")
+
+
 def _merge(worker_outputs: Sequence[Path], destination: Path) -> int:
     shutil.copytree(worker_outputs[0], destination)
     search_entries = _read_search(worker_outputs[0] / "search.json")
@@ -160,6 +165,16 @@ def _merge(worker_outputs: Sequence[Path], destination: Path) -> int:
         raise RuntimeError("worker search indexes contain duplicate object IDs")
     if any(str(entry.get("href", "")).startswith("chorus.html") for entry in search_entries):
         raise RuntimeError("the developer-only chorus report entered the search index")
+
+    # A repeat slide sings lines the stanza before it has already sung, and
+    # `pages.py` says why that is not indexed: an entry holding no words the
+    # index lacks puts the same hymn in the results twice for no new match.
+    # The stanza is where a half-remembered line should open the deck.
+    search_entries = [
+        entry
+        for entry in search_entries
+        if not REPEAT_SLIDE.search(str(entry.get("href", "")))
+    ]
 
     # Make the merge deterministic: documents follow the lexical expansion of
     # the render globs, while entries within a document remain in slide order.
