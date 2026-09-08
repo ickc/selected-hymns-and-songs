@@ -727,11 +727,20 @@ now found by either spelling.
 
 Nothing stored moves. `data/` and every rendered page keep the book's spelling;
 the only visible effect beyond finding more is that a result's snippet shows
-the folded form, in eleven characters across the whole index. The table is read
-back out of the file and checked against `data/` by
-`tests/test_search_fold.py`, so a pair that stops being true of the collection
-fails there rather than quietly searching for a character that is no longer
-present. `你`/`祢` is deliberately out of it, for the reason below.
+the folded form, in **19 characters across 12 of the 6,906 entries**.
+
+**And the fold is allowed to be more lenient than `data/` is**, which is the
+part worth stating as a rule. A search result is an offer of candidates, not an
+assertion about the page, so the include carries a *second* table: 你, 妳, 祢
+and 袮, the four ways the hymnal writes *nǐ*, folded to the undifferentiated 你.
+`data/` may not do that — which of them a line takes is a reading of who is
+addressed, and hymn 109's Psalm 45 daughter and hymn 105's Church are correctly
+妳 — but nobody recalls a line by its pronoun, and all four are one word said to
+a different hearer. Keeping it out of the search because the *data* question is
+unsettled was the wrong inference, and the two tables now say so: `VARIANTS` is
+checked against `data/` by `tests/test_search_fold.py`, `PRONOUNS` is checked
+only for its shape, because no count in `data/` can confirm or refute a claim
+about what a reader remembers.
 
 A modern-spelling *edition* remains possible and remains unwanted; what the
 fold does is make one unnecessary for the reader who only wants to find a line.
@@ -778,9 +787,12 @@ D17 checked, and any dictionary has to record the exception beside the rule.
 - **Unconfirmed candidates exist.** 冼 appears 70 times in the layer against
   洗 51, which is almost certainly the layer misreading 洗 — but it has not
   been checked, and it is the shape a real eighth pair would have.
-- **`你`/`祢` is not a glyph question** and cannot go in the same table without
-  a note: the book uses both, reserving 祢 for God, and choosing between them
-  is a reading of who is addressed. See D17.
+- **`你`/`祢` is not a glyph question**, and there are four of them, not two:
+  你 neutral, 妳 feminine, 祢 for God and 袮 a second shape of 祢. `data/`
+  carries 4,547 你 and 8 妳 — hymn 109's Psalm 45 daughter and hymn 105's
+  Church, both correct — and no 祢 or 袮 at all. Choosing between them is a
+  reading of who is addressed, so this cannot go in the orthographic table; it
+  has its own, and it is folded in *search* only. See D17.
 - **The preface is exempt.** `data/preface.zh.markdown` is a modern
   publisher's note, and `zh/001` prints 為. Any dictionary applied across
   `data/` has to know that not all of `data/` is the 1960s typesetting.
@@ -1286,11 +1298,13 @@ committed table itself rather than in a commit message.
 10. ~~**D18's variant dictionary**~~ Done, and it was as small as advertised:
     `site/search-fold.html` patches the two fuse.js methods Quarto's search
     passes every indexed document and every query through, and folds both into
-    the form `data/` carries. Eight pairs; `你`/`祢` stays out, being a reading
-    rather than a glyph. Folding *both* ends rather than only the query is what
-    keeps the eleven places the site prints the other form — the Chinese
-    preface, 458's 更顯著, 814 and 817's 彀 — findable, by either spelling.
-    Nothing stored moved.
+    the form `data/` carries. Two tables: eight orthographic pairs, and the
+    four shapes of *nǐ* — 你 妳 祢 袮 — which `data/` may not fold and a search
+    may, because a result is an offer of candidates rather than a claim about
+    the page. Folding *both* ends rather than only the query is what keeps the
+    places the site prints the other form — the Chinese preface, 458's 更顯著,
+    814 and 817's 彀, 105 and 109's 妳 — findable, by either spelling. Nothing
+    stored moved.
 11. ~~**The TOC** (`en/002`, `zh/002`)~~ Done, and cheap as advertised. It is
     not a table: the ranges it prints are exactly what the hymns already say,
     so §4's tree computes them and the two pages became a check instead. All

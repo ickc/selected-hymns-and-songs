@@ -919,20 +919,40 @@ the particle; 814 and 817 keep the 彀 their pages print where the other hymns
 under that subject print 夠. Folded on both sides, each of those is found by
 either spelling.
 
-Eight pairs, seven pointing at the older shape and 彀 → 夠 pointing the other
-way, because there the book's own dominant form is the modern one. `你`/`祢` is
-deliberately absent: the hymnal uses both and reserves 祢 for God, so choosing
-between them is a reading of who is addressed rather than a choice of glyph.
-PLAN.md's D18 says where each pair was read off a page image.
+There are **two tables**, and the difference between them is the whole point.
+
+`VARIANTS` is eight orthographic pairs — two shapes of one character — seven
+pointing at the older shape and 彀 → 夠 pointing the other way, because there
+the book's own dominant form is the modern one. PLAN.md's D18 says where each
+was read off a page image.
+
+`PRONOUNS` folds the four ways the hymnal writes *nǐ*: 你 neutral, 妳 feminine,
+祢 reserved for God, and 袮 a second shape of 祢. This is **not** an
+orthographic pair, and that is why it needs a table of its own. Which one a
+line takes is a reading of who is being addressed — Psalm 45's "O daughter" in
+hymn 109 and the Church addressed as herself in 105 are correctly 妳 — so
+`data/` may not fold them, and D17 still owes the collection a pass over 你/祢.
+A search is under no such obligation: nobody recalls a line by its pronoun, and
+all four are one word said to a different hearer. They fold to 你, the
+undifferentiated one.
+
+That asymmetry is the licence the whole include runs on. **The fold may be more
+lenient than `data/` is**, because a search result is an offer of candidates and
+not an assertion about the page: a reader who cannot remember which shape a line
+was set in should be handed both and left to pick.
 
 What this does *not* touch is `data/` or any rendered page, which keep the
 book's spelling exactly. The one visible effect beyond finding more is that a
-result's snippet shows the folded form — eleven characters across the whole
-index. `tests/test_search_fold.py` reads the table back out of the file and
-checks it against `data/`, so a pair that stops being true of the collection —
-D17 rewrote its orthography once already, and D18 leaves a sweep of the lyrics
-open — fails there rather than quietly searching for a character that is no
-longer present.
+result's snippet shows the folded form — **19 characters in 12 of the 6,906
+entries**. `tests/test_search_fold.py` reads both tables back out of the file;
+it checks `VARIANTS` against `data/`, so a pair that stops being true of the
+collection — D17 rewrote its orthography once already, and D18 leaves a sweep
+of the lyrics open — fails there rather than quietly searching for a character
+that is no longer present. It checks `PRONOUNS` only for shape: no count in
+`data/` can confirm or refute a claim about what readers remember, and once
+D17's pass lands and 祢 becomes common, checking it against `data/` would fail
+for the wrong reason. What *would* deserve revisiting then is what a snippet
+displays; what it finds will still be right, because both ends are folded.
 
 ### Parallel rendering
 
