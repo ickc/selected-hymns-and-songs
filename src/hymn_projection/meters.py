@@ -343,10 +343,30 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
             # A repeat gives the verses several runs they might be sung on.
             # The one they are held to is the one they come closest to.
             expected = min(sung, key=lambda run: _distance(counts, run))
+            if _is_half_of(counts, expected):
+                # Every verse is exactly the first half of a doubled meter, so
+                # what does not scan is the chorus that completes it. Report
+                # the two together, or the finding reads as six bad verses
+                # where there is one bad chorus.
+                counts = sung_counts(hymn)
         found.append(
             Disagreement(number, _meter_text(hymn), expected, counts, implied(hymn))
         )
     return found
+
+
+def _is_half_of(
+    counts: list[tuple[int | str, list[int]]], expected: list[int]
+) -> bool:
+    """Say whether every verse is the first half of a doubled meter."""
+
+    if len(expected) % 2 or expected[: len(expected) // 2] != expected[len(expected) // 2 :]:
+        return False
+    half = sum(expected) // 2
+    # "The first half" by what it holds, not by where it breaks: 635's verse
+    # is two lines of thirteen where the meter says four of 8.5, and it is
+    # still the half its chorus completes.
+    return bool(counts) and all(sum(c) == half for _, c in counts)
 
 
 def _distance(

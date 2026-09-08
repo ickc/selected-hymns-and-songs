@@ -279,6 +279,24 @@ class DoubledMeterTest(TestCase):
         self.assertEqual(len(found), 1)
 
 
+class DoubledChorusTest(TestCase):
+    """Where the verse is half a doubled meter, the chorus is the other half.
+
+    A hymn whose verses are all exactly half of what the meter states has
+    nothing wrong with its verses: what does not scan is the chorus meant to
+    complete them, and the report says so by holding the two together.
+    """
+
+    def test_the_finding_is_reported_against_verse_and_chorus(self) -> None:
+        source = hymn("6.6.D.", ["一二三四五六", "一二三四五六"]).to_markdown()
+        with_chorus = source + "\n# 1-chorus\n\nchorus line\n一二三四五\n"
+        with_chorus += "another\n一二三四五六\n"
+
+        found = disagreements([(1, Hymn.from_markdown(with_chorus))])
+
+        self.assertEqual([d.stanzas for d in found], [[(1, [6, 6, 5, 6])]])
+
+
 class ShapeTest(TestCase):
     """The count a hymn always has, whatever the hymnal prints over it."""
 
