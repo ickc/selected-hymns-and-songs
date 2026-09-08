@@ -276,6 +276,111 @@ class LyricLine:
 
 
 @dataclass
+class Repeat:
+    """Which of a stanza's lines the hymnal sings again after it.
+
+    The book states a repeat in three places and relates none of them: it
+    writes the lines out a second time, it prints a direction under the last
+    stanza, or it marks the meter ``重`` / ``with repeat``.  Where the lines
+    are written out, `data/` already holds them and this is absent.  This is
+    for the other two, and it says the one thing they leave to the singer --
+    *which* lines -- so that a projection can sing what the book only names.
+
+    ``lines`` are the stanza's own lines, numbered from one, in the order they
+    are sung again.  They are not always a tail: `en/71` sets hymn 57's
+    ``8.6.8.6. with repeat`` as the fourth line twice and then the third and
+    fourth again, which is the same shape hymn 678 writes out as a chorus.
+
+    ``stanzas`` is every stanza unless it names some.  242 is the one that
+    names any: both its pages print the direction under the fourth stanza, and
+    both mean that stanza alone.
+
+    Not localized, because the structure is the tune's and both editions sing
+    it.  Every stanza of every hymn that carries a repeat has the same number
+    of lines in both languages, so the numbers mean the same thing on either
+    side.  242 looks like a counter-example and is not: `en/266` prints
+    *Repeat the last four lines* and `zh/258` prints ``第四節末兩行重唱一遍``,
+    and the Chinese page sets its stanzas in two columns, so two of its rows
+    are four of these lines.
+    """
+
+    lines: list[int]
+    #: The stanzas this repeat is sung in, or ``None`` for every one of them.
+    stanzas: list[int] | None = None
+
+    def __post_init__(self) -> None:
+        for name, value in (("lines", self.lines), ("stanzas", self.stanzas)):
+            if value is None:
+                continue
+            if not isinstance(value, list) or not value:
+                raise ValueError(f"repeat {name} must be a non-empty list")
+            if not all(
+                isinstance(number, int)
+                and not isinstance(number, bool)
+                and number > 0
+                for number in value
+            ):
+                raise ValueError(f"repeat {name} must be positive line numbers")
+        if self.stanzas is not None and len(self.stanzas) != len(set(self.stanzas)):
+            raise ValueError("repeat stanzas must be distinct")
+
+    @classmethod
+    def from_dict(cls, value: object) -> Repeat:
+        """Validate and construct a repeat from a YAML value."""
+
+        mapping = _mapping(value, "repeat")
+        unknown = set(mapping) - {"lines", "stanzas"}
+        if unknown:
+            raise ValueError(f"unknown repeat fields: {sorted(unknown)!r}")
+        if "lines" not in mapping:
+            raise ValueError("a repeat must say which lines are sung again")
+
+        def numbers(name: str) -> list[int] | None:
+            if name not in mapping:
+                return None
+            value = mapping[name]
+            if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+                raise ValueError(f"repeat {name} must be a list")
+            # Pandoc metadata has no numbers, only inlines, so a value read
+            # back out of `data/N.md` arrives as a string either way.
+            return [int(number) for number in value]
+
+        return cls(lines=numbers("lines") or [], stanzas=numbers("stanzas"))
+
+    def to_dict(self) -> dict[str, list[int]]:
+        """Return an independent YAML-compatible mapping."""
+
+        result: dict[str, list[int]] = {"lines": list(self.lines)}
+        if self.stanzas is not None:
+            result["stanzas"] = list(self.stanzas)
+        return result
+
+    def to_metadata(self) -> pf.MetaMap:
+        """Represent this repeat as Pandoc metadata."""
+
+        def listing(numbers: list[int]) -> pf.MetaList:
+            return pf.MetaList(
+                *(pf.MetaInlines(pf.Str(str(number))) for number in numbers)
+            )
+
+        content: dict[str, pf.MetaValue] = {"lines": listing(self.lines)}
+        if self.stanzas is not None:
+            content["stanzas"] = listing(self.stanzas)
+        return pf.MetaMap(**content)
+
+    def sung_in(self, name: int | str) -> bool:
+        """Say whether this repeat is sung in the named stanza.
+
+        A chorus is never one: the repeat belongs to the verse, and a chorus
+        that repeats its own lines is written out where the book writes it.
+        """
+
+        if not isinstance(name, int):
+            return False
+        return self.stanzas is None or name in self.stanzas
+
+
+@dataclass
 class Stanza:
     """A numbered verse or named chorus and its lyric lines."""
 
@@ -343,6 +448,9 @@ class Hymn:
     #: footnote, anchored where it belongs.
     note: list[LocalizedText] = field(default_factory=list)
     ref: LocalizedText | None = None
+    #: Which lines the hymn sings again, where the book says so without
+    #: writing them out.  See ``Repeat``.
+    repeat: Repeat | None = None
     title: LocalizedText | None = None
     #: The tune the English edition sets the hymn to, and the second one where
     #: it prints two.  Not localized: a tune has one name, in the edition that
@@ -373,6 +481,23 @@ class Hymn:
             isinstance(value, LocalizedText) for value in self.note
         ):
             raise ValueError("note must be a list of localized text")
+        if self.repeat is not None and not isinstance(self.repeat, Repeat):
+            raise ValueError("repeat must be a Repeat")
+        if self.repeat is not None:
+            names = {stanza.name for stanza in self.stanzas}
+            for name in self.repeat.stanzas or ():
+                if name not in names:
+                    raise ValueError(f"repeat names stanza {name}, which this hymn has not")
+            longest = max(
+                len(stanza.lines)
+                for stanza in self.stanzas
+                if self.repeat.sung_in(stanza.name)
+            )
+            for line in self.repeat.lines:
+                if line > longest:
+                    raise ValueError(
+                        f"repeat names line {line} of a stanza that has {longest}"
+                    )
 
     @classmethod
     def from_dict(cls, value: object) -> Hymn:
@@ -381,7 +506,7 @@ class Hymn:
         mapping = _mapping(value, "hymn")
         allowed = {
             "author", "category", "composer", "credit-note", "meter",
-            "note", "ref", "stanza", "title", "tune",
+            "note", "ref", "repeat", "stanza", "title", "tune",
         }
         unknown = set(mapping) - allowed
         missing = {"category", "stanza"} - set(mapping)
@@ -431,6 +556,7 @@ class Hymn:
 
         return cls(
             category=LocalizedText.from_dict(mapping["category"], "category"),
+            repeat=Repeat.from_dict(mapping["repeat"]) if "repeat" in mapping else None,
             stanzas=[Stanza.from_yaml(name, lines) for name, lines in stanza_mapping.items()],
             author=optional_text("author"),
             composer=optional_text("composer"),
@@ -463,6 +589,8 @@ class Hymn:
             result["note"] = [value.to_dict() for value in self.note]
         if self.ref is not None:
             result["ref"] = self.ref.to_dict()
+        if self.repeat is not None:
+            result["repeat"] = self.repeat.to_dict()
         result["stanza"] = {stanza.name: stanza.to_yaml() for stanza in self.stanzas}
         if self.title is not None:
             result["title"] = self.title.to_dict()
@@ -512,6 +640,8 @@ class Hymn:
                 if len(self.ref.translations) > 1
                 else _localized_metadata(self.ref)
             )
+        if self.repeat is not None:
+            metadata["repeat"] = self.repeat.to_metadata()
         if self.title is not None:
             metadata["title"] = _localized_metadata(self.title)
         if self.tune is not None:
@@ -563,6 +693,7 @@ class Hymn:
             "meter",
             "note",
             "ref",
+            "repeat",
             "title",
             "tune",
         }
@@ -612,6 +743,12 @@ class Hymn:
                 if reference is not None
                 else _localized_from_metadata(document.metadata["ref"], "ref").to_dict()
             )
+
+        if "repeat" in plain_metadata:
+            # Read from the plain metadata rather than the tagged tree: these
+            # are numbers, and a number belongs to no writing system, so
+            # `auto-lang.lua` leaves them alone.
+            metadata["repeat"] = plain_metadata["repeat"]
 
         stanza: dict[int | str, list[dict[str, str]]] = {}
         current_name: int | str | None = None

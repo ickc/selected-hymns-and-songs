@@ -110,6 +110,26 @@ class HymnConversionTest(TestCase):
         # stays readable: `en/56` prints `The Father only [glorious claim]!`.
         self.assertIn("The Father only [glorious claim]!", markdown)
 
+    def test_a_repeat_survives_the_round_trip_as_numbers(self) -> None:
+        # Pandoc metadata holds inlines and not numbers, so a repeat comes back
+        # out of the Markdown as strings and has to be read as figures again.
+        repeat = {"lines": [2, 3], "stanzas": [4]}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, repeat=repeat, stanza={
+            1: HYMN_DATA["stanza"][1], 4: HYMN_DATA["stanza"][1],
+        }))
+        markdown = hymn.to_markdown()
+
+        self.assertIn("repeat:\n  lines:\n  - 2\n  - 3\n  stanzas:\n  - 4\n", markdown)
+        self.assertEqual(Hymn.from_markdown(markdown).to_dict()["repeat"], repeat)
+
+    def test_a_repeat_sung_in_every_stanza_names_none_of_them(self) -> None:
+        hymn = Hymn.from_dict(dict(HYMN_DATA, repeat={"lines": [2]}))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertIsNone(recovered.repeat.stanzas)
+        self.assertEqual(recovered.to_dict()["repeat"], {"lines": [2]})
+
     def test_latin_scalar_meter_remains_a_scalar(self) -> None:
         hymn = Hymn.from_dict(dict(HYMN_DATA, meter="C.M."))
 
