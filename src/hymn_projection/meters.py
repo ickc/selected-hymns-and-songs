@@ -13,12 +13,22 @@ counting anything, and the two editions sing the same tune, so the Chinese
 count carries the meter for both.
 
 The two editions do not write a meter the same way, and the difference is not
-a mistake in either. Where a hymn's chorus is sung to the second half of a
+a mistake in either. The Chinese page marks a doubled tune `雙` where the
+English writes `D.`, a repeat `重` where it writes `with repeat`, a chorus
+`和` where it writes `with chorus`, and an irregular meter `特` where it writes
+`Irregular Meter`. Where a hymn's chorus is sung to the second half of a
 doubled tune, the English page writes `8.7.8.7.D.` and the Chinese page writes
 `8.7.8.7.和` -- the same eight sung lines, counted as one doubled verse on one
 page and as a verse and a chorus on the other. So a doubled meter is measured
 against the verse and the chorus it takes together whenever the verse alone is
 too short for it.
+
+The two pages can also state different *lengths*, and that too is neither page
+being wrong. A meter describes the tune, and a translation may sit a syllable
+differently on it: 45's English page prints `13. 13. 13. 14. with chorus`
+while its Chinese page prints `8.5.8.5.雙.和`, and only the second describes
+the Chinese lyrics. So a hymn may carry two meters, and the one counted here
+is always the Chinese page's.
 
 What a meter does not describe, and which is therefore not counted: the repeat
 a `重` asks for, which prints a line twice without counting it twice.
@@ -39,7 +49,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import accumulate
 from pathlib import Path
 
@@ -57,21 +67,27 @@ HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 # the longest disagreements the report had.
 NOTE = re.compile(r"\^\[[^\]]*\]")
 
+# The speaker a responsive chorus names before its line. Four hymns are set
+# that way -- 491, 532, 533 and 761 -- and the label is announced, not sung,
+# so it belongs to no note and to no count.
+SPEAKER = re.compile(r"^（(?:姊妹|弟兄|全體)）")
+
 # The `重` a Chinese meter may end with, and the `with repeat` its English
 # half writes instead: sing the last line, or the last phrase, twice. The
 # lengths before it are stated once, so a verse that writes the repeat out is
 # longer than its meter without being wrong.
 REPEAT = re.compile(r"重|with repeat")
 
-# The numeric head of a meter: `8.6.8.6.`, optionally doubled by `D.`. What
-# may follow it -- ` with chorus和`, ` (A)` -- is notation, not a count.
-NUMBERS = re.compile(r"^\.?((?:\d+\.)+)(D\.)?")
+# The numeric head of a meter: `8.6.8.6.`, optionally doubled -- `D.` on the
+# English page, `雙` on the Chinese one. What may follow it -- ` with chorus`,
+# `和`, ` (A)` -- is notation, not a count.
+NUMBERS = re.compile(r"^\.?((?:\d+\.)+)(D\.|雙\.?)?")
 
 
 def syllables(line: str) -> int:
     """Return how many syllables a Chinese lyric line is sung on."""
 
-    return len(HAN.findall(NOTE.sub("", line)))
+    return len(HAN.findall(SPEAKER.sub("", NOTE.sub("", line))))
 
 
 def printed(meter: str) -> list[int] | None:
@@ -271,6 +287,22 @@ class Disagreement:
     expected: list[int] | None
     stanzas: list[tuple[int | str, list[int]]]
     implied: str | None
+    runs: list[list[int]] = field(default_factory=list)
+
+    def held_to(self, counts: list[int]) -> list[int] | None:
+        """Return the run of lengths this one verse is fairly held against.
+
+        Where the meter asks for a repeat it offers several runs, and a verse
+        that writes the repeat out is not a verse with syllables to spare. So
+        a verse is measured against whichever admissible run holds as many
+        syllables as it does, and only against the hymn's own reference when
+        none of them do.
+        """
+
+        for run in self.runs:
+            if sum(run) == sum(counts):
+                return run
+        return self.reference
 
     @property
     def reference(self) -> list[int] | None:
@@ -296,7 +328,10 @@ class Disagreement:
         reference = self.reference
         if reference is None:
             return []
-        found = {compare(reference, counts) for _, counts in self.stanzas}
+        found = {
+            compare(self.held_to(counts) or reference, counts)
+            for _, counts in self.stanzas
+        }
         found.discard(None)
         if MISCOUNTED in found and self._is_one_dropped_character():
             found = (found - {MISCOUNTED}) | {DROPPED}
@@ -327,6 +362,7 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
         counts = stanza_counts(hymn)
         text = _meter_text(hymn)
         expected = printed(text or "")
+        runs: list[list[int]] = []
         if text is None:
             pass  # A hymn with no meter at all is a finding in itself.
         elif expected is None:
@@ -337,8 +373,8 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
             if implied(hymn) is not None:
                 continue
         else:
-            sung = repeats(text, expected)
-            if any(_scans(hymn, counts, run) for run in sung):
+            runs = sung = repeats(text, expected)
+            if _scans(hymn, counts, sung):
                 continue
             # A repeat gives the verses several runs they might be sung on.
             # The one they are held to is the one they come closest to.
@@ -350,7 +386,9 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
                 # where there is one bad chorus.
                 counts = sung_counts(hymn)
         found.append(
-            Disagreement(number, _meter_text(hymn), expected, counts, implied(hymn))
+            Disagreement(
+                number, _meter_text(hymn), expected, counts, implied(hymn), runs
+            )
         )
     return found
 
@@ -406,28 +444,45 @@ def chorus_disagreements(
 
 
 def _scans(
-    hymn: Hymn, counts: list[tuple[int | str, list[int]]], expected: list[int]
+    hymn: Hymn, counts: list[tuple[int | str, list[int]]], runs: list[list[int]]
 ) -> bool:
-    """Say whether every verse is as long as the meter says, chorus included."""
+    """Say whether every verse is as long as the meter says, chorus included.
 
-    if all(c == expected for _, c in counts):
+    A meter that asks for a repeat offers several runs, and each verse takes
+    whichever one it is printed on. 274's first verse writes its repeat out
+    beneath the music and its other two leave it to the singer, and the page
+    is right all three times -- so a verse is asked to match some run, not all
+    of them the same one.
+    """
+
+    if all(any(c == run for run in runs) for _, c in counts):
         return True
-    return all(c == expected for _, c in sung_counts(hymn))
+    return all(any(c == run for run in runs) for _, c in sung_counts(hymn))
 
 
 def _meter_text(hymn: Hymn) -> str | None:
-    """Return the meter as `data/N.md` writes it, for reporting."""
+    """Return the meter the Chinese edition prints, which is what is counted.
+
+    A localized meter holds two statements, and they are not always the same
+    statement: 45's English page prints `13. 13. 13. 14. with chorus` over
+    lines its Chinese page counts as `8.5.8.5.雙.和`. Both describe the same
+    tune; only the second describes the Chinese lyrics, and the Chinese lyrics
+    are what this module counts. So the Chinese half is read when there is
+    one, and the single meter when the hymn states only one.
+
+    This used to read the English half, on the belief that both stated the
+    same lengths and differed only in the qualifier. That was true of `data/`
+    because the transcription had made it true -- every localized meter
+    carried the English figures on both sides -- and forty of the hymns the
+    report could not settle were that collapse and nothing else.
+    """
 
     if hymn.meter is None:
         return None
     if isinstance(hymn.meter, str):
         return hymn.meter
-    # Both halves state the same lengths -- only the qualifier is written in
-    # two languages -- so either parses alike, and the English one is the
-    # analysis `data/` stores. Running them together, as this used to, printed
-    # a meter neither edition has.
     translations = hymn.meter.translations
-    return translations.get("en") or next(iter(translations.values()))
+    return translations.get("zh") or next(iter(translations.values()))
 
 
 def read(path: Path) -> tuple[int, Hymn]:

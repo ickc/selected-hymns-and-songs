@@ -6,17 +6,20 @@ character, so it can be counted rather than trusted. A disagreement is a
 finding either way round: a missing character in the lyrics, or a meter that
 was mistyped on the way into `data/`.
 
-A disagreement is not one thing. Of the 137 hymns reported, 81 hold fewer or
-more syllables than the meter asks for, which is a finding about the text; the
-other 56 hold exactly what it asks for and only cut it into different lines,
-which on 36 of them is the hymnal counting the tune's lines where the page
-prints two to a row. The report names which, because that is what says whether
+The meter counted against is the one the Chinese page prints, which is not
+always the one the English page prints: 45's English states
+`13. 13. 13. 14. with chorus` where its Chinese states `8.5.8.5.雙.和`,
+and only the second describes the Chinese lyrics.
+
+A disagreement is not one thing. Of the 63 hymns reported, 56 hold exactly what
+the meter asks for and only cut it into different lines -- the hymnal counting
+the tune's lines where the page prints two to a row -- and 7 hold a different
+number of syllables. The report names which, because that is what says whether
 a page has to be read.
 
-A report, not a gate: the hymnal's pages have to settle them one at a time. On
-89 of the 108 that are hymns 1-764 the meter is confirmed by the book's own
-metrical index, so what disagrees is the text. `--strict` turns it into a gate
-for when they do.
+A report, not a gate: the hymnal's pages have to settle them one at a time, and
+the seven that are left have been settled against the page and are the book's
+own. `--strict` turns it into a gate for when a later pass wants one.
 """
 
 from __future__ import annotations
@@ -78,7 +81,7 @@ def main() -> None:
         )
         for name, counts in disagreement.stanzas:
             if counts != reference:
-                said = compare(reference, counts)
+                said = compare(disagreement.held_to(counts) or reference, counts)
                 print(f"     stanza {name}: {'.'.join(str(c) for c in counts)}  ({said})")
 
     choruses = chorus_disagreements(read(path) for path in files)

@@ -35,6 +35,17 @@ def chorused(meter: str | None, *stanzas: tuple[str, list[str]]) -> Hymn:
     return Hymn.from_markdown(f"---\ncategory: 甲——乙\n{front}---\n{body}")
 
 
+def localized(english: str, chinese: str, *stanzas: list[str]) -> Hymn:
+    """Build a hymn whose two pages state two different meters."""
+
+    body = "".join(
+        f"\n# {index}\n\n" + "".join(f"line {index}\n{line}\n" for line in lines)
+        for index, lines in enumerate(stanzas, start=1)
+    )
+    front = f"meter:\n  en: {english}\n  zh: {chinese}\n"
+    return Hymn.from_markdown(f"---\ncategory: 甲——乙\n{front}---\n{body}")
+
+
 class SyllableTest(TestCase):
     """Chinese is one syllable to the character, and punctuation is not sung."""
 
@@ -43,6 +54,10 @@ class SyllableTest(TestCase):
 
     def test_an_empty_line_is_no_syllables(self) -> None:
         self.assertEqual(syllables("，。！"), 0)
+
+    def test_the_speaker_a_responsive_chorus_names_is_not_sung(self) -> None:
+        # 491, 532, 533 and 761 announce who sings each line of the chorus.
+        self.assertEqual(syllables("（全體）作我們生命性情。"), 7)
 
     def test_a_note_beside_the_line_is_not_sung_in_it(self) -> None:
         # The hymnal's own direction, which `data/N.md` keeps as an inline
@@ -93,6 +108,58 @@ class RepeatTest(TestCase):
         plain = hymn("6.5. 重", ["一二三四五六", "一二三四五"])
 
         self.assertEqual(disagreements([(1, plain)]), [])
+
+    def test_one_verse_may_write_the_repeat_out_and_another_not(self) -> None:
+        # 274 writes its repeat out beneath the music and leaves it to the
+        # singer in the verses printed as text. Both are the hymnal's own.
+        mixed = hymn(
+            "6.5. 重",
+            ["一二三四五六", "一二三四五", "一二三四五"],
+            ["一二三四五六", "一二三四五"],
+        )
+
+        self.assertEqual(disagreements([(1, mixed)]), [])
+
+    def test_the_verse_is_named_against_the_run_it_is_printed_on(self) -> None:
+        # The long verse holds a whole repeat; only the short one is short.
+        off = hymn(
+            "6.5. 重",
+            ["一二三四五六", "一二三四五", "一二三四五"],
+            ["一二三四五六", "一二三四"],
+        )
+        (found,) = disagreements([(1, off)])
+
+        self.assertEqual(found.kinds, ["syllables are missing or added"])
+        self.assertEqual(found.held_to([6, 5, 5]), [6, 5, 5])
+
+
+class ChineseMeterTest(TestCase):
+    """A hymn may print one meter in English and another in Chinese."""
+
+    def test_the_chinese_page_doubles_with_a_character(self) -> None:
+        # 45's `8.5.8.5.雙.和` is the English page's `D.` in Chinese.
+        self.assertEqual(printed("8.5.8.5.雙. 和"), [8, 5, 8, 5, 8, 5, 8, 5])
+
+    def test_a_doubling_character_may_end_the_meter(self) -> None:
+        # 453 states `6.6.11.雙` and nothing after it.
+        self.assertEqual(printed("6.6.11.雙."), [6, 6, 11, 6, 6, 11])
+
+    def test_the_chinese_half_is_the_one_counted(self) -> None:
+        # Both halves describe the tune; only the Chinese one describes the
+        # Chinese lyrics, which is what there is to count.
+        both = localized("7.7.", "4.10.", ["一二三四", "一二三四五六七八九十"])
+
+        self.assertEqual(disagreements([(1, both)]), [])
+
+    def test_the_english_half_does_not_excuse_the_chinese(self) -> None:
+        english = localized("4.10.", "7.7.", ["一二三四", "一二三四五六七八九十"])
+
+        self.assertEqual([d.number for d in disagreements([(1, english)])], [1])
+
+    def test_a_hymn_that_states_one_meter_is_held_to_it(self) -> None:
+        single = hymn("4.10.", ["一二三四", "一二三四五六七八九十"])
+
+        self.assertEqual(disagreements([(1, single)]), [])
 
 
 class ImpliedTest(TestCase):
