@@ -11,14 +11,14 @@ always the one the English page prints: 45's English states
 `13. 13. 13. 14. with chorus` where its Chinese states `8.5.8.5.雙.和`,
 and only the second describes the Chinese lyrics.
 
-A disagreement is not one thing. Of the 63 hymns reported, 56 hold exactly what
+A disagreement is not one thing. Of the 64 hymns reported, 56 hold exactly what
 the meter asks for and only cut it into different lines -- the hymnal counting
-the tune's lines where the page prints two to a row -- and 7 hold a different
+the tune's lines where the page prints two to a row -- and 8 hold a different
 number of syllables. The report names which, because that is what says whether
 a page has to be read.
 
 A report, not a gate: the hymnal's pages have to settle them one at a time, and
-the seven that are left have been settled against the page and are the book's
+the eight that are left have been settled against the page and are the book's
 own. `--strict` turns it into a gate for when a later pass wants one.
 """
 

@@ -101,6 +101,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `meterindex.py` | The **projection** of the same relation grouped the other way: the book's metrical index, meter then tune then hymns. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere, and reading the meter the Chinese page prints rather than the English one's. |
+| `notes.py` | the second **check** with no output of its own: the two kinds of prose the hymnal prints beside a hymn — a direction in the front matter, a gloss in the lyric line — read back against the stanzas they describe. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -1184,11 +1185,33 @@ Nobody is going to open 848 decks, so two scripts do it instead.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
+- `scripts/check_notes.py` (`pixi run check-notes`) reads the hymnal's own
+  prose about a hymn back against the hymn. This one **is** a gate: nothing in
+  `data/` fails it, and every rule in it was broken somewhere before the two
+  kinds of prose were told apart.
+
+  **A direction is front matter and a gloss is in the line.** A direction
+  governs the singing — which lines to repeat, which stanza leaves the chorus
+  out, which stanzas the other edition has not, why no music is printed — and
+  the page sets it apart from the stanza, so `data/` carries it under `note`,
+  which is a list because a hymn can print more than one. A gloss is a word
+  about a word — `Meaning, married ( Isa, 62:4).` under 324, `(第一節“眞”指基
+  督)` under 768 — and the page anchors it to that word, so it stays in the
+  lyric line as `^[...]`, where the report strips it before counting and the
+  page shows it under the stanza.
+
+  What is checked: a gloss that reads as a direction; a gloss quoting a word
+  its own line does not hold; a gloss naming a stanza other than the one it
+  sits in; a note saying what the English edition lacks that `data/`
+  contradicts; a note counting the Chinese stanzas wrongly; and a hymn both
+  told to repeat its last line and printing the repeat already. That last one
+  is the shape 274 had before D7 read its page.
+
 - `scripts/check_meters.py` (`pixi run meter-report`) counts the syllables of
   every Chinese lyric line against the meter printed over the hymn. A meter is
   a syllable count and Chinese is one syllable to the character, so this is not
   a heuristic. It is still a report and not a gate -- `--strict` makes it one --
-  because 63 hymns disagree.
+  because 64 hymns disagree.
 
   **The meter it counts against is the Chinese page's.** A hymn may state two,
   and they need not state the same lengths: 45's English page prints
@@ -1207,7 +1230,7 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   both ways -- 617's page states `7.6.7.6.雙` over rows of thirteen characters
   and 137's states `13.13.13.13.` over exactly the same shape -- so a meter
   that joins or splits the lyrics' lines at boundaries both agree on is
-  reported as that and not as a missing syllable. 56 of the 63 are this. The
+  reported as that and not as a missing syllable. 56 of the 64 are this. The
   sharpest finding is the third kind: the verse holds what the meter asks and
   cuts it somewhere it cannot be sung, which means one of the two readings of
   that verse is wrong and the other verses say which.
@@ -1219,9 +1242,9 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   `重` asks for, which states its lengths once however many times a verse
   writes them out -- and each verse of one hymn may take a different one of
   the runs the repeat allows, because 274 writes its repeat out under the music
-  and leaves it to the singer in the verses printed as text. A Pandoc inline
-  note, which is the hymnal's direction printed beside the verse rather than
-  words sung in it. And the speaker a responsive chorus names before its line,
+  and leaves it to the singer in the verses printed as text. A gloss, the
+  hymnal's word about a word printed at the foot of the page rather than words
+  sung in the verse. And the speaker a responsive chorus names before its line,
   `（姊妹）` / `（弟兄）` / `（全體）`, which 491, 532, 533 and 761 print and
   nobody sings.
 
@@ -1229,8 +1252,9 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   does not by itself convict the lyrics: 329's two editions agree with each
   other and with neither, because a meter describes the *tune* and a
   translation may sit a syllable differently on it. Four hymns are reported
-  for exactly that and always will be -- 48, 112, 329, 799. See
-  [PLAN.md](PLAN.md).
+  for exactly that and always will be -- 48, 112, 329, 799. So is 393, whose
+  eighth stanza prints its last line twice on both pages where its other seven
+  print it once. See [PLAN.md](PLAN.md).
 
   Two counts have no meter to check against and are checked anyway. Where the
   hymnal prints `Irregular Meter` it names no lengths, but the verses can still
@@ -1250,8 +1274,9 @@ the page projection — including the ways it deliberately differs from the deck
 `tests/test_categories.py` the subject table and the step that applies it,
 `tests/test_subjects.py` the subject index built from it,
 `tests/test_titles.py` the title table and the step that applies it,
-`tests/test_meters.py` the syllable check, and `tests/test_build_site.py` the
-partitioning and merge.
+`tests/test_meters.py` the syllable check, `tests/test_notes.py` the check on
+the hymnal's own prose, and `tests/test_build_site.py` the partitioning and
+merge.
 
 The hymn pages have no equivalent of `check-slides`. A deck can fail invisibly,
 by overflowing a fixed viewport 848 times over; a page scrolls, so there is no
@@ -1269,6 +1294,7 @@ apply-titles      Rewrite each hymn's title from data/titles.tsv
 check-titles      Fail if any hymn's title disagrees with that table
 apply-tunes       Rewrite each hymn's tune from data/tunes.tsv
 check-tunes       Fail if any hymn's tune disagrees with that table
+check-notes       Fail if a hymn's own notes and glosses disagree with its stanzas
 build             Regenerate the projections and render every deck and page in parallel
 build-serial      Regenerate the projections and render in one Quarto process
 serve             Preview the site on $QUARTO_PORT (8020)
