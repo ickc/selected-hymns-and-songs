@@ -5,6 +5,7 @@ from unittest import TestCase
 from hymn_projection.meters import (
     chorus_disagreements,
     disagreements,
+    repeats,
     implied,
     notation,
     printed,
@@ -43,6 +44,11 @@ class SyllableTest(TestCase):
     def test_an_empty_line_is_no_syllables(self) -> None:
         self.assertEqual(syllables("，。！"), 0)
 
+    def test_a_note_beside_the_line_is_not_sung_in_it(self) -> None:
+        # The hymnal's own direction, which `data/N.md` keeps as an inline
+        # note. 830 prints one and used to count as nine syllables long.
+        self.assertEqual(syllables("求你快回來。^[重唱「求你快回來」兩次。]"), 5)
+
 
 class NotationTest(TestCase):
     """Reading the hymnal's shorthand, and writing it back."""
@@ -64,6 +70,29 @@ class NotationTest(TestCase):
 
     def test_four_equal_lines_are_not_a_doubled_meter(self) -> None:
         self.assertEqual(notation([8, 8, 8, 8]), "8.8.8.8.")
+
+
+class RepeatTest(TestCase):
+    """`重` / `with repeat`: sing the last line, or the last phrase, twice."""
+
+    def test_a_meter_with_no_repeat_offers_only_its_lengths(self) -> None:
+        self.assertEqual(repeats("8.6.8.6.", [8, 6, 8, 6]), [[8, 6, 8, 6]])
+
+    def test_a_repeat_offers_every_tail_sung_again(self) -> None:
+        self.assertIn([8, 6, 8, 6, 6], repeats("8.6.8.6. 重", [8, 6, 8, 6]))
+        self.assertIn([8, 6, 8, 6, 8, 6], repeats("8.6.8.6. 重", [8, 6, 8, 6]))
+
+    def test_a_verse_that_writes_the_repeat_out_scans(self) -> None:
+        # 82 writes its repeated last line as a line of its own.
+        written = hymn("6.5. 重", ["一二三四五六", "一二三四五", "一二三四五"])
+
+        self.assertEqual(disagreements([(1, written)]), [])
+
+    def test_a_verse_that_does_not_write_it_out_scans_too(self) -> None:
+        # 57 and 71 leave the repeat to the singer, and both are right.
+        plain = hymn("6.5. 重", ["一二三四五六", "一二三四五"])
+
+        self.assertEqual(disagreements([(1, plain)]), [])
 
 
 class ImpliedTest(TestCase):

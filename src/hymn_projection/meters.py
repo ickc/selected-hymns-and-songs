@@ -50,6 +50,19 @@ from .model import Hymn, Stanza
 # and so is not counted.
 HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 
+# A Pandoc inline note. `data/N.md` carries the hymnal's own directions in
+# these -- 830's `^[重唱「求你快回來」兩次。]`, 355's
+# `^[第四節末四行重唱一遍]` -- and they are printed beside the verse rather
+# than sung in it. Twelve hymns carry one, and eleven of those verses were
+# the longest disagreements the report had.
+NOTE = re.compile(r"\^\[[^\]]*\]")
+
+# The `重` a Chinese meter may end with, and the `with repeat` its English
+# half writes instead: sing the last line, or the last phrase, twice. The
+# lengths before it are stated once, so a verse that writes the repeat out is
+# longer than its meter without being wrong.
+REPEAT = re.compile(r"重|with repeat")
+
 # The numeric head of a meter: `8.6.8.6.`, optionally doubled by `D.`. What
 # may follow it -- ` with chorus和`, ` (A)` -- is notation, not a count.
 NUMBERS = re.compile(r"^\.?((?:\d+\.)+)(D\.)?")
@@ -58,7 +71,7 @@ NUMBERS = re.compile(r"^\.?((?:\d+\.)+)(D\.)?")
 def syllables(line: str) -> int:
     """Return how many syllables a Chinese lyric line is sung on."""
 
-    return len(HAN.findall(line))
+    return len(HAN.findall(NOTE.sub("", line)))
 
 
 def printed(meter: str) -> list[int] | None:
@@ -69,6 +82,23 @@ def printed(meter: str) -> list[int] | None:
         return None
     counts = [int(number) for number in match.group(1).split(".") if number]
     return counts * 2 if match.group(2) else counts
+
+
+def repeats(meter: str, counts: list[int] | None) -> list[list[int]]:
+    """Return every run of lines a verse of this meter may be sung on.
+
+    Its lengths as printed, and -- where the meter asks for a repeat -- those
+    lengths with any tail of themselves sung again. Which tail the `重` means
+    is not written down, so all of them are admitted and the verses choose:
+    82 repeats its last line, 627 its last two, 529 its last two as one line
+    apiece.
+    """
+
+    if counts is None:
+        return []
+    if not REPEAT.search(meter):
+        return [counts]
+    return [counts] + [counts + counts[-tail:] for tail in range(1, len(counts) + 1)]
 
 
 def notation(counts: list[int]) -> str:
@@ -306,12 +336,26 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
             # hymnal declines to give a meter.
             if implied(hymn) is not None:
                 continue
-        elif _scans(hymn, counts, expected):
-            continue
+        else:
+            sung = repeats(text, expected)
+            if any(_scans(hymn, counts, run) for run in sung):
+                continue
+            # A repeat gives the verses several runs they might be sung on.
+            # The one they are held to is the one they come closest to.
+            expected = min(sung, key=lambda run: _distance(counts, run))
         found.append(
             Disagreement(number, _meter_text(hymn), expected, counts, implied(hymn))
         )
     return found
+
+
+def _distance(
+    counts: list[tuple[int | str, list[int]]], run: list[int]
+) -> tuple[int, int]:
+    """Say how far a hymn's verses are from one run of line lengths."""
+
+    off = [c for _, c in counts if c != run]
+    return len(off), sum(abs(sum(c) - sum(run)) for c in off)
 
 
 @dataclass
