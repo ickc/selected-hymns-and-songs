@@ -219,8 +219,13 @@ def write_table(subjects: Iterable[Subject], path: Path) -> None:
 def localized(hymn: Hymn, english: str) -> Hymn:
     """Return the hymn with the English half of its category set.
 
-    The Chinese half is left exactly as it was. `data/N.md` is the authority on
-    what the Chinese page says; the table only ever supplies the English.
+    The Chinese half is left exactly as it was, and the table only ever
+    supplies the English. That is a division of labour, not a claim that the
+    Chinese half is right: it came from the publisher's YAML rather than from a
+    page, and D17 found it in a different orthography from the book's -- 著 for
+    着, 裡 for 裏, 為 for 爲 -- and calling one subject a name the book does not
+    print. Those are corrected in `data/` and in the table together, because
+    the table is keyed by the Chinese string.
     """
 
     chinese = hymn.category.translations["zh"]

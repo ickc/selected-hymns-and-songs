@@ -370,6 +370,23 @@ round brackets — which is what the two editions print over a hymn and what
 format we control, and the parse would have to survive `The Son, His Person and
 Work` and `Psalm 126:1-3`; joining cannot go wrong.
 
+**The Chinese is the book's orthography, which is not the publisher's.** The
+Chinese half of every category, and of every hymn's lyrics, came from
+`../selected-hymns/data.yml` — cleaned OCR, and so a reading like any other,
+not a fact. Checked against the pages it turned out to be in modern forms
+throughout where the book uses older ones: 着 not 著, 裏 not 裡, 爲 not 為, 藉
+not 借, 眞 not 真, 敎 not 教, 啓 not 啟. All seven were read off page images,
+because the extraction's text layer is wrong about several of them — it reports
+爲 as 為 more often than not. `data/` and the table were corrected together,
+since the table is keyed by the Chinese string.
+
+Two characters are **not** substitutions, and both were checked one at a time:
+hymn 458's 比晨星更著 is *zhù*, and hymn 556's 何必先借明天憂 is *borrow*. Both
+stand as they are printed. The remaining one, 你 for the book's reverential 祢,
+turns on who is addressed rather than on a glyph, and is [D17](PLAN.md)'s
+outstanding half. `data/preface.zh.markdown` is exempt: the Chinese preface is
+a modern publisher's note, and its page prints the modern forms.
+
 `n1 n2 n3` is the numbering the book prints (`I.` / `2.` / `(1)`), and it is
 the **only** record of the order. Sorting the subjects by their lowest hymn
 number does not recover it: under the Father the book runs Greatness, Glory,
@@ -590,13 +607,13 @@ Two things the reading found, neither of which changes anything here:
   range `734-764` against an empty name. The English page prints `XVIII. Psalms
   and Scripture Portions`; the Chinese subject index prints the subject too.
   The omission is the book's, on that page only.
-- **One subject is named differently here from anywhere in the book.** The
-  Chinese contents page and the Chinese subject index both call V.6 神的醫治,
-  and so do hymns 279 and 280 on their own pages. `data/` calls it 醫病, which
-  is printed nowhere: it comes from the publisher's YAML. That is not a
-  disagreement between two printed sources, and chasing it down opened
-  [D17](PLAN.md) — the Chinese subject names in `data/` have never been checked
-  against the pages, and where they have now been checked they differ.
+- **One subject was named differently here from anywhere in the book.** The
+  Chinese contents page, the Chinese subject index and hymns 279 and 280's own
+  pages all call V.6 神的醫治; `data/` called it 醫病, which is printed nowhere
+  and came from the publisher's YAML. That is not a disagreement between two
+  printed sources, and chasing it down opened [D17](PLAN.md) — the Chinese half
+  of `data/` was in a different orthography from the book's throughout. It is
+  now corrected, and V.6 is 神的醫治.
 
 The contents page's own punctuation is not kept. Both editions separate the two
 runs with a full stop — `220-280. 779-789` — which reads as a decimal point
