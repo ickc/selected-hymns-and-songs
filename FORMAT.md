@@ -50,6 +50,13 @@ meter: 11.10.11.10. with chorus和
 The codec expands the shared `11.10.11.10. ` prefix back into both YAML values.
 A meter with zero or one detected language remains a YAML scalar.
 
+`credit-note` is localized like any other and flattens the same way, but it is
+the one field here that is not a quotation. Every other value is read off a
+printed page; this one says why a credit reads as it does on the three hymns
+whose two printings name different people, and it is written by
+[`authors.py`](DEVELOPER.md#the-credits-table) rather than transcribed. It
+carries English alone, like the credits it is about.
+
 A meter whose two languages share no notation has none factored out and is
 stored as any other localized field is:
 

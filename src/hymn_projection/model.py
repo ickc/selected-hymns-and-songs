@@ -315,6 +315,14 @@ class Hymn:
     #: of.  Localized like ``author`` because it is written the same way, and
     #: English-only for the same reason: the index is the English edition's.
     composer: LocalizedText | None = None
+    #: Why this hymn's credit is not simply what one page prints.  The English
+    #: edition prints its credits twice -- in the *Index of Authors and
+    #: Composers* and, on a copyrighted song, over the hymn itself -- and on
+    #: three hymns the two name different people.  Where `data/` had to choose
+    #: or combine, this says so, so that a reader who checks either printing
+    #: finds the discrepancy recorded rather than a silent third reading.
+    #: English-only, like the credits it is about.
+    credit_note: LocalizedText | None = None
     meter: str | LocalizedText | None = None
     note: LocalizedText | None = None
     ref: LocalizedText | None = None
@@ -340,7 +348,7 @@ class Hymn:
                 raise ValueError("tune must be a name or a list of names")
             if len(tunes) != len(set(tunes)):
                 raise ValueError("a hymn cannot be set to one tune twice")
-        for name in ("author", "composer", "note", "ref", "title"):
+        for name in ("author", "composer", "credit_note", "note", "ref", "title"):
             value = getattr(self, name)
             if value is not None and not isinstance(value, LocalizedText):
                 raise ValueError(f"{name} must be localized text")
@@ -351,7 +359,7 @@ class Hymn:
 
         mapping = _mapping(value, "hymn")
         allowed = {
-            "author", "category", "composer", "meter",
+            "author", "category", "composer", "credit-note", "meter",
             "note", "ref", "stanza", "title", "tune",
         }
         unknown = set(mapping) - allowed
@@ -392,6 +400,7 @@ class Hymn:
             stanzas=[Stanza.from_yaml(name, lines) for name, lines in stanza_mapping.items()],
             author=optional_text("author"),
             composer=optional_text("composer"),
+            credit_note=optional_text("credit-note"),
             meter=meter,
             note=optional_text("note"),
             ref=optional_text("ref"),
@@ -408,6 +417,8 @@ class Hymn:
         result["category"] = self.category.to_dict()
         if self.composer is not None:
             result["composer"] = self.composer.to_dict()
+        if self.credit_note is not None:
+            result["credit-note"] = self.credit_note.to_dict()
         if self.meter is not None:
             result["meter"] = (
                 self.meter.to_dict()
@@ -447,6 +458,8 @@ class Hymn:
         metadata["category"] = _localized_metadata(self.category)
         if self.composer is not None:
             metadata["composer"] = _localized_metadata(self.composer)
+        if self.credit_note is not None:
+            metadata["credit-note"] = _localized_metadata(self.credit_note)
         if self.meter is not None:
             metadata["meter"] = (
                 _named_metadata(self.meter, "meter")
@@ -510,6 +523,7 @@ class Hymn:
             "author",
             "category",
             "composer",
+            "credit-note",
             "meter",
             "note",
             "ref",
@@ -537,6 +551,10 @@ class Hymn:
                 document.metadata["composer"], "composer"
             ).to_dict()
 
+        if "credit-note" in document.metadata:
+            metadata["credit-note"] = _localized_from_metadata(
+                document.metadata["credit-note"], "credit-note"
+            ).to_dict()
         if "meter" in document.metadata:
             meter = _named_from_metadata(document.metadata["meter"])
             metadata["meter"] = (

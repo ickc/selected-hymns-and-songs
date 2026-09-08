@@ -21,6 +21,7 @@ from hymn_projection.scans import SCAN_LANGUAGES
 HYMN_DATA = {
     "author": {"en": "An Author"},
     "category": {"zh": "分類——測試"},
+    "credit-note": {"en": "The page prints one name, the index another."},
     "meter": {"en": "8.6.8.6. with chorus", "zh": "8.6.8.6. 和"},
     "note": {"en": "Keep *meaningful* Markdown"},
     "stanza": {
@@ -97,6 +98,9 @@ class HymnConversionTest(TestCase):
         self.assertIn("A “quoted” line—with punctuation.\n第一行。", markdown)
         self.assertIn("第一行。\n　　保留全形空格。\n", markdown)
         self.assertIn("note: Keep *meaningful* Markdown", markdown)
+        self.assertIn(
+            "credit-note: The page prints one name, the index another.", markdown
+        )
         self.assertIn("A line with *emphasis* and ^[a note].", markdown)
 
     def test_latin_scalar_meter_remains_a_scalar(self) -> None:
