@@ -68,7 +68,11 @@ CHINESE_SPACE = " "
 
 # A line may not begin with a mark that closes something, nor end with one that
 # opens something: the mark belongs to the line on the other side of the break.
-BEGINS_CLOSING = "”」』）)，。、；：！？,;:.!?"
+# The dash is in the first set because it breaks off from what precedes it and
+# the pages set it there -- `zh/49` prints hymn 43's `投靠祢；”——` at the end
+# of its half-line, and `zh/265` prints 247's `能關。”——` before `祂說了`,
+# where `data/` had begun the following line with it.
+BEGINS_CLOSING = "”」』）)，。、；：！？,;:.!?—"
 ENDS_OPENING = "“「『（("
 
 # Marks that pair off within a hymn, and the edition each belongs to.
