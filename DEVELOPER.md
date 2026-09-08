@@ -102,6 +102,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere, and reading the meter the Chinese page prints rather than the English one's. |
 | `notes.py` | the second **check** with no output of its own: the two kinds of prose the hymnal prints beside a hymn — a direction in the front matter, a gloss in the lyric line — read back against the stanzas they describe. |
+| `punctuation.py` | the third **check** with no output of its own: each lyric line read against the marks its own edition of the hymnal sets, the rule that a mark stays on the side of the line break its text is on, and the pairing of quotation marks. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -1211,6 +1212,43 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   exclamation mark, and matching exactly would miss five of its eight
   stanza-halves. See [D21](PLAN.md) for what else that measurement showed.
 
+- `scripts/check_punctuation.py` (`pixi run check-punctuation`) reads each
+  lyric line against the marks its own edition sets. Also a gate; `--kinds`
+  counts the findings by kind instead of listing them. Punctuation is not sung,
+  so nothing that counts syllables can see it, and it survived every check
+  built before this one.
+
+  **Each edition has its own alphabet.** A Chinese lyric line holds Han and
+  `，。、；：！？“”（）——…`; an English one holds Latin and
+  `,.;:!?-—()[]“”’`, with a space. Everything `data/` had wrong fell out of
+  that: a halfwidth `,` among 15,642 `，`, 173 apostrophes typed `'` or `‘`,
+  112 corner brackets in hymns no page sets them in, 87 fullwidth hyphens for
+  the dash, 98 ideographic spaces padding a line out to a printed column.
+
+  **Do not normalise the English toward ASCII.** Storing `'tis` and letting
+  Pandoc curl it prints `‘tis`, because `smart` reads a leading `'` as an
+  opening quote and the mark is an elision. `PANDOC_MARKDOWN` disables `smart`
+  for exactly this reason, so the normalisation runs the other way.
+
+  **Two marks are in the alphabet for one line each, and each names its page.**
+  418 ends `不知如何方能重新…`, and `zh/439` prints the three dots. 797 sets
+  `Thy way – Thy chosen way,` with a spaced en dash, and `en/847` prints it --
+  the later material, 765-848, is typeset in a modern face with its own
+  conventions, where the rest of the collection sets an unspaced em dash.
+
+  **The line-boundary rule is the one the re-lineations were done under**, and
+  nothing stated it until now: a closing mark stays with the line it closes and
+  an opening mark goes with the line it opens. The dash counts as closing,
+  because it breaks off from what precedes it and the pages set it there. Three
+  Chinese lines began with `”` and five with `——`.
+
+  **Quotation marks pair strictly in Chinese and loosely in English**, because
+  English sets a speech running over several stanzas by opening each of them
+  and closing only the last, which 345 does. So the English rule is only that a
+  quotation is never closed before it is opened -- which found three lines that
+  had opened one with `”` -- while the Chinese counts have to match, which
+  found 720's unclosed quotation and through it the whole corner-bracket class.
+
 - `scripts/check_meters.py` (`pixi run meter-report`) counts the syllables of
   every Chinese lyric line against the meter printed over the hymn. A meter is
   a syllable count and Chinese is one syllable to the character, so this is not
@@ -1279,8 +1317,8 @@ the page projection — including the ways it deliberately differs from the deck
 `tests/test_subjects.py` the subject index built from it,
 `tests/test_titles.py` the title table and the step that applies it,
 `tests/test_meters.py` the syllable check, `tests/test_notes.py` the check on
-the hymnal's own prose, and `tests/test_build_site.py` the partitioning and
-merge.
+the hymnal's own prose, `tests/test_punctuation.py` the check on its marks,
+and `tests/test_build_site.py` the partitioning and merge.
 
 The hymn pages have no equivalent of `check-slides`. A deck can fail invisibly,
 by overflowing a fixed viewport 848 times over; a page scrolls, so there is no
@@ -1299,6 +1337,7 @@ check-titles      Fail if any hymn's title disagrees with that table
 apply-tunes       Rewrite each hymn's tune from data/tunes.tsv
 check-tunes       Fail if any hymn's tune disagrees with that table
 check-notes       Fail if a hymn's own notes and glosses disagree with its stanzas
+check-punctuation Fail if a lyric line is not written with its edition's marks
 build             Regenerate the projections and render every deck and page in parallel
 build-serial      Regenerate the projections and render in one Quarto process
 serve             Preview the site on $QUARTO_PORT (8020)

@@ -34,6 +34,22 @@ Pandoc reads and writes either spelling unchanged, so the readable one is the
 source of record. A backslash anywhere in `data/` therefore means something has
 gone in that the page does not print.
 
+**Each edition is written with its own marks**, because the book sets each in
+its own typography and one file holds both. A Chinese lyric line holds Han
+characters and `，。、；：！？“”（）——…`; an English one holds Latin letters, a
+space, and `,.;:!?-—()[]“”’`. `pixi run check-punctuation` asserts it over all
+848 files, along with the rule the re-lineations were done under — a closing
+mark stays with the line it closes, an opening mark goes with the line it
+opens, and the dash counts as closing — and the pairing of quotation marks,
+strict in Chinese and, in English, only that none is closed before it is
+opened.
+
+Two marks are in those sets for one line apiece, and the page is the reason:
+`zh/439` prints 418's `…` and `en/847` prints 797's spaced `–`. The English is
+never normalised toward ASCII. `PANDOC_MARKDOWN` disables `smart`, so what is
+in `data/` is what the page prints, and `'tis` would be set as `‘tis` where the
+book prints `’tis` — the mark is an elision, not a quotation.
+
 The canonical language order is English then Chinese. After `auto-lang.lua`
 restores the language of each line, a repeated language or a transition from
 Chinese back to English marks the next YAML lyric-line mapping. This also

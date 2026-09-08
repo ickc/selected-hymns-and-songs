@@ -130,6 +130,10 @@ def _alphabet_findings(number: int, hymn: Hymn) -> list[Finding]:
                 continue
             if language == "zh" and _is_han(character):
                 continue
+            if character == "　":
+                # The padding rule below owns the ideographic space, and
+                # says something more useful about it than this one would.
+                continue
             if language == "en" and character.isascii() and character.isalpha():
                 continue
             findings.append(Finding(

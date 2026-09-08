@@ -49,6 +49,10 @@ check-authors = { cmd = "python scripts/apply_authors.py data --check", descript
 # front matter, a gloss in the lyric line -- checked against the hymn itself.
 # A gate, not a report: nothing in data/ fails it.
 check-notes = { cmd = "python scripts/check_notes.py data", description = "Fail if a hymn's own notes and glosses disagree with its stanzas" }
+# The two editions are set in different typography and data/ holds both in one
+# file, so each lyric line is read against its own edition's marks. Also a
+# gate: --kinds counts the findings rather than listing them.
+check-punctuation = { cmd = "python scripts/check_punctuation.py data", description = "Fail if a lyric line is not written with the marks its edition of the hymnal sets" }
 build = { cmd = "python scripts/build_site.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the decks and pages in parallel into site/_site" }
 build-serial = { cmd = "quarto render site && python scripts/stage_scans.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the site in one Quarto process" }
 serve = { cmd = "quarto preview site --render none --port $QUARTO_PORT --host 0.0.0.0", depends-on = ["build"], description = "Build in parallel, then preview and rebuild changed pages on $QUARTO_PORT" }
