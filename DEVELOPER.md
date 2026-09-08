@@ -103,6 +103,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere, and reading the meter the Chinese page prints rather than the English one's. |
 | `notes.py` | the second **check** with no output of its own: the two kinds of prose the hymnal prints beside a hymn — a direction in the front matter, a gloss in the lyric line — read back against the stanzas they describe. |
 | `punctuation.py` | the third **check** with no output of its own: each lyric line read against the marks its own edition of the hymnal sets, the rule that a mark stays on the side of the line break its text is on, and the pairing of quotation marks. |
+| `repeats.py` | the fourth **check** with no output of its own: the three places the hymnal states a repeat — written out, ordered in a note, marked in the meter — held against one another and against the `repeat` that says which lines. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -1249,6 +1250,54 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   had opened one with `”` -- while the Chinese counts have to match, which
   found 720's unclosed quotation and through it the whole corner-bracket class.
 
+- `scripts/check_repeats.py` (`pixi run check-repeats`) holds the hymnal's
+  three statements of a repeat against one another. Also a gate; `--kinds`
+  counts by kind.
+
+  **The book says *sing this again* three ways and relates none of them.** It
+  writes the lines out a second time; it prints a direction under the last
+  stanza, *Repeat the last line of each stanza* / `每節重唱最後一行`; or it
+  marks the meter, `重` and `with repeat`, and leaves the shape to the music.
+  Only the first is in `data/` in a form anything can act on, which is why a
+  deck used to print the sentence on its title slide and then show each stanza
+  once. `repeat` in the front matter is the other two written down: which of
+  the stanza's lines are sung again, in the order they are sung, and in which
+  stanzas. `slides.py` sings it; `pages.py` leaves the book's shape alone.
+
+  **A repeat is not always a tail, and not always the tune's whole point.**
+  `en/71` sets hymn 57's `8.6.8.6. with repeat` as the fourth line twice and
+  then the third and fourth again — the same four lines hymn 678 writes out as
+  `1-chorus` under the same meter. So `lines` is a sequence of the stanza's own
+  line numbers rather than a count of trailing ones, and 54's is the whole
+  stanza, which `en/69` prints as an *Optional Repeat* and the English meter
+  records as the `D.` of `7.8.7.8.D.` over four written lines.
+
+  **It is not localized.** Every stanza of every hymn that carries a repeat has
+  the same number of lines in both editions. 242 looks like the counter-example
+  — `en/266` prints *Repeat the last four lines* and `zh/258` prints
+  `第四節末兩行重唱一遍` — and is not: the Chinese pages set their stanzas in
+  two columns, so two of those rows are four of these lines, and both pages
+  print the direction under the fourth stanza and mean that stanza alone. It is
+  also why the check reads the English half of a direction and not the Chinese:
+  an English row is one line.
+
+  What is checked: a meter marked `重` with no repeat anywhere; a note ordering
+  one with no repeat anywhere; a repeat both written down and written out,
+  which would sing it twice over; a repeat nothing asks for; and, on twenty of
+  the twenty-eight, the number of lines the English direction names against the
+  number the field holds. A repeat naming a line or a stanza the hymn has not
+  is refused by the model before the check runs.
+
+  **What accounts for a repeat that is not written down** is
+  `notes.writes_the_repeat_out` — a tail of a stanza sung again, punctuation
+  folded — plus four hymns named in `WRITES_IT_OUT` with their reasons, because
+  those four write it somewhere no rule over the text could find. 534 sets
+  `Or on this earthly ball, Or on this earthly ball.` on one line and 321 sets
+  `Full salvation! Full salvation!` on one line, and only one of them is a
+  repeat. And 355's `回頭再唱正歌一遍` is named rather than held: a *da capo*
+  sends the singer back through the whole verse after the chorus, which is not
+  a tail of a stanza sung where the stanza ends.
+
 - `scripts/check_meters.py` (`pixi run meter-report`) counts the syllables of
   every Chinese lyric line against the meter printed over the hymn. A meter is
   a syllable count and Chinese is one syllable to the character, so this is not
@@ -1284,11 +1333,13 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   `重` asks for, which states its lengths once however many times a verse
   writes them out -- and each verse of one hymn may take a different one of
   the runs the repeat allows, because 274 writes its repeat out under the music
-  and leaves it to the singer in the verses printed as text. A gloss, the
-  hymnal's word about a word printed at the foot of the page rather than words
-  sung in the verse. And the speaker a responsive chorus names before its line,
-  `（姊妹）` / `（弟兄）` / `（全體）`, which 491, 532, 533 and 761 print and
-  nobody sings.
+  and leaves it to the singer in the verses printed as text. Which tail the
+  mark means is not in the mark, so where the hymn carries no `repeat` every
+  tail is admitted and the verses choose; where it does, that one run is
+  offered and the guessing stops. A gloss, the hymnal's word about a word
+  printed at the foot of the page rather than words sung in the verse. And the
+  speaker a responsive chorus names before its line, `（姊妹）` / `（弟兄）` /
+  `（全體）`, which 491, 532, 533 and 761 print and nobody sings.
 
   The metrical index confirms many of these meters independently, which still
   does not by itself convict the lyrics: 329's two editions agree with each
@@ -1318,7 +1369,8 @@ the page projection — including the ways it deliberately differs from the deck
 `tests/test_titles.py` the title table and the step that applies it,
 `tests/test_meters.py` the syllable check, `tests/test_notes.py` the check on
 the hymnal's own prose, `tests/test_punctuation.py` the check on its marks,
-and `tests/test_build_site.py` the partitioning and merge.
+`tests/test_repeats.py` the check on what it sings twice, and
+`tests/test_build_site.py` the partitioning and merge.
 
 The hymn pages have no equivalent of `check-slides`. A deck can fail invisibly,
 by overflowing a fixed viewport 848 times over; a page scrolls, so there is no
@@ -1338,6 +1390,7 @@ apply-tunes       Rewrite each hymn's tune from data/tunes.tsv
 check-tunes       Fail if any hymn's tune disagrees with that table
 check-notes       Fail if a hymn's own notes and glosses disagree with its stanzas
 check-punctuation Fail if a lyric line is not written with its edition's marks
+check-repeats     Fail if a hymn's three statements of what is sung twice disagree
 build             Regenerate the projections and render every deck and page in parallel
 build-serial      Regenerate the projections and render in one Quarto process
 serve             Preview the site on $QUARTO_PORT (8020)

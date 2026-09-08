@@ -83,6 +83,28 @@ after the word it is about.
 明亮晨星^[第二節的“明亮晨星”指主基督]的光華，
 ```
 
+**A repeat is stated three ways and `repeat` is the one anything can act on.**
+The book writes the lines out a second time, or prints a direction —
+*Repeat the last line of each stanza*, `每節重唱最後一行` — or marks the meter
+`重` / `with repeat` and leaves the shape to the music. Where the lines are
+written out `data/` already holds them; the other two are written down as
+front matter, and 28 hymns carry it.
+
+```yaml
+repeat:
+  lines: [5, 6, 7, 8]
+  stanzas: [4]
+```
+
+`lines` are the stanza's own lines, numbered from one, in the order they are
+sung again — not always a tail, because `en/71` sets hymn 57's repeat as the
+fourth line twice and then the third and fourth again. `stanzas` is every
+stanza unless it names some. It is not localized: every stanza of every hymn
+that carries a repeat has the same number of lines in both editions.
+`pixi run check-repeats` holds the three statements against one another, and a
+*da capo* — 355's `回頭再唱正歌一遍`, the whole verse again after the chorus —
+is the one form it does not hold.
+
 Neither is inferred from the words: what a note says is checkable against the
 hymn, and `pixi run check-notes` checks it. A gloss written as a direction, a
 gloss quoting a word its line does not hold, a note naming a stanza the hymn
