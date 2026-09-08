@@ -377,7 +377,7 @@ files them under `Irregular Meters` by construction: 741 of the 764 agree now
 rather than 759. That is the index being less specific than the page, not the
 two disagreeing.
 
-### D7 — the meter against the lyrics — **tooling done, 128 left, and now mostly about the text**
+### D7 — the meter against the lyrics — **the check now says which of two things it found; 22 hymns corrected, 7 text questions left**
 
 The Chinese page for 779 (`zh/838.txt`) reads `6. 4. 6. 4 雙`; `data/779.md`
 says `8.6.8.6.D.`.
@@ -412,14 +412,9 @@ Three things it taught us about the data:
   simply a typo. Its page prints `8.6.8.6.6.6.7.5. 和`; fixed, along with 772,
   whose page prints `8.8.8.8.7.` and which `data/` had as `8.8.8.8.8.`.
 
-**139 hymns still disagree**: 89 where every verse agrees on some other meter
-than the one stored, 49 whose verses disagree with each other, and 1 a single
-syllable out. The "no meter" class is gone — see D1.
-
-**Nothing goes unchecked now.** The 93 hymns the hymnal calls irregular used to
-be skipped, because `Irregular Meter` names no lengths to count against; their
-verses are now counted against *each other*, which 11 of them fail (242, 393,
-476, 477, 632, 706, 709, 755, 830, 834, 840). And every chorus a hymn prints is
+**Nothing goes unchecked.** The 93 hymns the hymnal calls irregular used to be
+skipped, because `Irregular Meter` names no lengths to count against; their
+verses are now counted against *each other*. And every chorus a hymn prints is
 sung to the same strain, so the choruses of one hymn have to scan alike — one
 hymn's do not, 480, and reading its page to find out whose the odd syllable was
 turned up D14. `pixi run meter-report --shape` prints the counts.
@@ -429,12 +424,124 @@ turned up D14. `pixi run meter-report --shape` prints the counts.
 confirms**; of the rest, 18 are the hymns whose count comes from the Chinese
 page against an index that only says `Irregular Meters`, and one is 616, where
 the index adds a chorus the two pages and the hymn itself deny. On the 89 the
-meter is right twice over, so the
-disagreement is a finding about the **lyrics** — a dropped character, or a
-lineation the transcription joined — not about the meter. That is a different
-job from reading 175 pages, and a much better defined one: the remaining 20 are
-in the supplement, where there is no index to corroborate and the Chinese page
-is the only witness.
+meter is right twice over, so the disagreement is a finding about the
+**lyrics** — a dropped character, or a lineation the transcription joined — not
+about the meter.
+
+#### The check was asking one question where there are two
+
+139 hymns disagreed, and the report called all 139 the same thing. They are
+not. A verse and a meter are two readings of one run of syllables, and they can
+differ in two ways that want quite different work:
+
+- they can hold **different syllables**, which is a finding about the text and
+  the only kind a page can settle in our favour;
+- or they can hold the same syllables and **cut them in different places**,
+  which is often no finding at all.
+
+The second is common because a meter names the lines of the *tune* and a page
+prints the lines of the *stanza*, and where the tune's lines are short the page
+prints two of them to a row. **The hymnal does this both ways.** 617's page
+states `7.6.7.6.雙` over rows of thirteen characters; 137's states
+`13.13.13.13.` over exactly the same shape. Neither is wrong, and `data/`
+follows the row on some hymns (847, 617) and the sung line on others (685) —
+which is itself only visible because the meter disagrees.
+
+So a verse is now compared on its **total** first and its **line breaks**
+second, and the report names five kinds:
+
+| kind | what it means | hymns |
+|---|---|---|
+| syllables are missing or added | the totals differ — the text finding | 54 |
+| one verse, one syllable out | the classic dropped character | 1 |
+| the meter counts a break the lines do not print | the page prints two of the tune's lines to a row | 29 |
+| the lines print a break the meter does not count | the reverse | 12 |
+| a line break is in a different place | the whole verse is there, cut where it cannot be sung | 6 |
+
+**Three kinds of false positive went with it.** A stanza the Chinese edition
+does not have is not a verse that lost its syllables — 789, 813 and 840 print
+more English stanzas than Chinese ones, and 840's English page says so. A
+meter ending in `重` asks for the last line, or the last phrase, to be sung
+twice and states the lengths once, so the ten hymns that write the repeat out
+came out longer than their own meter. And a Pandoc inline note is the hymnal's
+direction printed beside the verse, not words sung in it: twelve hymns carry
+one, and eleven of those verses were among the longest disagreements the report
+had. Where a doubled meter is only satisfied by a verse and its chorus and
+every verse holds exactly half, the report now prints the two together, because
+what does not scan is the one chorus and not the six verses.
+
+#### What that left, and what it settled
+
+**Seventeen misplaced line breaks, fixed without adding or taking away a
+character.** A verse breaking differently from its own siblings *and* from the
+meter is fixed by both of them at once: the whole verse is present, and the
+lengths every other verse agrees on say where its lines end. The pages confirm
+it wherever the odd verse is printed as text rather than sung under the music —
+711's second and third and 673's fifth print exactly the break the count
+predicts, and 673's page also has the comma the old break had swallowed. The
+seventeen are 43, 107, 109, 229, 243, 323, 459, 469, 498, 599, 618, 624, 650,
+673, 685, 706, 709, 711 and 723.
+
+**Nine characters the transcription had dropped**, each confirmed on the
+Chinese page:
+
+| hymn | verse | the page prints | what `data/` had |
+|---|---|---|---|
+| 122 | 2 | 以色列**民**被選族類 | 以色列被選族類 |
+| 270 | 4 | 隨同**所有**歡樂聖眾讚美 | 隨同歡樂聖眾讚美 |
+| 298 | 2 | 寶血**爲**我擔過、祂血曾**爲**我們流過 | both 爲 gone |
+| 632 | 4 | 勝利終必**要**得到 | 勝利終必得到 |
+| 685 | 3 | 原本藏在天**上**父的心懷 | 原本藏在天父的心懷 |
+| 755 | 1 | 這些東西**就**都要加給你們 | 這些東西都要加給你們 |
+| 834 | 4 | 纔使撒冷對我**能**成爲盼望 | 纔使撒冷對我成爲盼望 |
+
+122's is confirmed twice over: its twin 123 prints the same line under the
+other tune and has always had the 民.
+
+**And four lines that were not the page's at all**, found by eye while reading
+a page the count had sent us to — the same way D14 was found, and invisible to
+any count because each is the same length as what it replaces:
+
+| hymn | verse | the page prints | what `data/` had |
+|---|---|---|---|
+| 599 | 2 | 賜我裝備，抵擋仇敵 | 賜我裝備，戰勝敵軍 |
+| 599 | 2 | 向祂，我投倚 | 祂有信心 |
+| 632 | 3 | 用十架對付“己，” | 應用十架在“己，／”單靠… |
+| 813 | 3 | 處處**跟主**走窄路 | 處處行走窄路 |
+
+813's was the chorus's line standing in the verse's place; its second verse
+does the same thing with 時時 and its fourth with 一直.
+
+#### What is left, and it is smaller than it looks
+
+102 hymns are still reported, and they divide sharply:
+
+| | hymns | what settles it |
+|---|---|---|
+| every verse agrees with every other and all differ from the meter | 48 | not a dropped character — no character goes missing from five verses identically. The meter is the English edition's statement about the tune. |
+| one verse differs from its own siblings | 7 | **this is the remaining text audit**: 112, 274, 476, 477, 533, 722 and 685's fourth |
+| the lines are not the meter's lines | 41 | a lineation question; every syllable is present |
+| 453 | 1 | settled above, and will always be reported |
+
+**The 48 are a finding about the meter, not the lyrics, and the pages say so.**
+45's English page prints `13. 13. 13. 14. with chorus` and its Chinese page
+prints `8.5.8.5.雙.和` — and 8+5 is 13, so the Chinese edition's meter describes
+the Chinese lyrics exactly while the English edition's does not. 199 is the
+same: `8. 8. 9. 8. with chorus` in English, `8.8.8.8.和` in Chinese, and the
+lyrics count 8.8.8.8. `data/` keeps the English form on both, as it does on
+453, so both will keep being reported.
+
+329 shows the other half of it: **both** pages print `9.7.10.7.和` over Chinese
+lyrics that count 9.7.9.7 in all three verses. The Chinese page there is
+repeating the English edition's count rather than describing its own text. So a
+meter is a statement about the *tune*, and a Chinese translation may sit a
+syllable differently on it without anything being wrong — which is the limit of
+what a syllable count can decide, and the reason the 48 want a page rather than
+more arithmetic.
+
+Closing them properly means recording the Chinese edition's meter where it
+differs from the English one, which the model already allows: a localized meter
+may hold different numbers in its two halves, and today none does.
 
 ### D14 — half of hymn 480's Chinese was not the text on its page — **fixed**
 
@@ -1321,10 +1428,12 @@ committed table itself rather than in a commit message.
 1. ~~**D5** — transcribe the missing English for 797, 824, 845.~~ Done; it also
    turned up a whole-hymn swap between 797 and 798.
 2. ~~**D1**~~ Done: every hymn in the collection now carries a meter, the last
-   45 read off the page in the D13 pass. **D7** remains as a syllable audit with
-   125 hymns left, and D13 turned it into a question about the *lyrics* rather
-   than the meter on the 104 hymns whose meter the book's metrical index
-   confirms.
+   45 read off the page in the D13 pass. ~~**D7**~~ is done as a syllable
+   audit: the check now separates a verse that has lost syllables from one
+   that only breaks its lines elsewhere, which corrected 22 hymns and left
+   **seven** with a verse that differs from its own siblings. What still
+   disagrees is mostly the meter — the English edition's statement about the
+   tune, which a Chinese translation may sit a syllable differently on.
 3. ~~**§3 preface** — two pages, high value, nearly free.~~ Done:
    `data/preface.*.markdown` and `site/preface.md`. It also exposed a navbar
    bug on every page but five, and left the *TABLE OF CONTENTS* still
@@ -1385,8 +1494,10 @@ committed table itself rather than in a commit message.
 orthography is corrected; what remains of it — 你 for 祢 across 557 files — is
 a reading pass and the largest single correction left in `data/`, and it is now
 the only part of D18 still standing.
-**D7**'s remaining syllable disagreements are the middle one, and D13 turned most of them into questions
-about the lyrics rather than the meter. **D16** is the largest, a two-edition
+**D7**'s syllable audit is done, and what it leaves is a different job: seven
+hymns with a verse that differs from its own siblings, and 48 whose verses all
+agree and differ from the meter, which wants the Chinese edition's meter
+recorded where it is not the English one's. **D16** is the largest, a two-edition
 transcription of the page annotations, and it is what would finally settle what
 the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
 for carrying the front and back matter in `scan/`. **D17** would want it too:
