@@ -205,6 +205,18 @@ def _heading(hymn: Hymn, number: int) -> str:
     parts.append(_fence(3, ".hymn-meta", " · ".join(meta)))
     if hymn.note is not None:
         parts.append(_fence(3, ".hymn-note", _localized_inline(hymn.note.translations)))
+    # Under the note, and in a class of its own: the note is the book speaking
+    # and this is not. It says where a credit came from when the edition prints
+    # two that disagree, which is exactly the question the scan beside it
+    # invites, so the page that shows both is the page it belongs on.
+    if hymn.credit_note is not None:
+        parts.append(
+            _fence(
+                3,
+                ".hymn-credit-note",
+                _localized_inline(hymn.credit_note.translations),
+            )
+        )
     return _fence(5, ".hymn-heading", "\n\n".join(parts))
 
 

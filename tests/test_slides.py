@@ -170,6 +170,7 @@ class ProjectionTest(TestCase):
             {1: [{"en": "One", "zh": "一"}], "1-chorus": [{"en": "Refrain"}]},
             meter="8.7.8.7.",
             note={"en": "A note"},
+            **{"credit-note": {"en": "Why the credit reads so"}},
         )
         markdown = to_markdown(value, 104)
 
@@ -177,6 +178,12 @@ class ProjectionTest(TestCase):
         self.assertIn("number: 104", markdown)
         self.assertNotIn("meter", markdown)
         self.assertIn("note: '[A note]{lang=en}'", markdown)
+        # Hyphenated in the deck, as it is in `data/` and in the title-slide
+        # template that prints it; the dataclass spells it with an underscore
+        # because Python fields must.
+        self.assertIn(
+            "credit-note: '[Why the credit reads so]{lang=en}'", markdown
+        )
         self.assertIn("## 1 {#v1}", markdown)
         self.assertIn("[One]{lang=en}\\\n[一]{lang=zh-Hant}", markdown)
         self.assertIn("::: lyrics", markdown)

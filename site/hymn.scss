@@ -120,3 +120,12 @@ body.grid .reveal .lyrics br {
   font-size: 0.5em;
   color: #888;
 }
+
+// Smaller again, and italic: on a title slide this is the one line that is not
+// read off the hymnal. Three decks carry it.
+.reveal .hymn-credit-note {
+  margin-top: 0.4em;
+  font-size: 0.4em;
+  font-style: italic;
+  color: #888;
+}

@@ -201,6 +201,18 @@ body.hymn-page div.quarto-container {
   opacity: 0.7;
 }
 
+// Not the book speaking. Every other line in this heading is transcribed from
+// a page; this one says that two pages disagreed and which way the credit
+// above it was settled, so it is set apart in italic rather than left to look
+// like one more thing the hymnal printed. English-only, like the credits it is
+// about, so the language toggle leaves it alone.
+.hymn-heading .hymn-credit-note {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  opacity: 0.55;
+}
+
 // Who wrote the music and who wrote the words. Everything else on this line
 // says what it is by its own shape -- a meter is figures, a tune is a name in
 // small caps' place, a reference is a chapter and verse -- but two personal
