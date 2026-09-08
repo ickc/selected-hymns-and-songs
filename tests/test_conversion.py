@@ -18,6 +18,8 @@ from hymn_projection.categories import HEADER
 from hymn_projection.scans import SCAN_LANGUAGES
 
 
+DATA = Path(__file__).resolve().parent.parent / "data"
+
 HYMN_DATA = {
     "author": {"en": "An Author"},
     "category": {"zh": "分類——測試"},
@@ -28,6 +30,7 @@ HYMN_DATA = {
         1: [
             {"en": "A “quoted” line—with punctuation.", "zh": "第一行。"},
             {"zh": "　　保留全形空格。"},
+            {"en": "The Father only [glorious claim]!"},
         ],
         "1-chorus": [{"en": "A line with *emphasis* and ^[a note]."}],
     },
@@ -102,6 +105,10 @@ class HymnConversionTest(TestCase):
             "credit-note: The page prints one name, the index another.", markdown
         )
         self.assertIn("A line with *emphasis* and ^[a note].", markdown)
+        # Written as the page prints it. A lone bracket cannot begin a link
+        # here, so Pandoc neither needs nor writes an escape, and the source
+        # stays readable: `en/56` prints `The Father only [glorious claim]!`.
+        self.assertIn("The Father only [glorious claim]!", markdown)
 
     def test_latin_scalar_meter_remains_a_scalar(self) -> None:
         hymn = Hymn.from_dict(dict(HYMN_DATA, meter="C.M."))
@@ -401,3 +408,26 @@ A line
 
         self.assertEqual(hymn.meter, "8.6.8.6.")
         self.assertEqual(hymn.to_markdown(), source)
+
+
+class SourceTextTest(TestCase):
+    """A property of the checked-in source, asserted over all 848 files."""
+
+    def test_no_lyric_is_written_with_a_markdown_escape(self) -> None:
+        """`data/` is the page's characters, and a backslash is none of them.
+
+        Hymn 42 is the only line in the collection whose page prints square
+        brackets, and it carried `\\[glorious claim\\]` until the escape was
+        found to be doing nothing: both spellings survive the round trip
+        unchanged and parse to the same text, so the plain one is the source of
+        record. This keeps the collection at zero backslashes, which is what
+        makes the statement checkable.
+        """
+
+        escaped = sorted(
+            path.name
+            for path in DATA.glob("*.md")
+            if "\\" in path.read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(escaped, [])

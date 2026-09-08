@@ -24,7 +24,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `category` | 848 | yes, all 848 | done |
 | `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
 | `meter` | 848 | 382 name both, 466 print alike | D1 done; every hymn now has one |
-| `note` | 34, holding 37 | 22 both, 10 Chinese-only, 2 English-only | D4 and D20 done — a list now, and the single-language ones are single-language in the book too; see D16 |
+| `note` | 34, holding 37 | 22 notes both, 12 Chinese-only, 3 English-only | D4 and D20 done — a list now, and the single-language ones are single-language in the book too; see D16 |
 | `ref` | 41 | 36 both, 5 Chinese-only | D3 done; every page that prints one now has it |
 | `author` | 704 | 0 both — all English-only | §5 done; 1–764 only, the supplement is not indexed |
 | `composer` | 708 | 0 both — all English-only | §5 done; new field, same scope |
@@ -35,14 +35,15 @@ So: **no, not every field is bilingual.** `category` is, now. `meter` is:
 466 hymns print the same notation in both editions and carry one scalar, and
 the other 382 name their two halves in the front matter, which is what lets a
 page that says `Irregular Meter` sit beside one that counts. But
-`author` and `composer` are single-language, five of the 41 `ref`s and twelve
-of the 34 hymns with a `note` are, and three hymns are missing an entire
-language of lyrics. `author` and `composer` are single-language because their
-source is: the index they come from is the English edition's, and the Chinese
-edition credits nobody. The five `ref`s and the twelve notes are
-single-language because the book is — a note about what the *other* edition
-lacks is printed by one edition only, which is most of what the ten
-Chinese-only and two English-only notes say.
+`author` and `composer` are single-language, five of the 41 `ref`s and fifteen
+of the 37 notes are, and three hymns are missing an entire language of lyrics.
+`author` and `composer` are single-language because their source is: the index
+they come from is the English edition's, and the Chinese edition credits
+nobody. The five `ref`s and the fifteen notes are single-language because the
+book is — a note about what the *other* edition lacks is printed by one edition
+only, which is most of what the twelve Chinese-only and three English-only
+notes say. A hymn can hold one of each: 355's first note is Chinese only,
+because only its Chinese page prints one, and its second is in both.
 
 ### Structure is clean
 
@@ -212,7 +213,9 @@ somebody's, so it stays until [D16](#d16--neither-editions-page-annotations-are-
 settles where the field's contents come from. [D20](#d20--the-footnotes-were-two-kinds-of-thing-and-four-were-neither--done-19-inline-notes-classified-7-stay-8-move-4-no-page-prints)
 has since made the field a list and given it a check, and cleared all
 twenty-five mechanically — no hymn told to repeat its last line already prints
-the repeat — but did not re-read their pages.
+the repeat — but did not re-read their pages. It also added a seventh hymn to
+the six above: 355's Chinese page prints a note, its English page prints none,
+and the English half `data/` carried there has been removed.
 
 **One fix did come out of it.** Hymn 470's Chinese meter is `特.重` on the page
 and was `特` in `data/`; the `重` is the mark that made the note redundant in
@@ -1252,17 +1255,46 @@ its last line and printing the repeat already. Every rule was broken somewhere
 in `data/` before the two kinds were separated, and none is now — so this is a
 gate, not a report. Sixteen tests cover it.
 
-**Two things deliberately left as they are.**
+**Two loose ends, both since closed.**
 
-- **355's English half, `Repeat the first eight lines`, is on no English page.**
-  What `en/387` prints is *Fine* and *D.C. al Fine* in the score, which says the
-  same thing in the notation's own words; the Chinese page prints the sentence.
-  It is kept because dropping it would take a true direction off the English
-  deck, but it is an editorial rendering of a musical mark, not a quotation —
-  the one note in `data/` that is not.
-- **42's `\[glorious claim\]` is not a footnote and never was.** `en/56` prints
-  square brackets in the lyric line; the backslashes are Markdown escaping, and
-  are the projection working. It is the only escape of its kind in `data/`.
+- **355's English half, `Repeat the first eight lines`, was on no English
+  page.** `en/387` was read again at the foot: it prints nothing there, and
+  what it does carry is *Fine* over the eighth line and *D.C. al Fine* over the
+  last, which say the same thing in the notation's own words. The Chinese page
+  prints the sentence, `zh/377`'s `(回頭再唱正歌一遍)`.
+
+  **The English half is removed**, and 355 joins the six hymns
+  [D4](#d4--six-notes-have-lost-their-english-half--done-the-english-edition-prints-no-note)
+  settled the same way — 470, 584, 611, 659, 705, 720 — where the Chinese page
+  prints a note, the English page prints none, and the English edition carries
+  the same instruction in its *setting* instead. That was the deciding parallel:
+  D4 read all six English pages and found the repetition written into the music
+  or stated as `with repeat` in the meter, and 355's `D.C. al Fine` is exactly
+  that. `note` is now a quotation throughout — no half of it is anybody's
+  translation of a thing the other edition prints.
+
+  It cost something, and the cost is worth stating: on an English-only view of
+  355's deck the note is empty, as it already was on those six. The direction is
+  not lost, it is where the English edition puts it. This is *not* the same
+  question as the nineteen inherited bilingual notes, whose English is unsourced
+  but whose provenance is unknown and which D16 still holds: 355's English half
+  was known to have been written by hand into an inline footnote, and its page
+  has now been read.
+
+- **42's `\[glorious claim\]` was a Markdown escape doing nothing.** `en/56`
+  prints `The Father only [glorious claim]!` with literal square brackets, and
+  `data/` had escaped them. Both spellings were tested against the codec and
+  **both are stable** — Pandoc reads and writes either unchanged, they parse to
+  the same text, and the built HTML and `search.json` already showed plain
+  brackets either way. A bracket that cannot begin a link needs no escape, so
+  the escape was noise in a file meant to read like the page.
+
+  **The backslashes are removed**, which leaves `data/` with **no backslash in
+  any of its 848 files**. That is now a test in `tests/test_conversion.py`, and
+  a code-point assertion of the kind
+  [D19](#d19--the-punctuation-is-not-one-convention-but-several--surveyed-not-yet-fixed)
+  wants: a backslash anywhere in `data/` means something is in the source that
+  the page does not print.
 
 **What is still open**, and belongs to
 [D16](#d16--neither-editions-page-annotations-are-carried): the tune-borrowing

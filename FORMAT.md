@@ -22,9 +22,17 @@ We, Thy children, bless Thy Name!
 ```
 
 Text scalars in the canonical YAML are Markdown source, not literal text. The
-projection therefore preserves inline constructs such as `*emphasis*`,
-`^[inline notes]` and an escaped `\[bracket\]` the page really prints;
-the converter's temporary language spans do not escape or flatten that markup.
+projection therefore preserves inline constructs such as `*emphasis*` and
+`^[inline notes]`; the converter's temporary language spans do not escape or
+flatten that markup.
+
+**No lyric is written with a Markdown escape**, and `tests/test_conversion.py`
+asserts it over all 848 files. One page prints square brackets in its text —
+`en/56` sets hymn 42's `The Father only [glorious claim]!` — and they are
+written plainly, because a bracket that cannot begin a link needs no escape:
+Pandoc reads and writes either spelling unchanged, so the readable one is the
+source of record. A backslash anywhere in `data/` therefore means something has
+gone in that the page does not print.
 
 The canonical language order is English then Chinese. After `auto-lang.lua`
 restores the language of each line, a repeated language or a transition from
