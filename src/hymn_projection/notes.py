@@ -47,7 +47,7 @@ ORDERS_A_REPEAT = re.compile(r"(?<!不)重唱|重複|唱兩遍|回頭再唱|(?i:
 # hymnal's, and are what this catches if they come back.
 QUOTED = re.compile(r"[“”]([^“”]+)[“”]")
 # What ends a lyric line rather than saying anything about it. A repeat is
-# looked for with this folded away; see `_writes_the_repeat_out`.
+# looked for with this folded away; see `writes_the_repeat_out`.
 TRAILING = "，。、；：！？,;:.!? "
 # `第四節`, `第二詞`: which stanza the hymnal is talking about.  It writes the
 # number in Chinese, and never past the tenth stanza.
@@ -170,7 +170,7 @@ def _note_findings(number: int, hymn: Hymn) -> list[Finding]:
                 number, "a note counts the wrong number of Chinese stanzas",
                 f"{text!r}, but Chinese has {len(chinese)}",
             ))
-        if ORDERS_A_REPEAT.search(text) and _writes_the_repeat_out(hymn):
+        if ORDERS_A_REPEAT.search(text) and writes_the_repeat_out(hymn):
             findings.append(Finding(
                 number, "a repeat is both directed and written out",
                 f"{text!r}, but a stanza already ends with the line twice",
@@ -178,7 +178,7 @@ def _note_findings(number: int, hymn: Hymn) -> list[Finding]:
     return findings
 
 
-def _writes_the_repeat_out(hymn: Hymn) -> bool:
+def writes_the_repeat_out(hymn: Hymn) -> bool:
     """Say whether any stanza already ends with its closing lines sung again.
 
     Compared with the closing punctuation folded away, because the hymnal
@@ -187,6 +187,12 @@ def _writes_the_repeat_out(hymn: Hymn) -> bool:
     both editions. Matching the strings exactly finds that repeat in three of
     its eight stanza-halves and misses five. Over the collection the fold takes
     the count from 31 hymns to 47.
+
+    A tail, and adjacent, which is what this module's question needs: a note
+    saying *repeat the last line* is contradicted by a stanza that already ends
+    with its last line twice, and by nothing else. `repeats.WRITES_IT_OUT`
+    names the four hymns whose repeat the book writes somewhere other than the
+    tail, which is a different question and cannot be asked of the text alone.
     """
 
     for stanza in hymn.stanzas:
