@@ -100,7 +100,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `tuneindex.py` | The **projection** of the whole collection as the book's alphabetical index of tunes. |
 | `meterindex.py` | The **projection** of the same relation grouped the other way: the book's metrical index, meter then tune then hymns. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
-| `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere. |
+| `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere, and reading the meter the Chinese page prints rather than the English one's. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -249,6 +249,9 @@ What has been added here and is not there:
   (要我遠離罪俗) and 729 (沒有神，沒指望, which had a 有 too many). Each was
   the one verse of its hymn that would not scan; see `meter-report` under
   [Checking](#checking);
+- **two whole lines of 722's third verse**, `若沒有救主，雖暫能活着，` and
+  `但到要死時，將要怎辦？`, and two of 274's first in other words than the
+  page's — nineteen syllables and two lines that no count could have caught;
 - **nine more, found the same way once the check stopped confusing a missing
   syllable with a moved line break**: 122 (以色列**民**被選族類, which its twin
   123 has always had), 270 (隨同**所有**歡樂聖眾讚美), 298 (two 爲), 632
@@ -1185,7 +1188,14 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   every Chinese lyric line against the meter printed over the hymn. A meter is
   a syllable count and Chinese is one syllable to the character, so this is not
   a heuristic. It is still a report and not a gate -- `--strict` makes it one --
-  because 102 hymns disagree.
+  because 63 hymns disagree.
+
+  **The meter it counts against is the Chinese page's.** A hymn may state two,
+  and they need not state the same lengths: 45's English page prints
+  `13. 13. 13. 14. with chorus` where its Chinese page prints `8.5.8.5.雙.和`,
+  and only the second describes the Chinese lyrics. The Chinese edition also
+  writes its own marks -- `雙` for `D.`, `重` for `with repeat`, `和` for
+  `with chorus`, `特` for `Irregular Meter` -- and `printed()` reads them.
 
   **A verse and a meter can disagree in two ways, and the report keeps them
   apart**, because only one of them is about the text. They can hold different
@@ -1197,7 +1207,7 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   both ways -- 617's page states `7.6.7.6.雙` over rows of thirteen characters
   and 137's states `13.13.13.13.` over exactly the same shape -- so a meter
   that joins or splits the lyrics' lines at boundaries both agree on is
-  reported as that and not as a missing syllable. 41 of the 102 are this. The
+  reported as that and not as a missing syllable. 56 of the 63 are this. The
   sharpest finding is the third kind: the verse holds what the meter asks and
   cuts it somewhere it cannot be sung, which means one of the two readings of
   that verse is wrong and the other verses say which.
@@ -1207,14 +1217,20 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   than one that lost its syllables -- 789, 813 and 840 print more English
   stanzas than Chinese ones, and 840's English page says so. The repeat a
   `重` asks for, which states its lengths once however many times a verse
-  writes them out. And a Pandoc inline note, which is the hymnal's direction
-  printed beside the verse rather than words sung in it.
+  writes them out -- and each verse of one hymn may take a different one of
+  the runs the repeat allows, because 274 writes its repeat out under the music
+  and leaves it to the singer in the verses printed as text. A Pandoc inline
+  note, which is the hymnal's direction printed beside the verse rather than
+  words sung in it. And the speaker a responsive chorus names before its line,
+  `（姊妹）` / `（弟兄）` / `（全體）`, which 491, 532, 533 and 761 print and
+  nobody sings.
 
-  On 89 of the 108 disagreements that are hymns 1--764, the metrical index
-  confirms the meter independently. That does not by itself convict the
-  lyrics: 45's two editions print different meters and only the Chinese one
-  describes the Chinese text, and 329's two editions agree with each other and
-  with neither. See [PLAN.md](PLAN.md).
+  The metrical index confirms many of these meters independently, which still
+  does not by itself convict the lyrics: 329's two editions agree with each
+  other and with neither, because a meter describes the *tune* and a
+  translation may sit a syllable differently on it. Four hymns are reported
+  for exactly that and always will be -- 48, 112, 329, 799. See
+  [PLAN.md](PLAN.md).
 
   Two counts have no meter to check against and are checked anyway. Where the
   hymnal prints `Irregular Meter` it names no lengths, but the verses can still
