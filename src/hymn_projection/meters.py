@@ -268,6 +268,8 @@ class Disagreement:
             return []
         found = {compare(reference, counts) for _, counts in self.stanzas}
         found.discard(None)
+        if MISCOUNTED in found and self._is_one_dropped_character():
+            found = (found - {MISCOUNTED}) | {DROPPED}
         return [name for name in SEVERITY if name in found]
 
     @property
@@ -277,11 +279,7 @@ class Disagreement:
         if self.meter is None:
             return "no meter"
         found = self.kinds
-        if not found:
-            return MISCOUNTED
-        if found[0] is MISCOUNTED and self._is_one_dropped_character():
-            return DROPPED
-        return found[0]
+        return found[0] if found else MISCOUNTED
 
     def _is_one_dropped_character(self) -> bool:
         reference = self.reference or []
