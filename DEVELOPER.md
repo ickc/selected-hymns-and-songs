@@ -766,6 +766,14 @@ the hymn page under the note and on the deck's title slide, italic in both
 places, because it is the only line in either heading that the hymnal does not
 print.
 
+**The comparison is a floor, and a measured one.** It ran over the 605 hymns of
+1–764 that begin their own page, so it never looked at the 159 that begin below
+another hymn, nor at the supplement, nor at about thirty cells it discarded as
+speckle. Sampling the first of those — the 20 shared-page hymns whose index row
+is a joint credit, which is the signature of a page that prints one — found ten
+printing a credit, of which seven agree and three do not (hymns 19, 64 and
+329). So the unexamined pages are unexamined, not clean.
+
 **Scope, stated rather than hidden.** The index covers hymns 1 to 764. The
 English back matter's supplement has a table of contents, a first-lines index,
 a subject index and the list of Chinese-only hymns, and no authors — so the 84

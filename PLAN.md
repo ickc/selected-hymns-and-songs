@@ -575,12 +575,34 @@ heading the hymnal does not print. It is also the first cell in `data/` that is
 not read off a page, which is why it is confined to three rows: everything else
 here is one person written two ways, and this table is the record of that.
 
-**What is still a floor.** The 71-cell comparison came from the same heuristic,
-and on about thirty cells it returned scan speckle (`r--,`, `13\o/`) or grabbed
-the wrong line (`chorus`, `First tune.`), discarded rather than reported. So
-there may be disagreements it did not see. Every row it *did* report has now
-been read off `scan/en/`, except 571, where the index is a strict superset
-either way.
+**What is still a floor, and how deep.** Every row the heuristic *did* report
+has now been read off `scan/en/`, except 571, where the index is a strict
+superset either way. What it never looked at is larger than what it did:
+
+| never compared | hymns | why |
+| --- | --- | --- |
+| begin below another hymn | 159 of 1–764 | the reader looked above the first staff of a page, which is not where a mid-page hymn's credit sits |
+| the supplement | 45 present in English | the index stops at 764, so there is nothing to compare against — and `data/` therefore credits none of them |
+| cells it discarded | ~30 | scan speckle (`r--,`, `13\o/`) or the wrong line (`chorus`, `First tune.`), dropped rather than reported as unknown |
+
+**The first of those was sampled, and it is not empty.** Of the 159 shared-page
+hymns, the 20 whose index row is a joint credit — the signature of a modern
+copyrighted song, which is the kind of page that prints one — were read by eye.
+Ten print a credit and ten print none. Of the ten, seven agree and **three
+disagree**:
+
+| hymn | the page | the index | settled |
+| --- | --- | --- | --- |
+| 19 | `Jimmy & Carol Owens` | `Jimmy Owens` | the page — the index dropped a person |
+| 64 | `Tommy Coomes` | `Tom Coomes` | the page — as at 219 |
+| 329 | `Elton Roth` | `Elton M. Roth` | the index, already there |
+
+19 and 64 are corrected. The rate — three disagreements in ten pages that print
+anything — is about what the original comparison found, which says the
+unexamined 139 are unexamined rather than clean. They are enriched for older
+public-domain hymns, whose pages print nothing, so the yield there will be
+lower; it will not be zero. **Closing this means reading page tops by eye, and
+the count is 159 plus the supplement's 45, not the 605 already done.**
 
 
 ### D16 — neither edition's page annotations are carried
