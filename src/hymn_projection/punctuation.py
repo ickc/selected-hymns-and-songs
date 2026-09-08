@@ -56,7 +56,11 @@ CHINESE_MARKS = "，。、；：！？“”「」（）—…"
 # purpose, and so is ``‘``: every one of the thirty-five this collection had
 # was an elision -- ``‘Tis``, ``‘Neath``, ``‘gainst`` -- and the hymnal quotes
 # nothing inside a quotation, so an opening single quote here is a wrong mark.
-ENGLISH_MARKS = " ,.;:!?-—()[]“”’"
+# The en dash is here for one line: 797 sets `Thy way – Thy chosen way,` and
+# `en/847` prints it, spaced, in the modern face the collection's later
+# material is typeset in.  Everywhere else the English dash is an unspaced
+# em dash, `en/16` included, where `data/` had an en dash and the page an em.
+ENGLISH_MARKS = " ,.;:!?-—–()[]“”’"
 # One space may stand in a Chinese line, where the page sets the line in two
 # columns and `data/` writes it as one.  A run of them is column padding, which
 # is a property of the printed page's width and not of the text.
