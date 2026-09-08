@@ -26,6 +26,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `meter` | 848 | 382 name both, 466 print alike | D1 done; every hymn now has one |
 | `note` | 34, holding 37 | 22 notes both, 12 Chinese-only, 3 English-only | D4 and D20 done — a list now, and the single-language ones are single-language in the book too; see D16 |
 | `ref` | 41 | 36 both, 5 Chinese-only | D3 done; every page that prints one now has it |
+| `repeat` | 28 | n/a — one statement about the hymn, not two | D21 done; which lines are sung again where the book says so without writing them out |
 | `author` | 704 | 0 both — all English-only | §5 done; 1–764 only, the supplement is not indexed |
 | `composer` | 708 | 0 both — all English-only | §5 done; new field, same scope |
 | `title` | 778 | 0 both — all English-only | D12 done; 31 scripture portions and 39 Chinese-only hymns have no name in the book |
@@ -1312,7 +1313,7 @@ twenty-five.
 
 ### D19 — the punctuation is not one convention but several — **done: 386 lines corrected in eight classes, and `check-punctuation` keeps them**
 
-*(This was the dependency [D21](#d21--a-repeat-is-written-three-ways-and-read-none--surveyed-the-spec-is-specified-the-work-is-not-done) named. It is now met.)*
+*(This was the dependency [D21](#d21--a-repeat-is-written-three-ways-and-read-none--done-28-hymns-say-which-lines-and-check-repeats-keeps-the-three-statements-together) named. It was met, and D21 is now done.)*
 
 Every mark in `data/` was counted, English lines and Chinese lines apart, and
 then read against the pages. Punctuation is not sung, so nothing that counts
@@ -1409,39 +1410,163 @@ work left to do.
 
 ---
 
-### D21 — a repeat is written three ways and read none — **surveyed; the spec is specified, the work is not done**
+### D21 — a repeat is written three ways and read none — **done: 28 hymns say which lines, and `check-repeats` keeps the three statements together**
 
-The hymnal states a repeat in three places, and `data/` carries all three
-without relating them: written out in the lyrics, ordered in a `note`, or
-marked `重` / `with repeat` in the meter. Counted over 848 hymns:
+The hymnal states a repeat in three places and relates none of them: written
+out in the lyrics, ordered in a `note`, or marked `重` / `with repeat` in the
+meter. Counted over 848 hymns:
 
 | | hymns |
 |---|---|
-| the lyrics write a repeat out | 31 (47 — see below) |
+| the lyrics write a repeat out | 47 |
 | the meter carries `重` / `with repeat` | 35 |
 | a `note` orders one | 26 |
 
-and they overlap badly:
+**Nothing acted on any of it.** A deck whose hymn says *Repeat the last line of
+each stanza* printed that sentence on the title slide and then showed each
+stanza once; the congregation had to remember. That gap is now closed the way
+`chorus_sources()` closes its own: the source states the structure once, and
+the two projections differ — the slide **sings the repeat**, on a slide
+labelled `Repeat 重唱` beside the chorus's `Chorus 副歌`, and the page keeps the
+book's shape and prints the note.
 
-| written | meter mark | note | hymns |
-|---|---|---|---|
-| — | — | — | 782 |
-| ✓ | — | — | 22 |
-| — | ✓ | ✓ | 17 |
-| ✓ | ✓ | — | 9 |
-| — | ✓ | — | 9 |
-| — | — | ✓ | 9 |
+#### The three statements reduce to twenty-eight hymns
 
-**Nothing acts on any of it.** A deck whose hymn says *Repeat the last line of
-each stanza* prints that sentence on the title slide and then shows each stanza
-once; the congregation has to remember. That is the gap worth closing, and the
-right shape for it is the one `chorus_sources()` already has: the source states
-the structure once, and the two projections differ — the slide **spells the
-repeat out**, the page keeps the book's shape and prints the note.
+The survey's three-way overlap made this look like a reading of 44 pages. It is
+not, and the reduction is worth setting out, because every step of it is a
+statement about where the book has already said the thing.
 
-**The proposal that does not work is compression.** Deriving the note from the
-lyrics — finding the written-out repeats and folding them away — fails three
-ways, and each was measured rather than guessed.
+| what asks for a repeat | hymns | where the answer is |
+|---|---:|---|
+| the lyrics write it out, and nothing else asks | 36 | in `data/` already — nothing to add |
+| the lyrics write it out and the meter is marked | 11 | likewise |
+| the meter is marked and a `note` orders one | 17 | the note |
+| a `note` orders one and no meter is marked | 9 | the note |
+| the meter is marked and nothing else says anything | 7 | the pages |
+
+Of the last seven, **four write the repeat out in a shape the tail rule cannot
+see**, and finding that was the first of the two things this pass turned up.
+122 sets `Let angels prostrate fall,` twice in the *middle* of every stanza and
+`en/135` prints it twice in stanzas 2, 3 and 4 as well as under the music; 534
+sets `Or on this earthly ball, Or on this earthly ball.` on one line; 650 sings
+its third and fourth lines again with a fifth interposed; 678 writes the whole
+repeat out as `1-chorus`.
+
+So three hymns had to be read off their pages — 54, 57 and 575 — and 25 had a
+direction printed under them. Five of those twenty-five still needed their
+music looked at, for a reason given below, and 355's is a shape the field does
+not hold: 28 in the end.
+
+#### `repeat`, and what reading 57's page did to the spec
+
+The spec this section previously proposed was `{stanzas: all, lines: 1}`: a
+count of trailing lines, per language. `en/71` says it will not do.
+
+Hymn 57 is `8.6.8.6. with repeat`, and the music under its first stanza sings
+`And drives away his fear, / And drives away his fear. / It soothes his sorrow,
+heals his wounds, And drives away his fear.` — the fourth line twice, then the
+third and fourth again. That is no tail of anything. It is also, exactly, the
+four lines hymn 678 writes out as its chorus, under the same meter. So
+`with repeat` on an `8.6.8.6.` tune is a refrain built out of the stanza's own
+lines, its shape belonging to the tune and not to the notation, and half the
+collection's instances of it are written out while half are not.
+
+`repeat` therefore holds **a sequence of the stanza's own line numbers, in the
+order they are sung**:
+
+```yaml
+repeat:
+  lines: [5, 6, 7, 8]
+  stanzas: [4]
+```
+
+`stanzas` is every stanza unless it names some, and 242 is the only hymn that
+names any. `lines` is 57's `[4, 4, 3, 4]`, 575's `[7, 8]`, and 54's
+`[1, 2, 3, 4]` — the whole stanza, which `en/69` prints as an *Optional Repeat*
+over a first ending and which the English meter records as the `D.` of
+`7.8.7.8.D.` over four written lines.
+
+#### It is not per language, and 242 is why not
+
+The second thing this pass turned up contradicts what this section used to
+argue. 242 was the reason a repeat "must be per language": `en/266` prints
+*Repeat the last four lines* and `zh/258` prints `第四節末兩行重唱一遍`, and
+those looked like four lines against two.
+
+They are the same statement. **The Chinese page sets its stanzas in two
+columns**, so two of its printed rows are four of `data/`'s lines — the same
+typographic fact D19 found under 607 on `zh/647`. Both pages print the
+direction under the fourth stanza and both mean that stanza alone, which is
+what `stanzas: [4]` says.
+
+With 242 gone there is no counter-example left: **every stanza of every hymn
+that carries a repeat has the same number of lines in both editions**, so the
+line numbers mean the same thing on either side and the field is a single
+statement about the hymn. It also settles which half of a bilingual note the
+check should read — the English one, because an English page sets one line to
+a row.
+
+#### Where the twenty-eight values came from
+
+**Twenty are the English half of a direction the book prints**, taken at its
+word and then asserted: `check-repeats` reads *the last N lines* out of the
+English half and requires the field to hold N. That is not a derivation the
+data could drift away from silently.
+
+**Eight had no English half to read**, and were read off the music instead:
+
+| hymns | what `data/` had | what the page sings |
+|---|---|---|
+| 470 | `重唱每節最後一行` | `zh/492` sings `榮耀中的生命，成了我生命。` again — one printed row of a two-column stanza, and two lines |
+| 584, 611, 659, 720 | `最後一句唱兩遍` | one line, on each of their four pages |
+| 575 | nothing but `with repeat` | `en/622` sets the last two lines again |
+| 57 | nothing but `with repeat` | `en/71` sings `[4, 4, 3, 4]` |
+| 54 | nothing but `重` | `en/69` marks *Optional Repeat* over the whole stanza |
+
+470 is the one that shows why the Chinese half could not simply be counted:
+`一行` there is a printed row and means two lines, where 211's `一行` on a page
+that is also two-column means one, and only the music says which.
+
+#### What the check asserts
+
+`pixi run check-repeats` (`src/hymn_projection/repeats.py`) is a gate, not a
+report. A meter marked `重` must have its repeat somewhere; so must a note that
+orders one; a repeat written down must not also be written out, or it would be
+sung twice over; a repeat must have something asking for it; and the English
+direction's count must match the field's. A repeat naming a line or a stanza
+the hymn has not is refused by the model before the check runs. Nineteen tests
+cover it.
+
+**What accounts for a repeat that is not written down** is the tail rule
+`notes.writes_the_repeat_out` — now public — plus four hymns named with their
+reasons, and naming them rather than ruling them is the honest half of this
+section. 534 sets `Or on this earthly ball, Or on this earthly ball.` on one
+line and 321 sets `Full salvation! Full salvation!` on one line. Those are the
+same shape and only one of them is a repeat. **Text identity cannot tell a
+repeat the book chose to write out from words that simply repeat** — which is
+what this section argued when it argued against compression, and it is just as
+true in the other direction.
+
+#### What the meter got out of it
+
+`meters.repeats()` admits every tail a `重` might mean, because the mark does
+not say which. Where a hymn now carries a `repeat`, that one run is offered and
+the guessing stops.
+
+**The report is unchanged, to the byte** — still 64. That was named here as the
+prize and it did not materialise, and the reason is worth writing down: the
+hymns whose verses actually needed one of those extra runs are exactly the
+eleven that *write* the repeat out, and there the tail is in the lyrics rather
+than in a field. A hymn that leaves its repeat to the meter has verses that
+scan as the meter prints it. So what this buys is not a settled hymn but a
+closed door: a repeat entered wrongly will now fail to scan instead of being
+absorbed by whichever tail happens to fit.
+
+#### The proposal that still does not work is compression
+
+Deriving the direction from the lyrics — finding the written-out repeats and
+folding them away into a `note` — remains wrong, and each reason was measured
+rather than guessed.
 
 1. **It would replace what the page prints with prose the page does not.** The
    book does both: some hymns it writes out, some it notes, and `data/` is a
@@ -1449,70 +1574,47 @@ ways, and each was measured rather than guessed.
    full, into a direction `en/802` does not carry is precisely the defect
    [D20](#d20--the-footnotes-were-two-kinds-of-thing-and-four-were-neither--done-19-inline-notes-classified-7-stay-8-move-4-no-page-prints)
    removed from 393, 830 and 813.
-2. **The repeat is not a property of the hymn.** Of the 31 that write one out,
-   **18 write it in only some of their stanzas** and **25 have the two editions
-   disagreeing about where**. 274 writes it under the music and leaves it to
-   the singer in the stanzas printed as text; 393 writes it in the eighth
-   stanza and in none of the other seven; 82's Chinese writes it in all four
-   stanzas and its English in none by exact reading. So a hymn-level `repeat`
-   field cannot hold the fact; it is per stanza and per language, like the
-   meter.
-3. **Detection is decided by punctuation, which D19 has now settled.**
-   Hymn 82 writes its last line twice in every stanza of both editions, and
-   closes the first copy with `，` and the second with `！`:
-
-   ```
-   除掉人所有污穢，
-   除掉人所有污穢！
-   ```
-
-   Matching the strings exactly finds that repeat in three of its eight
-   stanza-halves. Folding the trailing punctuation away takes the collection
+2. **A written-out repeat is not a property of the hymn.** Of the 31 that write
+   one out by exact match, **18 write it in only some of their stanzas** and
+   **25 have the two editions disagreeing about where**. 274 writes it under
+   the music and leaves it to the singer in the stanzas printed as text; 393
+   writes it in the eighth stanza and in none of the other seven.
+3. **Detection is decided by punctuation.** Hymn 82 writes its last line twice
+   in every stanza of both editions and closes the first copy with `，` and the
+   second with `！`. Matching exactly finds that repeat in three of its eight
+   stanza-halves; folding the trailing punctuation away takes the collection
    from **31 hymns to 47**. And the differing mark is not noise — it is the
-   same line said again with more force, which is exactly what would be lost by
-   folding two lines into one.
+   same line said again with more force. That fold is what
+   `notes.writes_the_repeat_out` does, and D19 is what made it a statement
+   about the text rather than about the transcription.
 
    Hymn 8's chorus shows the other side of it: `Then sings my soul… / How great
    Thou art… / Then sings my soul… / How great Thou art…` is not a compressible
    repeat, it is the words of the chorus, and only a punctuation difference
-   (`Thee:` against `Thee,`) keeps the detector from claiming it. **Text
-   identity cannot tell a repeat the book chose to write out from words that
-   simply repeat.**
+   (`Thee:` against `Thee,`) keeps the detector from claiming it.
 
-**What was done now.** `check-notes`'s existing rule — a hymn may not both be
-told to repeat its last line and print the repeat — now compares with the
-trailing punctuation folded away, so it sees the 47 rather than the 31. It
-still passes: no hymn in `data/` does both. That invariant is what a later pass
-can build on.
+The direction this section did take is the mirror image: the *note* is the
+source and the *structure* is derived from it, which is checkable in the one
+place it matters and never rewrites a page.
 
-**What the spec would have to be**, if this is taken up. Not one field but a
-per-language one, beside the meter rather than inside the lyrics:
+#### Two things it does not hold, and one it moved
 
-```yaml
-repeat:
-  en: {stanzas: all, lines: 1}
-  zh: {stanzas: [4], lines: 2}
-```
+**355's *da capo* is named rather than held.** `zh/377` prints
+`(回頭再唱正歌一遍)` and `en/387` prints *Fine* over the eighth line and
+*D.C. al Fine* over the last: the whole verse again, after the chorus. `repeat`
+holds lines of a stanza sung where the stanza ends, and that is a different
+shape; `check-repeats` names the *da capo* so that 355 is an exception on
+purpose rather than a hole.
 
-242 is why it must be per language: `en/266` prints *Repeat the last four
-lines* and `zh/258` prints `第四節末兩行重唱一遍`, because the two editions
-break the same words into different numbers of lines. 355 is why `lines` is not
-enough on its own — its repeat is a *da capo*, the whole eight-line verse again
-after the chorus — and 705's `第三至第六節用第二節和詩` is not a repeat at all
-but a chorus selection, which `chorus_sources()` already resolves.
+**The repeat slides are kept out of the search index.** They hold lines the
+stanza before them has already sung, so indexing them would put the same hymn
+in the results twice for no new match — the reason `pages.py` already gives for
+indexing the decks and not the pages. The count is 6,907 before and after.
 
-Then: `slides.py` expands a stanza whose `repeat` says so, `pages.py` leaves it
-alone and prints the note, and `meters.py` — whose `repeats()` already admits
-every tail a `重` might mean, because the mark does not say which — could be
-told which one instead of guessing. That last is the prize: it would settle
-some of the 35 hymns in the report whose lines the meter joins or splits.
+**`data/` gained no lyrics.** Every one of the 28 is front matter; not a
+syllable moved, and the meter report and the chorus report are both unchanged.
 
-**Dependencies.** D19 was the one, and it is met: the marks are now asserted,
-so a comparison that ignores punctuation is a statement about the text rather
-than about the transcription. What is left is the reading of the pages, and
-that is the real cost, because whether a repeat was *chosen* by the editors or
-is simply the words repeating cannot be decided from `data/` alone. Roughly
-D16-sized.
+**Dependencies.** D19 was the one, and it was met before this began.
 
 ---
 
@@ -1935,8 +2037,9 @@ it is not the English one's, and the 64 hymns still reported are the hymnal's
 own — 56 a lineation question, and seven the report should keep making.
 **D19** is done: 386 lines corrected across 145 hymns in eight classes, and
 `check-punctuation` now asserts that each edition of the hymnal is written with
-its own — which is also what unblocks **D21**, surveyed and specified but not
-built. **D16** is the largest, a two-edition transcription of the page
+its own. **D21** is done on top of it: 28 hymns now say which lines they sing
+twice, the decks sing them, and `check-repeats` holds the hymnal's three
+statements of a repeat together. **D16** is the largest, a two-edition transcription of the page
 annotations, and it is what would finally settle what the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
 for carrying the front and back matter in `scan/`. **D17** would want it too:
 the Chinese subject index is one of its witnesses and is not in this
