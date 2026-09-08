@@ -259,7 +259,7 @@ What has been added here and is not there:
   祂有信心, 632's 用十架對付“己，” for 應用十架在“己，, and 813's
   處處**跟主**走窄路, which was the chorus's line standing in the verse's
   place. No count could have found any of them, which is the D14 lesson again;
-- **seventeen line breaks moved back to where the tune puts them**, in 43, 107,
+- **nineteen line breaks moved back to where the tune puts them**, in 43, 107,
   109, 229, 243, 323, 459, 469, 498, 599, 618, 624, 650, 673, 685, 706, 709,
   711 and 723. Each verse held exactly what its meter and its own siblings ask
   for and cut it somewhere it cannot be sung, so the fix adds and takes away

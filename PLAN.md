@@ -377,7 +377,7 @@ files them under `Irregular Meters` by construction: 741 of the 764 agree now
 rather than 759. That is the index being less specific than the page, not the
 two disagreeing.
 
-### D7 — the meter against the lyrics — **the check now says which of two things it found; 22 hymns corrected, 7 text questions left**
+### D7 — the meter against the lyrics — **the check now says which of two things it found; 26 hymns corrected, 7 text questions left**
 
 The Chinese page for 779 (`zh/838.txt`) reads `6. 4. 6. 4 雙`; `data/779.md`
 says `8.6.8.6.D.`.
@@ -472,14 +472,14 @@ what does not scan is the one chorus and not the six verses.
 
 #### What that left, and what it settled
 
-**Seventeen misplaced line breaks, fixed without adding or taking away a
+**Nineteen misplaced line breaks, fixed without adding or taking away a
 character.** A verse breaking differently from its own siblings *and* from the
 meter is fixed by both of them at once: the whole verse is present, and the
 lengths every other verse agrees on say where its lines end. The pages confirm
 it wherever the odd verse is printed as text rather than sung under the music —
 711's second and third and 673's fifth print exactly the break the count
 predicts, and 673's page also has the comma the old break had swallowed. The
-seventeen are 43, 107, 109, 229, 243, 323, 459, 469, 498, 599, 618, 624, 650,
+nineteen are 43, 107, 109, 229, 243, 323, 459, 469, 498, 599, 618, 624, 650,
 673, 685, 706, 709, 711 and 723.
 
 **Nine characters the transcription had dropped**, each confirmed on the
