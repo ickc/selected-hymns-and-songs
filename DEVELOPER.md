@@ -1205,7 +1205,11 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   sits in; a note saying what the English edition lacks that `data/`
   contradicts; a note counting the Chinese stanzas wrongly; and a hymn both
   told to repeat its last line and printing the repeat already. That last one
-  is the shape 274 had before D7 read its page.
+  is the shape 274 had before D7 read its page, and it compares with the
+  closing punctuation folded away: 82 writes its last line twice in every
+  stanza and closes the first copy with a comma and the second with an
+  exclamation mark, and matching exactly would miss five of its eight
+  stanza-halves. See [D21](PLAN.md) for what else that measurement showed.
 
 - `scripts/check_meters.py` (`pixi run meter-report`) counts the syllables of
   every Chinese lyric line against the meter printed over the hymn. A meter is

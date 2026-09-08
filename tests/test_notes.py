@@ -126,6 +126,22 @@ class NoteTest(TestCase):
             kinds(value), ["a repeat is both directed and written out"]
         )
 
+    def test_the_repeat_is_found_though_its_two_copies_end_differently(self) -> None:
+        # 82's shape: the last line written twice, the first copy closing with
+        # a comma and the second with an exclamation mark.
+        value = hymn(["一", "二，", "二！"], note=["重唱每節最後一行"])
+
+        self.assertEqual(
+            kinds(value), ["a repeat is both directed and written out"]
+        )
+
+    def test_a_repeat_of_more_than_one_line_is_found_too(self) -> None:
+        value = hymn(["一", "二", "一", "二。"], note=["每節重唱最後兩行"])
+
+        self.assertEqual(
+            kinds(value), ["a repeat is both directed and written out"]
+        )
+
     def test_a_direction_not_to_repeat_may_stand_over_a_written_repeat(self) -> None:
         # 734's chorus is written out under every stanza and the note says to
         # leave it off after the last, which is not a contradiction.

@@ -46,6 +46,9 @@ ORDERS_A_REPEAT = re.compile(r"(?<!不)重唱|重複|唱兩遍|回頭再唱|(?i:
 # curly double quote; the corner brackets `data/` once had here are not the
 # hymnal's, and are what this catches if they come back.
 QUOTED = re.compile(r"[“”]([^“”]+)[“”]")
+# What ends a lyric line rather than saying anything about it. A repeat is
+# looked for with this folded away; see `_writes_the_repeat_out`.
+TRAILING = "，。、；：！？,;:.!? "
 # `第四節`, `第二詞`: which stanza the hymnal is talking about.  It writes the
 # number in Chinese, and never past the tenth stanza.
 NUMBERED = re.compile(r"第([一二三四五六七八九十]+)[節詞]")
@@ -176,19 +179,26 @@ def _note_findings(number: int, hymn: Hymn) -> list[Finding]:
 
 
 def _writes_the_repeat_out(hymn: Hymn) -> bool:
-    """Say whether any stanza already ends with its last line sung twice."""
+    """Say whether any stanza already ends with its closing lines sung again.
+
+    Compared with the closing punctuation folded away, because the hymnal
+    varies it between the two copies: 82 writes every stanza's last line twice
+    and ends the first with a comma and the second with an exclamation mark, in
+    both editions. Matching the strings exactly finds that repeat in three of
+    its eight stanza-halves and misses five. Over the collection the fold takes
+    the count from 31 hymns to 47.
+    """
 
     for stanza in hymn.stanzas:
         for language in ("en", "zh"):
             lines = [
-                line.translations[language]
+                line.translations[language].rstrip(TRAILING)
                 for line in stanza.lines
                 if language in line.translations
             ]
-            if len(lines) >= 2 and lines[-1] == lines[-2]:
-                return True
-            if len(lines) >= 4 and lines[-2:] == lines[-4:-2]:
-                return True
+            for length in range(len(lines) // 2, 0, -1):
+                if lines[-length:] == lines[-2 * length:-length]:
+                    return True
     return False
 
 
