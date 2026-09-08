@@ -1292,7 +1292,7 @@ gate, not a report. Sixteen tests cover it.
   **The backslashes are removed**, which leaves `data/` with **no backslash in
   any of its 848 files**. That is now a test in `tests/test_conversion.py`, and
   a code-point assertion of the kind
-  [D19](#d19--the-punctuation-is-not-one-convention-but-several--surveyed-not-yet-fixed)
+  [D19](#d19--the-punctuation-is-not-one-convention-but-several--done-386-lines-corrected-in-eight-classes-and-check-punctuation-keeps-them)
   wants: a backslash anywhere in `data/` means something is in the source that
   the page does not print.
 
@@ -1310,79 +1310,102 @@ lines` beside `Repeat the last two lines`), and a mechanical check — does any
 hymn told to repeat its last line already print the repeat? — clears all
 twenty-five.
 
-### D19 — the punctuation is not one convention but several — **surveyed, not yet fixed**
+### D19 — the punctuation is not one convention but several — **done: 386 lines corrected in eight classes, and `check-punctuation` keeps them**
 
-*(A second thing waits on this: [D21](#d21--a-repeat-is-written-three-ways-and-read-none--surveyed-the-spec-is-specified-the-work-is-not-done) cannot tell a written-out repeat from two lines that differ only in their closing mark until the marks are settled.)*
+*(This was the dependency [D21](#d21--a-repeat-is-written-three-ways-and-read-none--surveyed-the-spec-is-specified-the-work-is-not-done) named. It is now met.)*
 
-Every mark in `data/` was counted, English lines and Chinese lines apart. Most
-of it is consistent; what is not is small, sharply bounded, and provable
-without reading a page in most cases.
+Every mark in `data/` was counted, English lines and Chinese lines apart, and
+then read against the pages. Punctuation is not sung, so nothing that counts
+syllables can see it: the meter report stood at 64 before this work and at 64
+after, which is the proof that none of it moved a syllable, and also the reason
+it survived D7, D14 and every check built since.
 
-**The Chinese lines.** 15,642 `，`, 3,953 `。`, 3,176 `；`, 2,849 `！` — and
-then:
+**What the count found**, and what the pages said about each: 386 lines in
+145 hymns, eight classes, one commit apiece.
 
-| what is there | how many | what the rest of the collection uses |
-|---|---|---|
-| `,` U+002C | 3 (379, 529, 532) | `，` U+FF0C |
-| `!` U+0021 | 1 (616) | `！` U+FF01 |
-| `﹕` U+FE55 small colon | 2 (130, 134) | `：` U+FF1A |
-| `﹔` U+FE54 small semicolon | 1 (117) | `；` U+FF1B |
-| `…` U+2026 | 1 (418) | nothing else uses it |
-| `－` U+FF0D fullwidth hyphen-minus | 87 | `——` (187) and `—` (2) |
+| what was there | how many | what it is now | decided by |
+|---|---|---|---|
+| `,` `!` `﹕` `﹔` in Chinese lines | 7 | `，！：；` | the count alone — one halfwidth or presentation form against thousands |
+| `'` and `‘` for an elision or a possessive | 173 | `’` | the words themselves, then `en/847` |
+| `"` in 22, `–` in 1 | 7 | `“”`, `—` | `en/35`, `en/16` |
+| `－` and a lone `—` for the Chinese dash | 89 | `——` | `zh/49` and `zh/500`, measured |
+| a Chinese line beginning `——` | 5 | moved to the line before | `zh/49`, `zh/265` |
+| ideographic and multiple spaces padding a line | 41 lines | one space, or none | `zh/647` |
+| a line beginning `”`, or opening with it | 7 | moved, or `“` | `zh/32`, `zh/170`, `zh/488`, `en/40`, `en/44`, `en/606`, `en/712` |
+| `「」` | 112 | `“”` | `zh/748`, `zh/756`, `zh/776` |
 
-The first five are typos on any reading: one halfwidth mark or presentation
-form against thousands of the proper one, and a `！` is not `!` in a font that
-sets one to a full character width. **The dash is the real question**, and the
-only one of the six that a page has to settle: 187 places write `——`, two
-write a single `—`, and 87 write `－`. Chinese sets a dash as two character
-widths, so `——` is the expected form; whether the 87 are a *different* mark in
-the book (a one-em rule) or the same mark transcribed differently is a question
-for `scan/zh/`, and it is the same question for all 87 at once.
+**Three of those classes were not in the survey**, and the check found them
+because the alphabet rule does not know in advance what it is looking for.
 
-**The English lines.** 2,681 `’` against **138 `'`** — and every one of the 138
-is in hymns 765–848, which is where the collection's later material lives.
-That block uses both: 35 hymns in it have a straight apostrophe and fifteen of
-them have a curly one too, sometimes in the same stanza. So it is a
-transcription inconsistency and not an edition difference, and it is the whole
-of the problem: `’tis`, `thro’`, `heav’n`, `ev’ry`, `pow’r`, `o’er`. Beside it,
-eight straight `"` (22 and 768) against 359 `”`, and two `–` en dashes (1 and
-797) against 463 `—`.
+- **35 apostrophes were set backwards**, as `‘`, not straight: `‘Tis`,
+  `‘Neath`, `‘gainst`, `‘Twas`. The survey had counted `’` against `'` and not
+  asked what the `‘` were. Every one is an elision and none is a quotation, so
+  they join the 138.
+- **98 ideographic spaces padded 41 lines out to a column.** `zh/647` prints
+  607 in two columns and `data/` wrote each pair as one line, padding the gap
+  — three spaces after a six-character half-line, one after a seven. A run
+  whose length is a function of what precedes it is the page's column width,
+  not text.
+- **112 corner brackets are not the book's mark.** They sat in nineteen hymns,
+  all between 670 and 768, which looked like a section set in its own style.
+  It is not: `zh/776` prints 720's `“主，祢已經有九十九，難道還嫌不夠？”`,
+  `zh/756` prints 700's `“幾乎”甚爲不妥，`, `zh/748` prints 692's
+  `“你們必須重生！”`. The Chinese edition quotes with `“”` throughout.
 
-**Do not normalise English toward ASCII.** The obvious-looking move — store
-`'tis`, let Pandoc's `smart` extension curl it on the way to HTML — gets this
-collection wrong, and the codec already refuses it: `PANDOC_MARKDOWN` is
-`markdown-smart`, so what is in `data/` is what the page prints. `smart` reads
-a leading `'` as an *opening* single quote, so `'tis` becomes `‘tis` and
-`'Mid` becomes `‘Mid`, where the page prints `’tis` and `’Mid` — the mark is
-an elision, not a quotation. The collection is full of them. The normalisation
-therefore runs the other way: **toward** the typographic form the book sets,
-which is what 764 of the 848 hymns already have.
+**The dash was the one question a count could not settle**, and the pages did.
+`data/` spelled it three ways and position did not sort them: both the doubled
+`——` and the fullwidth `－` appeared at the end of a line and in the middle of
+one. So the printed marks were measured against the glyph pitch of the line
+they sit on. `zh/49`, where `data/` spelled them `——`, gives 0.53, 0.49, 0.53
+and 0.50 of a character width; `zh/500`, where `data/` spelled them `－`, gives
+0.43 to 0.68 across six hymns. One mark, about half an em, in a face that sets
+all its punctuation narrow. One mark, so one spelling — the doubled one, which
+is the Chinese convention and what two-thirds of the collection already had.
 
-**What to build.** A `punctuation.py` beside `meters.py` — a check with no
-output of its own — and `pixi run check-punctuation`, on the same footing as
-`meter-report`:
+**Two marks stay for one line each, and each names its page.** 418 ends
+`不知如何方能重新…`, and `zh/439` prints the three dots, though Chinese usually
+sets an ellipsis as six. 797 sets `Thy way – Thy chosen way,` with a spaced en
+dash, and `en/847` prints exactly that: the later material, 765–848, is
+typeset in a modern face with conventions of its own, where everywhere else the
+English dash is an unspaced em dash. That same page settled the apostrophe,
+printing `’Tis` with the curly mark.
 
-- **the codepoint assertion**, which is the part worth having and costs
-  nothing: a Chinese lyric line contains Han, Chinese punctuation and nothing
-  else; an English lyric line contains Latin, ASCII punctuation and the four
-  typographic marks the book sets (`’ ‘ “ ”`) and nothing else. Every one of
-  the exceptions above falls out of that one rule, and it stays true afterwards
-  without anyone watching it;
-- **the line-boundary rule**, which the D7 re-lineations were done under and
-  which nothing yet states: a closing mark stays with the line it closes and an
-  opening mark goes with the line it opens. `data/` already satisfies the
-  second everywhere and the first in all but three lines (27, 162 and 466 each
-  begin `”`), so the check would start at three findings — and those three want
-  a page, because a closing quote at the head of a line is either the book's
-  own or a break put in the wrong place;
-- **the fixer**, which is the smaller half and should be run once per class
-  rather than all at once, so that each class is a commit somebody can read.
+**Two things fell out that are not punctuation**, and are recorded here because
+this is where they were seen.
 
-**Where it does not reach.** Punctuation is not sung, so none of this can be
-checked by counting, and none of it changes a single syllable — which is
-exactly why it survived D7 and why a separate check is the only thing that will
-find it. It is also the third time the same shape of defect has appeared (D14's
-twelve lines, D7's four, and now this): a difference the meter cannot see.
+- **`zh/439` prints `主阿,憐憫!` where `data/` had `主阿憐憫！`** — a comma the
+  transcription had dropped. It is restored. The check cannot find the others
+  of its kind, because it asks *which* mark and not *whether* one; finding
+  those is a page-reading pass, and belongs with [D16](#d16--neither-editions-page-annotations-are-carried).
+- **`zh/647` shows 607's lines are two half-lines**, and `data/` writes them as
+  one joined by a space. 23 hymns do that. Whether they should instead be two
+  lines is a lineation question, which is [D7](#d7--the-chinese-lines-do-not-scan-as-the-meter-says)'s
+  and not this one's; the space is kept because it records the break, and the
+  padding is gone because it recorded the page's width.
+
+**What is now asserted**, by `punctuation.py` and `pixi run
+check-punctuation`, and by 14 tests:
+
+- **the alphabet.** A Chinese lyric line holds Han and `，。、；：！？“”（）——…`;
+  an English one holds Latin, a space and `,.;:!?-—()[]“”’`. Every class above
+  falls out of this one rule, and it stays true afterwards without anyone
+  watching it. **The English is not normalised toward ASCII**: `PANDOC_MARKDOWN`
+  is `markdown-smart`, and `smart` would read a leading `'` as an opening quote
+  and set `'tis` as `‘tis` where the page prints `’tis`.
+- **the line boundary**, which the D7 re-lineations were done under and which
+  nothing until now stated: a closing mark stays with the line it closes and an
+  opening mark goes with the line it opens. The dash counts as closing, because
+  it breaks off from what precedes it and the pages set it there.
+- **the pairing**, strict in Chinese and loose in English. English sets a
+  speech running through several stanzas by opening each of them and closing
+  only the last — 345 does — so there the rule is only that a quotation is
+  never closed before it is opened, which found three lines that had opened one
+  with `”`. The strict half found 720's unclosed quotation, and 720 found the
+  corner brackets.
+
+**The fixer is not kept.** Each class was a one-off script and a commit
+somebody can read; what is kept is the assertion, which is the half that has
+work left to do.
 
 ---
 
@@ -1434,7 +1457,7 @@ ways, and each was measured rather than guessed.
    stanzas and its English in none by exact reading. So a hymn-level `repeat`
    field cannot hold the fact; it is per stanza and per language, like the
    meter.
-3. **Detection is decided by punctuation, which D19 has not yet settled.**
+3. **Detection is decided by punctuation, which D19 has now settled.**
    Hymn 82 writes its last line twice in every stanza of both editions, and
    closes the first copy with `，` and the second with `！`:
 
@@ -1484,11 +1507,12 @@ every tail a `重` might mean, because the mark does not say which — could be
 told which one instead of guessing. That last is the prize: it would settle
 some of the 35 hymns in the report whose lines the meter joins or splits.
 
-**Dependencies.** D19 first, so that a comparison ignoring punctuation is a
-statement about the text rather than about the transcription; and the reading
-of the pages is the real cost, because whether a repeat was *chosen* by the
-editors or is simply the words repeating cannot be decided from `data/` alone.
-Roughly D16-sized.
+**Dependencies.** D19 was the one, and it is met: the marks are now asserted,
+so a comparison that ignores punctuation is a statement about the text rather
+than about the transcription. What is left is the reading of the pages, and
+that is the real cost, because whether a repeat was *chosen* by the editors or
+is simply the words repeating cannot be decided from `data/` alone. Roughly
+D16-sized.
 
 ---
 
@@ -1908,14 +1932,12 @@ a reading pass and the largest single correction left in `data/`, and it is now
 the only part of D18 still standing.
 **D7** is done: the Chinese edition's meter is recorded on the 43 hymns where
 it is not the English one's, and the 64 hymns still reported are the hymnal's
-own — 56 a lineation question, and seven the report should keep making. **D19** is new and
-middle-sized: the punctuation was surveyed mark by mark and is not one
-convention but several — 138 straight apostrophes in hymns 765–848 where 2,681
-elsewhere are `’`, four halfwidth marks and three presentation forms in Chinese
-lines, and 87 places that write a dash `－` where 187 write `——`. Most of it
-falls out of a single codepoint assertion. **D16** is the largest, a two-edition
-transcription of the page annotations, and it is what would finally settle what
-the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
+own — 56 a lineation question, and seven the report should keep making.
+**D19** is done: 386 lines corrected across 145 hymns in eight classes, and
+`check-punctuation` now asserts that each edition of the hymnal is written with
+its own — which is also what unblocks **D21**, surveyed and specified but not
+built. **D16** is the largest, a two-edition transcription of the page
+annotations, and it is what would finally settle what the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
 for carrying the front and back matter in `scan/`. **D17** would want it too:
 the Chinese subject index is one of its witnesses and is not in this
 repository.
