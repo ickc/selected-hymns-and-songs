@@ -53,7 +53,7 @@ from dataclasses import dataclass, field
 from itertools import accumulate
 from pathlib import Path
 
-from .model import Hymn, Stanza
+from .model import Hymn, Repeat, Stanza
 
 
 # The CJK ranges the hymnal's Chinese is written in. Punctuation is not sung
@@ -100,20 +100,31 @@ def printed(meter: str) -> list[int] | None:
     return counts * 2 if match.group(2) else counts
 
 
-def repeats(meter: str, counts: list[int] | None) -> list[list[int]]:
+def repeats(
+    meter: str, counts: list[int] | None, repeat: Repeat | None = None
+) -> list[list[int]]:
     """Return every run of lines a verse of this meter may be sung on.
 
     Its lengths as printed, and -- where the meter asks for a repeat -- those
-    lengths with any tail of themselves sung again. Which tail the `重` means
-    is not written down, so all of them are admitted and the verses choose:
-    82 repeats its last line, 627 its last two, 529 its last two as one line
-    apiece.
+    lengths with the repeat sung after them.
+
+    ``重`` says that there is a repeat and never which, so where nothing else
+    says either, every tail is admitted and the verses choose: 82 repeats its
+    last line, 627 its last two, 529 its last two as one line apiece. Where the
+    hymn carries a ``repeat``, that is which, and only that run is offered --
+    the mark has been read, and a verse measured against every tail is barely
+    measured at all.
+
+    The printed lengths stay admissible either way, because a repeat is not
+    sung in every stanza of every hymn: 242's is sung in the fourth alone.
     """
 
     if counts is None:
         return []
     if not REPEAT.search(meter):
         return [counts]
+    if repeat is not None and max(repeat.lines) <= len(counts):
+        return [counts, counts + [counts[line - 1] for line in repeat.lines]]
     return [counts] + [counts + counts[-tail:] for tail in range(1, len(counts) + 1)]
 
 
@@ -373,7 +384,7 @@ def disagreements(hymns: Iterable[tuple[int, Hymn]]) -> list[Disagreement]:
             if implied(hymn) is not None:
                 continue
         else:
-            runs = sung = repeats(text, expected)
+            runs = sung = repeats(text, expected, hymn.repeat)
             if _scans(hymn, counts, sung):
                 continue
             # A repeat gives the verses several runs they might be sung on.

@@ -12,7 +12,7 @@ from hymn_projection.meters import (
     shape,
     syllables,
 )
-from hymn_projection.model import Hymn
+from hymn_projection.model import Hymn, Repeat
 
 
 def hymn(meter: str | None, *stanzas: list[str]) -> Hymn:
@@ -96,6 +96,19 @@ class RepeatTest(TestCase):
     def test_a_repeat_offers_every_tail_sung_again(self) -> None:
         self.assertIn([8, 6, 8, 6, 6], repeats("8.6.8.6. 重", [8, 6, 8, 6]))
         self.assertIn([8, 6, 8, 6, 8, 6], repeats("8.6.8.6. 重", [8, 6, 8, 6]))
+
+    def test_a_repeat_that_has_been_read_offers_only_what_it_says(self) -> None:
+        # 57's, off `en/71`: the fourth line twice, then the third and fourth.
+        self.assertEqual(
+            repeats("8.6.8.6. 重", [8, 6, 8, 6], Repeat(lines=[4, 4, 3, 4])),
+            [[8, 6, 8, 6], [8, 6, 8, 6, 6, 6, 8, 6]],
+        )
+
+    def test_a_stanza_the_repeat_is_not_sung_in_is_still_admitted(self) -> None:
+        # 242 sings its repeat in the fourth stanza and in none of the others.
+        self.assertIn(
+            [8, 6, 8, 6], repeats("8.6.8.6. 重", [8, 6, 8, 6], Repeat(lines=[4]))
+        )
 
     def test_a_verse_that_writes_the_repeat_out_scans(self) -> None:
         # 82 writes its repeated last line as a line of its own.
