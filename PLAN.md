@@ -663,7 +663,7 @@ that is D8's and §4's business rather than an orthographic sweep's. And the
 comparison itself reached only 327 of 848 pages, because the other 521 put
 something other than the heading on the first line the reader recovered.
 
-### D18 — a variant dictionary, and where normalising is allowed to win
+### D18 — a variant dictionary, and where normalising is allowed to win — **done: the search folds, and the data does not**
 
 D17 corrected `data/` **towards** the book: 着 not 著, 裏 not 裡, 爲 not 為, 藉
 not 借, 眞 not 真, 敎 not 教, 啓 not 啟. That is the right default and it should
@@ -709,14 +709,32 @@ sources looks like. None of the four pairs actually collided, because each pair
 sits under a different parent — but they are one phrase printed two ways, and
 nothing but luck kept them from being one key printed two ways.
 
-**The second question: a modern-form reading of the whole text.** The book's
-orthography is now `data/`'s, which is right for fidelity and awkward for a
-reader. The site's search index is built from this text, so someone typing
-裡面, 你, 真 or 教會 — the forms a modern keyboard produces — will not match
-裏面, 祢, 眞 or 敎會. A variant dictionary would let the search fold both ways
-without touching what is stored, and would also make a modern-spelling edition
-possible later if it is ever wanted. Whether search should fold, and whether
-the folding belongs in the index or in the query, is undecided.
+**The second question: a modern-form reading of the whole text — settled, in
+`site/search-fold.html`.** The book's orthography is `data/`'s, which is right
+for fidelity and awkward for a reader: **2,698 of the 6,906 search entries**
+carry at least one of these characters, and none of them is what a modern IME
+produces. Someone typing 裡面 or 教會 was told the hymnal did not contain them.
+
+The folding belongs in **both** the index and the query, and that turned out to
+be the answer rather than a compromise. Quarto's search is fuse.js over
+`search.json`, and both ends of it pass through one object — `Fuse.prototype.add`
+takes each indexed document and `Fuse.prototype.search` takes each query — so a
+single include patches the pair and folds both into the form `data/` carries.
+Folding the query alone would have been cheaper and would have broken the
+eleven places the site *does* print the other form: the Chinese preface's 為,
+hymn 458's 更顯著, and 814 and 817's 彀. Folded on both sides, each of those is
+now found by either spelling.
+
+Nothing stored moves. `data/` and every rendered page keep the book's spelling;
+the only visible effect beyond finding more is that a result's snippet shows
+the folded form, in eleven characters across the whole index. The table is read
+back out of the file and checked against `data/` by
+`tests/test_search_fold.py`, so a pair that stops being true of the collection
+fails there rather than quietly searching for a character that is no longer
+present. `你`/`祢` is deliberately out of it, for the reason below.
+
+A modern-spelling *edition* remains possible and remains unwanted; what the
+fold does is make one unnecessary for the reader who only wants to find a line.
 
 **What the dictionary would hold.** Seven pairs are settled, each read off a
 page image rather than off the extraction's text layer, which is wrong about
@@ -767,10 +785,11 @@ D17 checked, and any dictionary has to record the exception beside the rule.
   publisher's note, and `zh/001` prints 為. Any dictionary applied across
   `data/` has to know that not all of `data/` is the 1960s typesetting.
 
-**Size.** Small as a table and as a search change; large if it is taken as
-licence to re-sweep the lyrics, which is really D17's outstanding half. Worth
-doing as the table plus the search folding first, and leaving the sweep to
-whoever does 你/祢.
+**Size.** It was small as a table and as a search change, and both are done.
+What is left under this heading is the sweep of the lyrics, which is really
+D17's outstanding half and belongs to whoever does 你/祢 — and the caveats
+above say what such a sweep would have to establish before it moved a
+character.
 
 ### D8 — the category is single-valued, but the book's index is not
 
@@ -1264,10 +1283,14 @@ committed table itself rather than in a commit message.
    `scan/{en,zh}/N.png`. §5 is the largest of them, and D15 shows the shape of
    the problem: the check that found the index disagreeing with the hymn pages
    could only run because the *hymn* pages are here. The index pages are not.
-10. **D18's variant dictionary** — the pairs are already known and written
-    down; what is open is whether the site's search folds them, so a reader
-    typing 裡面 or 你 finds 裏面 and 祢. Small, and it is the only thing
-    standing between the book's orthography and a reader's keyboard.
+10. ~~**D18's variant dictionary**~~ Done, and it was as small as advertised:
+    `site/search-fold.html` patches the two fuse.js methods Quarto's search
+    passes every indexed document and every query through, and folds both into
+    the form `data/` carries. Eight pairs; `你`/`祢` stays out, being a reading
+    rather than a glyph. Folding *both* ends rather than only the query is what
+    keeps the eleven places the site prints the other form — the Chinese
+    preface, 458's 更顯著, 814 and 817's 彀 — findable, by either spelling.
+    Nothing stored moved.
 11. ~~**The TOC** (`en/002`, `zh/002`)~~ Done, and cheap as advertised. It is
     not a table: the ranges it prints are exactly what the hymns already say,
     so §4's tree computes them and the two pages became a check instead. All
@@ -1279,11 +1302,10 @@ committed table itself rather than in a commit message.
     name that looked like an index-against-page disagreement and was not —
     **D17**, which is not small.
 
-**What is next.** Five things are open and each is a different size. **D17**'s
+**What is next.** Four things are open and each is a different size. **D17**'s
 orthography is corrected; what remains of it — 你 for 祢 across 557 files — is
-a reading pass and the largest single correction left in `data/`. **D18** is
-the small one: the variant pairs are already known, and the open question is
-whether the search folds them.
+a reading pass and the largest single correction left in `data/`, and it is now
+the only part of D18 still standing.
 **D15**'s policy question is the smallest and needs a decision rather than
 work: whether `data/` should prefer a hymn's own page over the author index on
 the nine hymns where the two name different people. **D7**'s remaining syllable

@@ -900,6 +900,40 @@ This is why the html format has a theme rather than `theme: none`: without one
 there is no navbar to put the box in, and Quarto finds nothing it recognizes as
 content on the two pages, so neither would be in the index.
 
+### Folding the orthography, which is ours
+
+`site/search-fold.html` is the exception to "none of this is ours". `data/` is
+in the hymnal's own typesetting — 着 not 著, 裏 not 裡, 爲 not 為 — because a
+lyric is a quotation and the page decides how it is spelled. **2,698 of the
+6,906 entries carry at least one of these characters**, and none of them is
+what a modern IME produces: without the fold, a reader searching for 裡面 or
+教會 is told the hymnal does not contain them.
+
+Both ends of the search go through one object — fuse.js is handed each indexed
+document by `add` and each query by `search` — so the include patches those two
+methods and folds both into the form `data/` carries. Folding **both** is what
+makes it symmetric, and it is not redundant: the eleven places the site does
+print the other form would otherwise become unreachable. The Chinese preface is
+a modern publisher's note and prints 為; hymn 458's 更顯著 is *zhù* rather than
+the particle; 814 and 817 keep the 彀 their pages print where the other hymns
+under that subject print 夠. Folded on both sides, each of those is found by
+either spelling.
+
+Eight pairs, seven pointing at the older shape and 彀 → 夠 pointing the other
+way, because there the book's own dominant form is the modern one. `你`/`祢` is
+deliberately absent: the hymnal uses both and reserves 祢 for God, so choosing
+between them is a reading of who is addressed rather than a choice of glyph.
+PLAN.md's D18 says where each pair was read off a page image.
+
+What this does *not* touch is `data/` or any rendered page, which keep the
+book's spelling exactly. The one visible effect beyond finding more is that a
+result's snippet shows the folded form — eleven characters across the whole
+index. `tests/test_search_fold.py` reads the table back out of the file and
+checks it against `data/`, so a pair that stops being true of the collection —
+D17 rewrote its orthography once already, and D18 leaves a sweep of the lyrics
+open — fails there rather than quietly searching for a character that is no
+longer present.
+
 ### Parallel rendering
 
 Quarto can render one file or a directory, so the decks can be divided into

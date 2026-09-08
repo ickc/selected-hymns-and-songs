@@ -94,12 +94,14 @@ format:
           <link rel="preconnect" href="https://font.kolen.dev" crossorigin>
           <link rel="stylesheet" href="https://font.kolen.dev/assets/faces.css">
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap">
-    # Both are fragments appended to the body and both are inert on a page
-    # that does not carry the markup they look for: the number box is only on
-    # the landing page, and the panes only on a hymn page.
+    # All three are fragments appended to the body, and each is inert where
+    # what it looks for is not there: the number box is only on the landing
+    # page, the panes only on a hymn page, and the fold returns unless the
+    # theme has loaded fuse.js for the search box.
     include-after-body:
       - goto.html
       - hymn-page.html
+      - search-fold.html
   revealjs:
     theme: [default, hymn.scss]
     template-partials:

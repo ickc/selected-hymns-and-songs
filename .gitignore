@@ -24,4 +24,5 @@ site/*.html
 !site/fit.html
 !site/goto.html
 !site/hymn-page.html
+!site/search-fold.html
 !site/title-slide.html
