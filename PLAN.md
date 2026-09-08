@@ -103,7 +103,9 @@ proposal §5.
 rule is not one the book keeps. Three agree with it letter for letter. The
 fourth does not: the index prints hymn 439's author `Thomas D. Chisholm` where
 the hymn's own page prints `Thomas O. Chisholm`, and its composer `Carl H.
-Lowden` where the page prints `C. Harold Lowden`. That is D15.
+Lowden` where the page prints `C. Harold Lowden`. That is D15, and D15 settled
+it back the way `data/` had it: the index contradicts itself at hymn 397, and
+the page's own copyright line repeats the Lowden it credits.
 
 ### D3 — `ref` is inconsistent, monolingual, and partly redundant — **done, 41 now**
 
@@ -484,65 +486,101 @@ cannot pair, and 480 ranks 311th of 847 on line similarity, squarely mid-pack.
 Finding others means reading pages by eye. This is the one defect class in the
 collection with no cheap detector.
 
-### D15 — the author index disagrees with the hymn pages on 17 hymns
+### D15 — the author index disagrees with the hymn pages on 17 hymns — **done: the fuller printing wins, and three rows say why**
 
 **A second source turned up after §5 was called sourceless.** The English
 preface says author and composer names are in the index at the back "except for
 copyright-bearing songs" — and it is exactly those songs that carry the names
-*over the hymn instead*, at the top of the page, author left and composer
-right. That is a second printing of the same fact. It does not cover the
-collection: reading the top of all 605 hymns that begin their own page finds a
-credit on both sides for only 71 cells, most pages printing neither. But those
-71 are a real check, and 21 agree outright.
+*over the hymn instead*, above the first staff. That is a second printing of
+the same fact. It does not cover the collection: reading the top of all 605
+hymns that begin their own page finds a credit for only 71 cells, most pages
+printing neither. But those 71 are a real check, and 21 agree outright.
 
-**Of the rest, most are the same person written two ways**, which is the book
-being loose rather than wrong, and the index's form is kept:
+**The page does not have the index's shape, and that is the whole defect.**
+Reading the eleven page images the two printings disagree on finds three
+layouts, not one:
 
-| hymn | the index | the hymn's own page |
+| layout | left margin | right margin | hymns |
+| --- | --- | --- | --- |
+| split | the author | the composer | 144, 286, 363, 378, 430, 439, 492 |
+| joint | *empty* | the whole credit | 11, 54, 118, 128, 216, 234, 266 |
+| joint, stacked | *empty* | two names, one per line | 219, 505 |
+
+The right margin means the composer on a split page and the whole credit on a
+joint one. **Position alone does not say which**, and the index — having two
+columns to fill — resolves a joint credit by writing it into both. 110 of the
+764 rows carry the same name twice, and every joint-credit page above is one of
+them. `data/authors.tsv` keeps that convention: it is the book's own, and the
+alternative is a third representation for a hundred hymns to serve fifteen.
+
+**Which is also how the first reading of these pages went wrong.** The column
+this defect was first recorded from came from a coordinate heuristic over the
+text extraction — it takes the bottom line on each margin, having removed the
+subject heading, the meter and the number — and that is right for a split page
+and silently halves a stacked one. It reported `Tommy Coomes` for 219 and lost
+`Morris Chapman`; `Randy Rigby` for 505 and lost `Danny Daniels`; and on 144 it
+read `Jennie Hussey` off a page that plainly prints `Jennie E. Hussey`. Three
+of the seventeen rows were artefacts of the reader. **A coordinate heuristic
+over a text layer finds candidates; only a page settles them.**
+
+**Settled by taking whichever printing carries more.** Ten rows keep the
+index's name:
+
+| hymn | the index — kept | the hymn's own page |
 | --- | --- | --- |
-| 11 | `F. M. Lehman` | `Frederick M. Lehman` |
-| 118 | `Dave Fellingham` | `David Fellingham` |
-| 128 | `Jack Hayford` | `Jack W. Hayford` |
-| 144 | `Jennie E. Hussey` | `Jennie Hussey` |
-| 234 | `Debby Kerner` | `Debby Kerner Rettino` |
+| 144 | `Jennie E. Hussey` | `Jennie E. Hussey` — not a disagreement at all |
+| 216 | `Graham Kendrick and Chris Rolinson` | `Graham Kendrick` |
 | 286 | `Alfred H. Ackley`, `Bentley D. Ackley` | `A. H. Ackley`, `B. D. Ackley` |
 | 363 | `George O. Webster`, `Charles H. Gabriel` | `Geo. O. Webster`, `Chas. H. Gabriel` |
-| 430 | `A. B. Simpson` | `A. Simpson` |
+| 430 author | `A. B. Simpson` | `A. Simpson` |
+| 492 | `John W. Peterson, Alfred B. Smith` | `Alfred B. Smith` |
 | 571 | `Jean Sibelius, arr. for The Hymnal` | `Jean Sibelius` |
 
-**Nine are substantive**, and on these the two pages name different people or
-credit a different number of them. Nothing here decides which is right, so the
-index's reading stands in `data/` and the disagreement is recorded instead:
+and seven take the page's, for the same reason:
 
-| hymn | the index | the hymn's own page |
+| hymn | the index | the hymn's own page — kept |
 | --- | --- | --- |
-| 54 | `Nalda Hearn` (both) | `Naida Hearn` (both) |
-| 216 | `Graham Kendrick and Chris Rolinson` | `Graham Kendrick` |
-| 219 | `Morris Chapman and Tom Coomes` | `Tommy Coomes` |
-| 266 | `Michael Ryan` | `Dale Garratt` |
-| 378 | `Homer Hammontree` | `W. H. Hammontree` |
-| 430 | `I. H. Meredith` | `George Stebbins` |
-| 439 | `Thomas D. Chisholm`, `Carl H. Lowden` | `Thomas O. Chisholm`, `C. Harold Lowden` |
-| 492 | `John W. Peterson, Alfred B. Smith` | `Alfred B. Smith` |
-| 505 | `Danny Daniels` | `Randy Rigby` |
+| 11 | `F. M. Lehman` | `Frederick M. Lehman` |
+| 54 | `Nalda Hearn` | `Naida Hearn` — the index's `Nalda` is a misprint |
+| 118 | `Unknown`, `Dave Fellingham` | `David Fellingham`, joint — a name beats *Unknown* |
+| 128 | `Jack Hayford` | `Jack W. Hayford` |
+| 219 | `Morris Chapman and Tom Coomes` | `Morris Chapman and Tommy Coomes` |
+| 234 | `Debby Kerner` | `Debby Kerner Rettino` |
+| 505 | `Danny Daniels` | `Danny Daniels and Randy Rigby` |
 
-**439 is the one that costs something.** `data/` had `Thomas O. Chisholm` from
-the hymn's own page — one of D2's four — and applying the table replaced it
-with the index's `Thomas D. Chisholm`. The same index prints `Thomas O.
-Chisholm` at hymn 397, so it contradicts itself as well as the page. The table
-is a transcription of the index and keeps what the index prints; whether
-`data/` should prefer the hymn's own page where one exists is a policy question
-this defect exists to raise, and it applies to all nine substantive rows at
-once rather than to 439 alone.
+**439 was the one that cost something, and the page wins both cells.** `data/`
+had `Thomas O. Chisholm` from the hymn's own page — one of D2's four — and
+applying the table had replaced it with the index's `Thomas D. Chisholm`. The
+same index prints `Thomas O. Chisholm` at hymn 397, so it contradicts itself as
+well as the page; and the page's own copyright line repeats the `C. Harold
+Lowden` it credits, where the index prints `Carl H.`. A printing that
+corroborates itself beats one that contradicts itself.
 
-**How reliable this is.** The reader that produced the page column is a
-coordinate heuristic over the text extraction, not a reading pass: it takes the
-bottom line on each margin above the first staff, having removed the subject
-heading, the meter and the hymn number. On about thirty cells it returned scan
-speckle (`r--,`, `13\o/`) or grabbed the wrong line (`chorus`, `First tune.`),
-and those were discarded rather than reported. So this table is a floor, not a
-census — there may be disagreements it did not see, and the two rows checked by
-eye on the page images, 54 and 439, both held.
+**On three the two name different people, and there the table says so.** A
+fourth column carries a note, which reaches the hymn as `credit-note` — beside
+the credit and not inside it, so the front matter still answers *who wrote
+this* in the field that question is asked of:
+
+| hymn | the page | the index | `data/` |
+| --- | --- | --- | --- |
+| 266 | `Dale Garratt` | `Michael Ryan` | both, page first |
+| 430 composer | `George Stebbins` | `I. H. Meredith` | both, page first |
+| 378 composer | `W. H. Hammontree` | `Homer Hammontree` | the index's, as the fuller name |
+
+Combining asserts a co-authorship that is probably false — one printing is
+simply wrong, and nothing in the book says which — so the note is what makes
+the row honest rather than a decoration on it. It is shown on the hymn page and
+on the deck's title slide, italic in both, being the only line in either
+heading the hymnal does not print. It is also the first cell in `data/` that is
+not read off a page, which is why it is confined to three rows: everything else
+here is one person written two ways, and this table is the record of that.
+
+**What is still a floor.** The 71-cell comparison came from the same heuristic,
+and on about thirty cells it returned scan speckle (`r--,`, `13\o/`) or grabbed
+the wrong line (`chorus`, `First tune.`), discarded rather than reported. So
+there may be disagreements it did not see. Every row it *did* report has now
+been read off `scan/en/`, except 571, where the index is a strict superset
+either way.
 
 
 ### D16 — neither edition's page annotations are carried
@@ -1076,7 +1114,9 @@ a misreading, now fixed.
 **A fifth check turned up that this section said did not exist**, and it is
 D15: the copyright-bearing songs print their credits over the hymn, which is a
 second printing of the same fact. It reaches only 71 cells of the 764 rows, but
-21 of those agree outright and the rest are recorded.
+21 of those agree outright and the fifteen that disagree are now settled by
+taking whichever printing carries more — which makes this table a reading of
+two sources rather than a transcription of one.
 
 **Two marks of the book's own.** A blank is not a gap in the reading — the
 index heads itself *(Blanks indicate untraceable sources)* — and 17 hymns have
@@ -1293,8 +1333,11 @@ committed table itself rather than in a commit message.
    both prefaces — was read off pages this repository does not hold, so none
    of them can be checked here the way a hymn can be checked against
    `scan/{en,zh}/N.png`. §5 is the largest of them, and D15 shows the shape of
-   the problem: the check that found the index disagreeing with the hymn pages
-   could only run because the *hymn* pages are here. The index pages are not.
+   the problem twice over: the check that found the index disagreeing with the
+   hymn pages could only run because the *hymn* pages are here — and settling
+   it meant reading eleven of them by eye, which is exactly what could not be
+   done for the index's own sixteen pages. Every D15 row is now confirmed on
+   one side and taken on trust on the other.
 10. ~~**D18's variant dictionary**~~ Done, and it was as small as advertised:
     `site/search-fold.html` patches the two fuse.js methods Quarto's search
     passes every indexed document and every query through, and folds both into
@@ -1316,14 +1359,11 @@ committed table itself rather than in a commit message.
     name that looked like an index-against-page disagreement and was not —
     **D17**, which is not small.
 
-**What is next.** Four things are open and each is a different size. **D17**'s
+**What is next.** Three things are open and each is a different size. **D17**'s
 orthography is corrected; what remains of it — 你 for 祢 across 557 files — is
 a reading pass and the largest single correction left in `data/`, and it is now
 the only part of D18 still standing.
-**D15**'s policy question is the smallest and needs a decision rather than
-work: whether `data/` should prefer a hymn's own page over the author index on
-the nine hymns where the two name different people. **D7**'s remaining syllable
-disagreements are the middle one, and D13 turned most of them into questions
+**D7**'s remaining syllable disagreements are the middle one, and D13 turned most of them into questions
 about the lyrics rather than the meter. **D16** is the largest, a two-edition
 transcription of the page annotations, and it is what would finally settle what
 the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument

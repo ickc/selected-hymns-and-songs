@@ -96,7 +96,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `categories.py` | `data/categories.tsv`: the book's subject outline, and the **preprocessing** step that writes the English half of each hymn's category from it. |
 | `titles.py` | `data/titles.tsv`: the name the book's subject index files each hymn under, and the **preprocessing** step that writes it. |
 | `tunes.py` | `data/tunes.tsv`: the tune the English edition sets each hymn to, and the **preprocessing** step that writes it. |
-| `authors.py` | `data/authors.tsv`: who wrote the words and who wrote the music, and the **preprocessing** step that writes them. |
+| `authors.py` | `data/authors.tsv`: who wrote the words and who wrote the music, why the credit reads that way on the three hymns the book credits twice over and differently, and the **preprocessing** step that writes them. |
 | `tuneindex.py` | The **projection** of the whole collection as the book's alphabetical index of tunes. |
 | `meterindex.py` | The **projection** of the same relation grouped the other way: the book's metrical index, meter then tune then hymns. |
 | `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
@@ -653,14 +653,16 @@ prints both. It is the next section.
 `data/authors.tsv` is who wrote the words and who wrote the music: 764 rows,
 one per hymn the English edition indexes, 704 authors and 708 composers, and
 747 hymns that gain at least one name where `data/` carried four. It is read
-out of the *Index of Authors and Composers*, `en/879`–`en/894`.
+out of the *Index of Authors and Composers*, `en/879`–`en/894`, and — on the
+songs that carry their credit over the hymn as well — corrected against that.
 
-**This is the one table with no second source.** The categories could be
-checked against the table of contents, the titles against the index of first
-lines, the tunes against a *second* printed index listing the same relation —
-632 hymns got the same name from both outright, and that agreement is what made
-`data/tunes.tsv` trustworthy. This index is printed once. Nothing else in the
-book says who wrote hymn 393, so the verification had to be built:
+**The index was built as the one table with no second source.** The categories
+could be checked against the table of contents, the titles against the index of
+first lines, the tunes against a *second* printed index listing the same
+relation — 632 hymns got the same name from both outright, and that agreement
+is what made `data/tunes.tsv` trustworthy. The index of authors is printed
+once. Nothing else in the book says who wrote hymn 393, so the verification had
+to be built:
 
 - **The structure is machine-derived, not read.** `en/879.txt` extracts as a
   bare list of hymn numbers with both text columns dropped, and two other pages
@@ -702,19 +704,82 @@ same problem [the meter has](#why-the-meter-names-its-languages-and-nothing-else
 except that here the book supplies the wording itself: hymn 473's author is
 printed `vv.2-5, compiler`.
 
+### The second printing, and the three shapes it comes in
+
+**A second source did turn up, on the songs under copyright.** The English
+preface says the names are in the back "except for copyright-bearing songs" —
+and those pages carry the credit themselves, above the first staff. It covers
+71 cells of the 605 hymns that begin their own page, so it is a check and not a
+census, but it is a real one.
+
+**It does not have the index's shape.** Reading the pages the two printings
+disagree on finds three layouts:
+
+| layout | left margin | right margin | hymns |
+| --- | --- | --- | --- |
+| split | the author | the composer | 144, 286, 363, 378, 430, 439, 492 |
+| joint | *empty* | the whole credit | 11, 54, 118, 128, 216, 234, 266 |
+| joint, stacked | *empty* | two names, one per line | 219, 505 |
+
+So the right margin means the composer on a split page and the whole credit on
+a joint one, and **position alone does not say which**. The index, having two
+columns to fill, resolves a joint credit by writing it into both — 110 rows
+carry the same name twice — and `data/authors.tsv` keeps that convention,
+because it is the book's own and because the alternative is a third
+representation for a hundred hymns.
+
+**Which is also how the first reading of these pages went wrong.** The
+heuristic that found the disagreement took *the bottom line on each margin*,
+which is right for a split page and silently halves a stacked one: it reported
+`Tommy Coomes` for 219 and lost `Morris Chapman`, reported `Randy Rigby` for
+505 and lost `Danny Daniels`, and on 144 read `Jennie Hussey` off a page that
+prints `Jennie E. Hussey`. Reading the eleven page images settled all three.
+The lesson is the general one — a coordinate heuristic over a text layer finds
+candidates, and only a page settles them.
+
+**Where they disagree, the fuller printing wins.** Ten rows keep the index's
+name because it spells out what the page abbreviates (`Alfred H. Ackley` for
+`A. H. Ackley`, `Graham Kendrick and Chris Rolinson` where the page prints only
+Kendrick); five take the page's for the same reason (`Frederick M. Lehman`,
+`Jack W. Hayford`, `Debby Kerner Rettino`, `Danny Daniels and Randy Rigby`, and
+hymn 54's `Naida Hearn`, where the index's `Nalda` is a misprint). Hymn 439
+takes the page on both cells: the page prints `Thomas O. Chisholm` where the
+index prints `Thomas D.` and contradicts itself at hymn 397, and its own
+copyright line repeats the `C. Harold Lowden` it credits.
+
+**On three the two printings name different people, and there the table says
+so.** A fourth column carries a note, and it is the one cell in `data/` that is
+not read off a page:
+
+| hymn | the page | the index | `data/` |
+| --- | --- | --- | --- |
+| 266 | `Dale Garratt` | `Michael Ryan` | both, page first |
+| 430 | `George Stebbins` | `I. H. Meredith` | both, page first |
+| 378 | `W. H. Hammontree` | `Homer Hammontree` | the index's, as the fuller name |
+
+Combining asserts a co-authorship that is probably false — one printing is
+simply wrong, and nothing in the book says which — so the note is what makes
+the row honest rather than a decoration on it. It reaches the hymn as
+`credit-note`, beside the credit and not inside it, so the front matter still
+answers "who wrote this" in the field that question is asked of. It is shown on
+the hymn page under the note and on the deck's title slide, italic in both
+places, because it is the only line in either heading that the hymnal does not
+print.
+
 **Scope, stated rather than hidden.** The index covers hymns 1 to 764. The
 English back matter's supplement has a table of contents, a first-lines index,
 a subject index and the list of Chinese-only hymns, and no authors — so the 84
 supplement hymns have no credits, and `apply-authors` removes any they somehow
 acquired. The names are English-only: the Chinese edition credits nobody.
 
-`pixi run apply-authors` writes both names into every `data/N.md`; `pixi run
-check-authors` reports the same without writing. They are shown on the hymn
-page at the end of the meta line, each marked with the character a Chinese
-hymnal heads that credit with — 曲 for the music, 詞 for the words — because two
-personal names side by side are the first pair on that line a reader could not
-tell apart from the text alone. Like the meter and the tune, they are not on a
-slide.
+`pixi run apply-authors` writes both names and any note into every
+`data/N.md`; `pixi run check-authors` reports the same without writing. Both
+names are shown on the hymn page at the end of the meta line, each marked with
+the character a Chinese hymnal heads that credit with — 曲 for the music, 詞 for
+the words — because two personal names side by side are the first pair on that
+line a reader could not tell apart from the text alone. A deck's title slide
+shows the author alone; the composer is carried in its front matter and left
+untemplated, on the grounds that nobody sings a tune by knowing who wrote it.
 
 ## The metrical index
 
