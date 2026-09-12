@@ -210,7 +210,7 @@ Chinese page, some of it is on neither page, and its English is editorial
 throughout. **That is why the wording was left alone.** Normalising `Repeat the
 last 2 lines` to `Repeat the last two lines` would be imposing consistency on
 text whose source is unknown, and the variation may yet turn out to be
-somebody's, so it stays until [D16](#d16--neither-editions-page-annotations-are-carried)
+somebody's, so it stays until [D16](#d16--neither-editions-page-annotations-are-carried--partly-done)
 settles where the field's contents come from. [D20](#d20--the-footnotes-were-two-kinds-of-thing-and-four-were-neither--done-19-inline-notes-classified-7-stay-8-move-4-no-page-prints)
 has since made the field a list and given it a check, and cleared all
 twenty-five mechanically — no hymn told to repeat its last line already prints
@@ -789,7 +789,7 @@ lower; it will not be zero. **Closing this means reading page tops by eye, and
 the count is 159 plus the supplement's 45, not the 605 already done.**
 
 
-### D16 — neither edition's page annotations are carried — **partly done by [D20](#d20--the-footnotes-were-two-kinds-of-thing-and-four-were-neither--done-19-inline-notes-classified-7-stay-8-move-4-no-page-prints)**
+### D16 — neither edition's page annotations are carried — **partly done**
 
 D3 and D4 both ran into the same thing from different sides. Besides the
 subject, the meter, the number and the scripture reference, a page can carry a
@@ -839,7 +839,8 @@ lower bound. Realistically it is a §-sized piece of work like §5 or §6, and i
 should decide at the same time what the existing `note`s are and where they
 came from.
 
-**D20 did the first slice**, and settled the shape the rest can be poured into:
+**[D20](#d20--the-footnotes-were-two-kinds-of-thing-and-four-were-neither--done-19-inline-notes-classified-7-stay-8-move-4-no-page-prints)
+did the first slice**, and settled the shape the rest can be poured into:
 `note` is a list of the book's own directions, a gloss stays in the lyric line
 where the page anchors it, and `pixi run check-notes` reads both back against
 the hymn. Eight of the annotations listed above are now carried — 129, 242,
@@ -1298,7 +1299,7 @@ gate, not a report. Sixteen tests cover it.
   the page does not print.
 
 **What is still open**, and belongs to
-[D16](#d16--neither-editions-page-annotations-are-carried): the tune-borrowing
+[D16](#d16--neither-editions-page-annotations-are-carried--partly-done): the tune-borrowing
 notes (*"may be sung to the tune of hymn #467"* on about ten English pages,
 `調用第四百九十一首` on about seven Chinese ones), the provenance notes
 (`蓋恩夫人獄中之詩`), the long instruction on `zh/152`, and the copyright lines
@@ -1377,10 +1378,10 @@ this is where they were seen.
 - **`zh/439` prints `主阿,憐憫!` where `data/` had `主阿憐憫！`** — a comma the
   transcription had dropped. It is restored. The check cannot find the others
   of its kind, because it asks *which* mark and not *whether* one; finding
-  those is a page-reading pass, and belongs with [D16](#d16--neither-editions-page-annotations-are-carried).
+  those is a page-reading pass, and belongs with [D16](#d16--neither-editions-page-annotations-are-carried--partly-done).
 - **`zh/647` shows 607's lines are two half-lines**, and `data/` writes them as
   one joined by a space. 23 hymns do that. Whether they should instead be two
-  lines is a lineation question, which is [D7](#d7--the-chinese-lines-do-not-scan-as-the-meter-says)'s
+  lines is a lineation question, which is [D7](#d7--the-meter-against-the-lyrics--done-139-disagreements-down-to-63-and-the-63-are-the-hymnals-own)'s
   and not this one's; the space is kept because it records the break, and the
   padding is gone because it recorded the page's width.
 
