@@ -37,14 +37,16 @@ So: **no, not every field is bilingual.** `category` is, now. `meter` is:
 the other 382 name their two halves in the front matter, which is what lets a
 page that says `Irregular Meter` sit beside one that counts. But
 `author` and `composer` are single-language, five of the 41 `ref`s and fifteen
-of the 37 notes are, and three hymns are missing an entire language of lyrics.
+of the 37 notes are, and 36 hymns have no English lyrics.
 `author` and `composer` are single-language because their source is: the index
 they come from is the English edition's, and the Chinese edition credits
 nobody. The five `ref`s and the fifteen notes are single-language because the
 book is — a note about what the *other* edition lacks is printed by one edition
 only, which is most of what the twelve Chinese-only and three English-only
 notes say. A hymn can hold one of each: 355's first note is Chinese only,
-because only its Chinese page prints one, and its second is in both.
+because only its Chinese page prints one, and its second is in both. And the
+36 hymns have no English because the English edition prints none: its own list
+of Chinese-only hymns names 39, and D6 is the other three.
 
 ### Structure is clean
 
@@ -794,8 +796,8 @@ the count is 159 plus the supplement's 45, not the 605 already done.**
 D3 and D4 both ran into the same thing from different sides. Besides the
 subject, the meter, the number and the scripture reference, a page can carry a
 short parenthetical line — how to sing it, which tune to borrow, what a word
-means, how the other edition's text differs. `data/` carries 25 of these as
-`note`, and D4 showed that set is neither complete nor sourced. **Both editions
+means, how the other edition's text differs. `data/` carried 25 of these as
+`note` when this was written (37 on 34 hymns since D20), and D4 showed that set is neither complete nor sourced. **Both editions
 print a great many more, and the two editions' sets are different.**
 
 A sweep of the text layer of all 848 pages of each edition finds, at minimum:
@@ -1947,9 +1949,9 @@ in this repository to check either of them against.
 `Irregular Meter` / `特`, which breaks the shared-prefix representation (D1);
 `composer` and `tune` are new fields, and `tune` may be plural (§6b). None is
 hard, but each touches the codec, the round trip, and the tests, and they are
-better done as one considered change than as three drive-bys. **Two of the
-three are made**: the meter fallback (D1) and `tune`, which is indeed plural —
-`str | list[str]`, for hymn 146 and no other. `composer` is still ahead.
+better done as one considered change than as three drive-bys. **All three
+are made**: the meter fallback (D1), `tune`, which is indeed plural —
+`str | list[str]`, for hymn 146 and no other — and `composer` (§5).
 
 **Extraction protocol.** What worked for the categories should be the rule:
 prefer a relation that can be checked against a second source; extract with
@@ -1976,7 +1978,7 @@ committed table itself rather than in a commit message.
 3. ~~**§3 preface** — two pages, high value, nearly free.~~ Done:
    `data/preface.*.markdown` and `site/preface.md`. It also exposed a navbar
    bug on every page but five, and left the *TABLE OF CONTENTS* still
-   untranscribed.
+   untranscribed — since done, as item 11.
 4. ~~**D9 + §4** — widen the category table with levels and printed numbering,
    then generate the subject index page.~~ Done; it also turned up D11.
 5. ~~**§6 tunes**~~ Done, both halves: `data/tunes.tsv`, 765 pairs over hymns
@@ -2035,13 +2037,13 @@ a reading pass and the largest single correction left in `data/`, and it is now
 the only part of D18 still standing.
 **D7** is done: the Chinese edition's meter is recorded on the 43 hymns where
 it is not the English one's, and the 64 hymns still reported are the hymnal's
-own — 56 a lineation question, and seven the report should keep making.
+own — 56 a lineation question, and eight the report should keep making.
 **D19** is done: 386 lines corrected across 145 hymns in eight classes, and
 `check-punctuation` now asserts that each edition of the hymnal is written with
 its own. **D21** is done on top of it: 28 hymns now say which lines they sing
 twice, the decks sing them, and `check-repeats` holds the hymnal's three
 statements of a repeat together. **D16** is the largest, a two-edition transcription of the page
-annotations, and it is what would finally settle what the 25 `note`s are. Also still open and unchanged: **D8**, item 9's argument
+annotations, and it is what would finally settle what the notes inherited from `data.yml` are. Also still open and unchanged: **D8**, item 9's argument
 for carrying the front and back matter in `scan/`. **D17** would want it too:
 the Chinese subject index is one of its witnesses and is not in this
 repository.
