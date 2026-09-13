@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from collections.abc import Collection
 from typing import Iterator
 
 from .model import LANGUAGE_ORDER, Hymn, LyricLine, Stanza
@@ -69,7 +70,9 @@ class Slide:
     glosses: list[tuple[str, str]] = field(default_factory=list)
 
 
-def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
+def chorus_sources(
+    stanzas: list[Stanza], omitted: Collection[int] = ()
+) -> dict[int, dict[str, str]]:
     """Name the chorus each numbered stanza's languages are sung with.
 
     Four shapes occur in the collection: no chorus at all; one ``1-chorus``
@@ -82,6 +85,9 @@ def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
 
     This is the rule itself, kept apart from the lyrics it selects so that the
     report in ``site/chorus.md`` names exactly what the slides sing.
+
+    A stanza in ``omitted`` -- a hymn's ``chorus_omitted`` -- sings none: the
+    book says so where a hymn ends on a verse.
     """
 
     latest: dict[str, str] = {}
@@ -96,10 +102,14 @@ def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
             latest[language] = str(stanza.name)
         if current is not None:
             resolved[current] = dict(latest)
+    for number in omitted:
+        resolved[number] = {}
     return resolved
 
 
-def chorus_by_stanza(stanzas: list[Stanza]) -> dict[int, dict[str, list[LyricLine]]]:
+def chorus_by_stanza(
+    stanzas: list[Stanza], omitted: Collection[int] = ()
+) -> dict[int, dict[str, list[LyricLine]]]:
     """Return the lyrics of the chorus each numbered stanza is sung with."""
 
     named = {str(stanza.name): stanza for stanza in stanzas}
@@ -110,7 +120,7 @@ def chorus_by_stanza(stanzas: list[Stanza]) -> dict[int, dict[str, list[LyricLin
             ]
             for language, name in sources.items()
         }
-        for number, sources in chorus_sources(stanzas).items()
+        for number, sources in chorus_sources(stanzas, omitted).items()
     }
 
 
@@ -210,7 +220,7 @@ def slides(hymn: Hymn, limit: int = LINES_PER_SLIDE) -> list[Slide]:
 
     chorus_label = f"{span('Chorus', 'en')} {span('副歌', 'zh')}"
     repeat_label = f"{span('Repeat', 'en')} {span('重唱', 'zh')}"
-    resolved = chorus_by_stanza(hymn.stanzas)
+    resolved = chorus_by_stanza(hymn.stanzas, hymn.chorus_omitted or ())
     result: list[Slide] = []
     for stanza in hymn.stanzas:
         if not isinstance(stanza.name, int):
@@ -292,15 +302,19 @@ def chorus_shape(hymn: Hymn) -> str:
     the case worth checking.
     """
 
+    omitted = hymn.chorus_omitted or ()
+    # A stanza the book leaves without its chorus says nothing about the shape.
     numbers = [
-        stanza.name for stanza in hymn.stanzas if isinstance(stanza.name, int)
+        stanza.name
+        for stanza in hymn.stanzas
+        if isinstance(stanza.name, int) and stanza.name not in omitted
     ]
     names = [
         str(stanza.name) for stanza in hymn.stanzas if not isinstance(stanza.name, int)
     ]
     if not names:
         return "none"
-    sources = chorus_sources(hymn.stanzas)
+    sources = chorus_sources(hymn.stanzas, omitted)
     # Both plain shapes are claimed by what the resolution did, never by the
     # names alone: a lone `1-chorus` written after the second stanza leaves the
     # first two stanzas singing no chorus at all, which is a hymn to look at
@@ -365,7 +379,9 @@ def chorus_report_markdown(entries: list[tuple[int, Hymn]]) -> str:
         "|---:|---:|---|---|",
     ]
     for number, hymn in mixed:
-        for stanza, sources in sorted(chorus_sources(hymn.stanzas).items()):
+        for stanza, sources in sorted(
+            chorus_sources(hymn.stanzas, hymn.chorus_omitted or ()).items()
+        ):
             english = sources.get("en")
             chinese = sources.get("zh")
             lines.append(

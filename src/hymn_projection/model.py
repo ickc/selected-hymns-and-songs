@@ -435,6 +435,13 @@ class Hymn:
     #: finds the discrepancy recorded rather than a silent third reading.
     #: English-only, like the credits it is about.
     credit_note: LocalizedText | None = None
+    #: The stanzas the chorus is not sung after, where the book says so.  A
+    #: chorus is otherwise sung after every stanza, and both 355 and 734 end on
+    #: a verse: 355 is verse, chorus, verse -- its *D.C. al Fine* is how the
+    #: score sends the second stanza back to the verse's music -- and both
+    #: print a direction not to sing the chorus again.  The numbers are the
+    #: stanzas', which the Chinese half of each direction names.
+    chorus_omitted: list[int] | None = None
     meter: str | LocalizedText | None = None
     #: What the hymnal says about singing this hymn, in its own words: which
     #: lines to repeat, which stanza leaves the chorus out, which stanzas the
@@ -481,6 +488,23 @@ class Hymn:
             isinstance(value, LocalizedText) for value in self.note
         ):
             raise ValueError("note must be a list of localized text")
+        if self.chorus_omitted is not None:
+            numbered = {stanza.name for stanza in self.stanzas if isinstance(stanza.name, int)}
+            omitted = self.chorus_omitted
+            if not isinstance(omitted, list) or not omitted or not all(
+                isinstance(number, int) and not isinstance(number, bool)
+                for number in omitted
+            ):
+                raise ValueError("chorus-omitted must be a non-empty list of stanza numbers")
+            if len(omitted) != len(set(omitted)):
+                raise ValueError("chorus-omitted stanzas must be distinct")
+            for number in omitted:
+                if number not in numbered:
+                    raise ValueError(
+                        f"chorus-omitted names stanza {number}, which this hymn has not"
+                    )
+            if len(numbered) == len(names):
+                raise ValueError("chorus-omitted is given for a hymn with no chorus")
         if self.repeat is not None and not isinstance(self.repeat, Repeat):
             raise ValueError("repeat must be a Repeat")
         if self.repeat is not None:
@@ -505,8 +529,8 @@ class Hymn:
 
         mapping = _mapping(value, "hymn")
         allowed = {
-            "author", "category", "composer", "credit-note", "meter",
-            "note", "ref", "repeat", "stanza", "title", "tune",
+            "author", "category", "chorus-omitted", "composer", "credit-note",
+            "meter", "note", "ref", "repeat", "stanza", "title", "tune",
         }
         unknown = set(mapping) - allowed
         missing = {"category", "stanza"} - set(mapping)
@@ -536,6 +560,17 @@ class Hymn:
             else:
                 raise ValueError("tune must be a name or a list of names")
 
+        chorus_omitted: list[int] | None = None
+        if "chorus-omitted" in mapping:
+            omitted_value = mapping["chorus-omitted"]
+            if isinstance(omitted_value, (str, bytes)) or not isinstance(
+                omitted_value, Sequence
+            ):
+                raise ValueError("chorus-omitted must be a list")
+            # Read back out of `data/N.md` these arrive as strings, as a
+            # repeat's do: Pandoc metadata has no numbers.
+            chorus_omitted = [int(number) for number in omitted_value]
+
         def optional_text(name: str) -> LocalizedText | None:
             if name not in mapping:
                 return None
@@ -559,6 +594,7 @@ class Hymn:
             repeat=Repeat.from_dict(mapping["repeat"]) if "repeat" in mapping else None,
             stanzas=[Stanza.from_yaml(name, lines) for name, lines in stanza_mapping.items()],
             author=optional_text("author"),
+            chorus_omitted=chorus_omitted,
             composer=optional_text("composer"),
             credit_note=optional_text("credit-note"),
             meter=meter,
@@ -575,6 +611,8 @@ class Hymn:
         if self.author is not None:
             result["author"] = self.author.to_dict()
         result["category"] = self.category.to_dict()
+        if self.chorus_omitted is not None:
+            result["chorus-omitted"] = list(self.chorus_omitted)
         if self.composer is not None:
             result["composer"] = self.composer.to_dict()
         if self.credit_note is not None:
@@ -618,6 +656,10 @@ class Hymn:
         if self.author is not None:
             metadata["author"] = _localized_metadata(self.author)
         metadata["category"] = _localized_metadata(self.category)
+        if self.chorus_omitted is not None:
+            metadata["chorus-omitted"] = pf.MetaList(
+                *(pf.MetaInlines(pf.Str(str(number))) for number in self.chorus_omitted)
+            )
         if self.composer is not None:
             metadata["composer"] = _localized_metadata(self.composer)
         if self.credit_note is not None:
@@ -688,6 +730,7 @@ class Hymn:
             "auto-lang",
             "author",
             "category",
+            "chorus-omitted",
             "composer",
             "credit-note",
             "meter",
@@ -743,6 +786,9 @@ class Hymn:
                 if reference is not None
                 else _localized_from_metadata(document.metadata["ref"], "ref").to_dict()
             )
+
+        if "chorus-omitted" in plain_metadata:
+            metadata["chorus-omitted"] = plain_metadata["chorus-omitted"]
 
         if "repeat" in plain_metadata:
             # Read from the plain metadata rather than the tagged tree: these

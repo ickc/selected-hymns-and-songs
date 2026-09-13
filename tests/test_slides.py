@@ -75,6 +75,19 @@ class ChorusResolutionTest(TestCase):
              "Four", "Last refrain"],
         )
 
+    def test_a_stanza_the_book_leaves_without_its_chorus_ends_bare(self) -> None:
+        # Hymn 355: verse, chorus, verse. Its score sends the second stanza back
+        # to the verse with *D.C. al Fine*, and both pages say not to sing the
+        # chorus again.
+        value = hymn(
+            {1: [{"en": "One"}], "1-chorus": [{"en": "Refrain"}], 2: [{"en": "Two"}]},
+            **{"chorus-omitted": [2]},
+        )
+        sung = [slide.lines[0].translations["en"] for slide in slides(value)]
+
+        self.assertEqual(sung, ["One", "Refrain", "Two"])
+        self.assertEqual(chorus_shape(value), "single")
+
     def test_a_replacement_in_one_language_leaves_the_other_alone(self) -> None:
         # Hymn 668's shape: 3-chorus exists only in Chinese, so stanza 3 sings
         # the English of 1-chorus against a different Chinese chorus. The two

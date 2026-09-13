@@ -140,7 +140,7 @@ def _resolution(hymn: Hymn, name: str) -> str:
 
     if chorus_shape(hymn) != "mixed":
         return ""
-    sources = chorus_sources(hymn.stanzas)
+    sources = chorus_sources(hymn.stanzas, hymn.chorus_omitted or ())
     stanzas = {
         language: [
             number

@@ -122,6 +122,28 @@ class HymnConversionTest(TestCase):
         self.assertIn("repeat:\n  lines:\n  - 2\n  - 3\n  stanzas:\n  - 4\n", markdown)
         self.assertEqual(Hymn.from_markdown(markdown).to_dict()["repeat"], repeat)
 
+    def test_a_chorus_omitted_survives_the_round_trip_as_numbers(self) -> None:
+        hymn = Hymn.from_dict(dict(HYMN_DATA, **{"chorus-omitted": [2]}, stanza={
+            1: HYMN_DATA["stanza"][1], "1-chorus": HYMN_DATA["stanza"][1],
+            2: HYMN_DATA["stanza"][1],
+        }))
+        markdown = hymn.to_markdown()
+
+        self.assertIn("chorus-omitted:\n- 2\n", markdown)
+        self.assertEqual(Hymn.from_markdown(markdown).chorus_omitted, [2])
+
+    def test_a_chorus_cannot_be_omitted_where_there_is_none(self) -> None:
+        with self.assertRaisesRegex(ValueError, "no chorus"):
+            Hymn.from_dict(dict(
+                HYMN_DATA, **{"chorus-omitted": [1]}, stanza={1: HYMN_DATA["stanza"][1]}
+            ))
+
+    def test_a_chorus_cannot_be_omitted_after_a_stanza_the_hymn_has_not(self) -> None:
+        with self.assertRaisesRegex(ValueError, "which this hymn has not"):
+            Hymn.from_dict(dict(HYMN_DATA, **{"chorus-omitted": [9]}, stanza={
+                1: HYMN_DATA["stanza"][1], "1-chorus": HYMN_DATA["stanza"][1],
+            }))
+
     def test_a_repeat_sung_in_every_stanza_names_none_of_them(self) -> None:
         hymn = Hymn.from_dict(dict(HYMN_DATA, repeat={"lines": [2]}))
 
