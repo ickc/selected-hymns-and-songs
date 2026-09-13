@@ -512,16 +512,17 @@ class Hymn:
             for name in self.repeat.stanzas or ():
                 if name not in names:
                     raise ValueError(f"repeat names stanza {name}, which this hymn has not")
-            longest = max(
-                len(stanza.lines)
-                for stanza in self.stanzas
-                if self.repeat.sung_in(stanza.name)
-            )
-            for line in self.repeat.lines:
-                if line > longest:
-                    raise ValueError(
-                        f"repeat names line {line} of a stanza that has {longest}"
-                    )
+            # Every stanza it is sung in, not only the longest: a projection
+            # reads the named lines out of each one.
+            for stanza in self.stanzas:
+                if not self.repeat.sung_in(stanza.name):
+                    continue
+                for line in self.repeat.lines:
+                    if line > len(stanza.lines):
+                        raise ValueError(
+                            f"repeat names line {line} of stanza {stanza.name},"
+                            f" which has {len(stanza.lines)}"
+                        )
 
     @classmethod
     def from_dict(cls, value: object) -> Hymn:

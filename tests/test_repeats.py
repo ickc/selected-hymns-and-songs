@@ -160,6 +160,11 @@ class ModelTest(TestCase):
         with self.assertRaises(ValueError):
             hymn(["一", "二"], meter="6.6. 重", repeat="  lines:\n  - 3")
 
+    def test_a_repeat_naming_a_line_a_shorter_stanza_has_not(self) -> None:
+        # The longest stanza has the line; the first, which also sings it, has not.
+        with self.assertRaisesRegex(ValueError, "stanza 1"):
+            hymn(["一", "二"], ["一", "二", "三", "四"], repeat="  lines:\n  - 3")
+
     def test_a_repeat_naming_a_stanza_the_hymn_has_not(self) -> None:
         with self.assertRaises(ValueError):
             hymn(
