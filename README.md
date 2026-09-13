@@ -15,8 +15,8 @@ hymnal is maintained here now, and `data/` carries readings and corrections
 that file does not. [FORMAT.md](FORMAT.md) describes what the Markdown looks
 like and why; [DEVELOPER.md](DEVELOPER.md) describes what has been added.
 
-`data/categories.tsv` — the book's subject outline: 285 subjects, both
-languages, three levels apart, in the order the hymnal numbers them. A hymn's
+`data/categories.tsv` — the book's subject outline: 255 subjects, both
+languages, up to three levels apart, in the order the hymnal numbers them. A hymn's
 category is the one field of `data/N.md` that is written from somewhere else,
 and this is also what the published subject index is built from; see
 [DEVELOPER.md](DEVELOPER.md).

@@ -27,7 +27,7 @@ flowchart LR
   yaml["../selected-hymns/data.yml<br/>where data/ came from"]
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
-  cats["<b>data/categories.tsv</b><br/>285 subjects, in git"]
+  cats["<b>data/categories.tsv</b><br/>255 subjects, in git"]
   tits["<b>data/titles.tsv</b><br/>778 names, in git"]
   tuns["<b>data/tunes.tsv</b><br/>765 pairs, in git"]
   auth["<b>data/authors.tsv</b><br/>764 rows, in git"]
@@ -384,7 +384,7 @@ n1  n2  n3  zh1        zh2  zh3      en1                en2         en3
 1   2   1   讚美和敬拜  聖父  祂的偉大  Praise and Worship  The Father  His Greatness
 ```
 
-285 rows, one per subject, in the order the book prints them. Tab-separated
+255 rows, one per subject, in the order the book prints them. Tab-separated
 because the names contain commas, quotation marks and parentheses and cannot
 contain a tab: a hand-edited row needs no quoting and cannot be misread. The
 English is title-cased, as the table of contents prints it, rather than the
@@ -395,7 +395,15 @@ pair and the third parenthesised, English with one em dash and the third in
 round brackets — which is what the two editions print over a hymn and what
 `data/N.md` carries. Splitting that back into levels would mean parsing a
 format we control, and the parse would have to survive `The Son, His Person and
-Work` and `Psalm 126:1-3`; joining cannot go wrong.
+Work`; joining cannot go wrong.
+
+**One section is a subject by itself.** The index subdivides *Psalms and
+Scripture Portions* by the passage each of hymns 734–764 versifies, one hymn
+to a passage. That is the hymn's `ref`, not a subject hymns share, and both
+pages print only the section over these hymns with the passage on its own line
+— so the table carries section XVIII as one row with no level 2, and the
+subject page names the passage beside each hymn instead. It used to carry the
+31 passages as subjects, which printed each one twice on the hymn page.
 
 **The Chinese is the book's orthography, which is not the publisher's.** The
 Chinese half of every category, and of every hymn's lyrics, came from
@@ -420,13 +428,14 @@ number does not recover it: under the Father the book runs Greatness, Glory,
 Majesty, Mercy, Love, and by first hymn number that comes out Greatness, Glory,
 Love, Redemption, Majesty. So the numbering is checked as it is read — every
 level has to run 1, 2, 3… under its parent, a heading has to keep one number
-throughout, and a level 2 is either one subject or a run of them. A row
+throughout, a level 2 is either one subject or a run of them, and so is a
+section. A row
 inserted without renumbering fails rather than being filed in the wrong place.
 
 The order was read back off the Chinese subject index (`zh/003`–`zh/007`,
 主題目錄), whose OCR gives the headings in print order. The names were not
 taken from that reading — we already had them — only the sequence, and three
-things check it: all 285 subjects matched, exactly once, with nothing left
+things check it: all 285 subjects it had then matched, exactly once, with nothing left
 over; the 222 rows whose printed number the OCR read legibly all agree with the
 position they were given; and 703 of the 848 hymns appear in the OCR of the
 index line of the very subject they are filed under, the rest lost to wrapped
