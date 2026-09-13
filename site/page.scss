@@ -166,6 +166,13 @@ td {
   opacity: 0.7;
 }
 
+// The passage a scripture portion versifies, set back like the number.
+.subject-ref {
+  margin-left: 0.35rem;
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+
 // The whole entry is the link, so it must not read as 848 underlines.
 .subject-hymns a {
   text-decoration: none;

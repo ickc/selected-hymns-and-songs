@@ -126,10 +126,13 @@ def _entry(number: int, hymn: Hymn) -> str:
     to hit with a thumb, and the line is what a reader is actually looking for.
     """
 
-    return (
-        f"[[{number}]{{.subject-number}} {_localized_inline(title(hymn))}]"
-        f"({PAGE_DIRECTORY}/{number}.html)"
-    )
+    name = f"[{number}]{{.subject-number}} {_localized_inline(title(hymn))}"
+    # The passage a hymn versifies is how the book's index files the scripture
+    # portions, and the subheading that used to say it is gone: a passage is
+    # the hymn's `ref`, not a subject hymns share.
+    if hymn.ref is not None:
+        name += f" [{_localized_inline(hymn.ref.translations)}]{{.subject-ref}}"
+    return f"[{name}]({PAGE_DIRECTORY}/{number}.html)"
 
 
 def _filed(

@@ -97,6 +97,19 @@ class IndexTest(TestCase):
 
         self.assertIn("[[178]{.subject-number} [我心單愛主]{lang=zh-Hant}](hymn/178.html)", page)
 
+    def test_a_hymn_that_versifies_a_passage_names_it(self) -> None:
+        portion = Hymn.from_markdown(
+            "---\ncategory: 聖靈——火\nref:\n  en: \"Psalm 17:15\"\n  zh: \"詩17:15\"\n"
+            "---\n\n# 1\n\nAs for me\n至於我\n"
+        )
+        page = to_markdown(self.subjects, [(735, portion)])
+
+        self.assertIn(
+            "[[735]{.subject-number} [As for me]{lang=en} [至於我]{lang=zh-Hant} "
+            "[[Psalm 17:15]{lang=en} [詩17:15]{lang=zh-Hant}]{.subject-ref}](hymn/735.html)",
+            page,
+        )
+
     def test_the_top_headings_are_offered_as_a_strip_to_jump_by(self) -> None:
         page = to_markdown(self.subjects, self.entries)
 
