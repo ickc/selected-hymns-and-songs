@@ -1983,6 +1983,19 @@ by eye, and one model change (`tune` is a name or an ordered list of names, for
 the one hymn the book prints to two). Far more tractable than §5, exactly
 because of the double source.
 
+**6c. Open: the metrical index drops a hymn's own Chinese meter.** A section is
+headed by one English meter and one Chinese half, the half most of its hymns
+print. Sixteen English meters also file hymns whose Chinese page prints another
+meter — 8.6.8.6. files 790 (`8.7.8.7.`) and 115 (`8.6.8.7.`); 8.7.8.7.D. files
+five, including 116 (`特`) — and the page says nothing about those. Splitting
+the section by both halves would break the 212 headings the printed index
+carries, and listing every Chinese half on the heading would misstate the
+section's other hymns. What remains is marking the hymn itself: its number
+under the tune, followed by the Chinese meter where it differs from the
+heading's. That needs a design for how an annotated number reads in a run of
+links, and there are 26 such hymns to check it against.
+(Raised in review of PR #12.)
+
 ---
 
 ## 7. Cross-cutting decisions
