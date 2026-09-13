@@ -24,7 +24,7 @@ boxes), because that is where you go to look. The printed page numbers differ.
 | `category` | 848 | yes, all 848 | done |
 | `stanza` | 848 | 812 both, 36 Chinese-only | D5 done; see D6 |
 | `meter` | 848 | 382 name both, 466 print alike | D1 done; every hymn now has one |
-| `note` | 34, holding 37 | 22 notes both, 12 Chinese-only, 3 English-only | D4 and D20 done — a list now, and the single-language ones are single-language in the book too; see D16 |
+| `note` | 37, holding 40 | 22 notes both, 15 Chinese-only, 3 English-only | D4 and D20 done — a list now, and the single-language ones are single-language in the book too; see D16 |
 | `ref` | 41 | 36 both, 5 Chinese-only | D3 done; every page that prints one now has it |
 | `repeat` | 28 | n/a — one statement about the hymn, not two | D21 done; which lines are sung again where the book says so without writing them out |
 | `author` | 704 | 0 both — all English-only | §5 done; 1–764 only, the supplement is not indexed |
@@ -36,13 +36,13 @@ So: **no, not every field is bilingual.** `category` is, now. `meter` is:
 466 hymns print the same notation in both editions and carry one scalar, and
 the other 382 name their two halves in the front matter, which is what lets a
 page that says `Irregular Meter` sit beside one that counts. But
-`author` and `composer` are single-language, five of the 41 `ref`s and fifteen
-of the 37 notes are, and 36 hymns have no English lyrics.
+`author` and `composer` are single-language, five of the 41 `ref`s and eighteen
+of the 40 notes are, and 36 hymns have no English lyrics.
 `author` and `composer` are single-language because their source is: the index
 they come from is the English edition's, and the Chinese edition credits
-nobody. The five `ref`s and the fifteen notes are single-language because the
+nobody. The five `ref`s and the eighteen notes are single-language because the
 book is — a note about what the *other* edition lacks is printed by one edition
-only, which is most of what the twelve Chinese-only and three English-only
+only, which is half of what the fifteen Chinese-only and three English-only
 notes say. A hymn can hold one of each: 355's first note is Chinese only,
 because only its Chinese page prints one, and its second is in both. And the
 36 hymns have no English because the English edition prints none: its own list
@@ -222,8 +222,18 @@ and the English half `data/` carried there has been removed.
 
 **One fix did come out of it.** Hymn 470's Chinese meter is `特.重` on the page
 and was `特` in `data/`; the `重` is the mark that made the note redundant in
-the first place. 57 other hymns carry a bare `特` and have not been checked for
-a dropped `.重` or `.和`.
+the first place. 57 other hymns carried a bare `特` and had not been checked
+for a dropped `.重` or `.和`.
+
+**Checked since, and none was dropped.** 58 hymns carry a bare `特`. The nine
+with anything that could want a mark — 750's chorus, 242's `repeat`, and the
+seven whose lyrics write a repeat out (21, 393, 735, 736, 740, 745, 840) — were
+read off their Chinese pages, and all nine print `特` alone. The other 49 have
+no chorus and no repeat for a mark to describe. A `重` over a repeat that is
+neither written out nor noted, as 54's and 57's were, would still not be seen;
+that is the one shape this could have missed. Reading those pages turned up
+three notes `data/` did not carry, now under D20, and a second *da capo*, now
+under D21.
 
 ### D5 — three hymns are missing their English lyrics entirely — **done**
 
@@ -1249,6 +1259,13 @@ print nothing at the foot of their last page.
 The last two are the reason those two hymns have no music on one side, which
 `data/` records nowhere else.
 
+**Three more, found afterwards** while reading pages for D4's bare `特`, and
+none of them has an English counterpart: `zh/26` prints 394's copyright note
+over hymn 21 and `zh/793` prints it over 735, and `zh/26` also prints
+`(可換唱第十六首調)` under hymn 20 — the first of D16's tune-borrowing family
+to be carried. How many other Chinese pages print the copyright note is not
+known; the pages that print it were found by chance, not by a sweep.
+
 **And a check, so it cannot decay.** `pixi run check-notes`
 (`src/hymn_projection/notes.py`) reads the prose back against the hymn. A gloss
 that reads as a direction; a gloss quoting a word its own line does not hold; a
@@ -1608,6 +1625,14 @@ place it matters and never rewrites a page.
 holds lines of a stanza sung where the stanza ends, and that is a different
 shape; `check-repeats` names the *da capo* so that 355 is an exception on
 purpose rather than a hole.
+
+**And 745 has one too, which the check does not know about.** `zh/802` marks
+*Fine* after `好像作夢的人。` and *D.C.* at the end, and the Chinese lyrics
+write that da capo out as their last two lines. The English half does not, and
+splits `The Lord hath done great things for us; / Whereof we are glad.` over
+two more lines than the Chinese, so from line 10 on the two halves of the
+stanza no longer pair. Settling it means reading `en/812` and deciding whether
+a written-out da capo is lyrics or structure — not a quick fix, and left open.
 
 **The repeat slides are kept out of the search index.** They hold lines the
 stanza before them has already sung, so indexing them would put the same hymn
