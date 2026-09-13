@@ -1052,9 +1052,11 @@ D17 checked, and any dictionary has to record the exception beside the rule.
   as 為 more often than not, 裏 as 裹 four times in five, and 祢 as 妳 always.
   Any candidate pair it suggests has to be confirmed on an image, and its
   counts must never be used to decide a pair on their own.
-- **Unconfirmed candidates exist.** 冼 appears 70 times in the layer against
-  洗 51, which is almost certainly the layer misreading 洗 — but it has not
-  been checked, and it is the shape a real eighth pair would have.
+- **One candidate was the layer's, and is closed.** 冼 appears 70 times in the
+  layer against 洗 51, which had the shape a real eighth pair would have. It
+  is not one: `data/` holds 洗 116 times in 71 hymns and 冼 not once, and
+  `zh/506` prints 480's 洗滌 and 洗我 with 洗. `data/` descends from an OCR
+  independent of the layer, so the two disagreeing is the layer misreading.
 - **`你`/`祢` is not a glyph question**, and there are four of them, not two:
   你 neutral, 妳 feminine, 祢 for God and 袮 a second shape of 祢. `data/`
   carries 4,547 你 and 8 妳 — hymn 109's Psalm 45 daughter and hymn 105's
