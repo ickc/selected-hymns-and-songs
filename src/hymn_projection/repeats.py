@@ -55,8 +55,7 @@ WRITTEN_NUMBERS = {
 # and they are sung where the stanza ends.  355 is the only hymn whose note
 # asks for one -- `zh/377` prints `(回頭再唱正歌一遍)` and `en/387` prints *Fine*
 # over the eighth line and *D.C. al Fine* over the last -- so it is named here
-# rather than given a field that would say the wrong thing.  745's score marks
-# one too, with no note, and its Chinese lyrics write it out; see PLAN.md D21.
+# rather than given a field that would say the wrong thing.
 DA_CAPO = re.compile(r"回頭再唱|D\.C\.")
 # The four hymns whose repeat the book writes into the lyrics somewhere other
 # than the end of a stanza, where `notes.writes_the_repeat_out` looks.  Each
@@ -73,6 +72,16 @@ DA_CAPO = re.compile(r"回頭再唱|D\.C\.")
 # * 678 writes the repeat out as `1-chorus`, and it is the same four lines
 #   `en/71` prints under hymn 57's music without writing them anywhere.
 WRITES_IT_OUT = frozenset({122, 534, 650, 678})
+# The hymns whose repeat nothing in `data/` asks for, because only the score
+# does -- no ``重``, no ``with repeat``, no direction -- each read off its page.
+#
+# * 745 is one stanza and no chorus, and both `en/812` and `zh/802` mark *Fine*
+#   after its third line and *D.C.* at its end: the opening three lines sung
+#   again, which is a ``repeat`` of ``[1, 2, 3]`` and not 355's *da capo*, which
+#   comes back after a chorus.  Its last two lines are printed twice with their
+#   own music, so the tail rule sees a repeat written out; that is the page's
+#   lyric, and the *da capo* sings none of it again.
+SCORE_ASKS = frozenset({745})
 
 
 @dataclass(frozen=True)
@@ -133,7 +142,7 @@ def findings(hymns: list[tuple[int, Hymn]]) -> list[Finding]:
         marked = _marked(hymn)
         directions = _directions(hymn)
         repeat = hymn.repeat
-        written = accounted_for(number, hymn)
+        written = accounted_for(number, hymn) and number not in SCORE_ASKS
 
         if repeat is None:
             if marked and not written:
@@ -153,7 +162,7 @@ def findings(hymns: list[tuple[int, Hymn]]) -> list[Finding]:
                 number, "a repeat is written down and written out",
                 f"{repeat.to_dict()} would sing again what a stanza already repeats",
             ))
-        if not marked and not directions:
+        if not marked and not directions and number not in SCORE_ASKS:
             result.append(Finding(
                 number, "a repeat is written down that nothing asks for",
                 f"{repeat.to_dict()}, but no meter is marked and no note orders one",

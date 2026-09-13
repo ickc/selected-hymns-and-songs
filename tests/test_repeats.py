@@ -134,6 +134,24 @@ class AgreementTest(TestCase):
 
         self.assertEqual(kinds(value), [])
 
+    def test_a_da_capo_only_the_score_asks_for(self) -> None:
+        # 745 is marked *Fine* and *D.C.* on both pages and nowhere else, and
+        # prints its last two lines twice with their own music.
+        value = hymn(
+            ["一", "二", "三", "四", "五，", "六；", "五，", "六。"],
+            meter="特",
+            repeat="  lines:\n  - 1\n  - 2\n  - 3",
+        )
+
+        self.assertEqual(findings([(745, value)]), [])
+        self.assertEqual(
+            kinds(value),
+            [
+                "a repeat is written down and written out",
+                "a repeat is written down that nothing asks for",
+            ],
+        )
+
 
 class ModelTest(TestCase):
     """What a repeat may name."""
