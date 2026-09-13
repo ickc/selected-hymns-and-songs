@@ -52,7 +52,10 @@ class Subject:
     """One row: a subject's place in the book's order, and both its names."""
 
     #: Its numbering, outermost first -- `(1, 2, 5)` is the book's `I. 2. (5)`.
-    #: Two or three long, because no subject is a level-1 heading alone.
+    #: One to three long. One only where the book files hymns under a section
+    #: and nothing finer: *Psalms and Scripture Portions* is subdivided in the
+    #: index by the passage each hymn versifies, which is the hymn's `ref` and
+    #: not a subject many hymns share, so `data/` files them under the section.
     number: tuple[int, ...]
     #: The Chinese name of each of those levels.
     zh: tuple[str, ...]
@@ -61,7 +64,7 @@ class Subject:
 
     @property
     def depth(self) -> int:
-        """How many levels deep the subject is printed: 2 or 3."""
+        """How many levels deep the subject is printed: 1, 2 or 3."""
 
         return len(self.number)
 
@@ -112,19 +115,27 @@ def _subject(fields: Sequence[str], path: Path, line_number: int) -> Subject:
     """Turn one row's nine fields into a subject, or say what is wrong with it."""
 
     columns = tuple(zip(fields[:3], fields[3:6], fields[6:]))
-    for level, (number, chinese, english) in enumerate(columns[:2], start=1):
-        if not (number and chinese and english):
-            raise ValueError(
-                f"{path}: line {line_number} has no level {level}; "
-                f"every subject is printed under a heading and a subheading"
-            )
-    third = columns[2]
-    if any(third) and not all(third):
+    if not all(columns[0]):
         raise ValueError(
-            f"{path}: line {line_number} gives only part of its third level; "
-            f"give {HEADER[2]}, {HEADER[5]} and {HEADER[8]} together or none of them"
+            f"{path}: line {line_number} has no level 1; "
+            f"every subject is printed under a heading"
         )
-    depth = 3 if all(third) else 2
+    depth = 1
+    for level in (2, 3):
+        given = columns[level - 1]
+        if any(given) and not all(given):
+            raise ValueError(
+                f"{path}: line {line_number} gives only part of its level {level}; "
+                f"give {HEADER[level - 1]}, {HEADER[level + 2]} and "
+                f"{HEADER[level + 5]} together or none of them"
+            )
+        if all(given):
+            if depth != level - 1:
+                raise ValueError(
+                    f"{path}: line {line_number} gives a level {level} "
+                    f"without a level {level - 1}"
+                )
+            depth = level
     numbers = []
     for number, *_ in columns[:depth]:
         if not number.isdecimal() or int(number) < 1:
@@ -152,9 +163,10 @@ def _check_numbering(subjects: Sequence[Subject], path: Path) -> None:
     seen: dict[int, dict[tuple[int, ...], tuple[str, ...]]] = {1: {}, 2: {}}
     counts: dict[tuple[int, ...], int] = {}
     depths: dict[tuple[int, ...], int] = {}
+    alone: dict[tuple[int, ...], bool] = {}
     for line_number, subject in enumerate(subjects, start=2):
         place = f"{path}: line {line_number}"
-        for level in (1, 2):
+        for level in range(1, min(subject.depth, 2) + 1):
             key = subject.number[:level]
             names = subject.zh[:level] + subject.en[:level]
             headings = seen[level]
@@ -172,6 +184,15 @@ def _check_numbering(subjects: Sequence[Subject], path: Path) -> None:
                 raise ValueError(
                     f"{place} gives level {level} number {key[-1]} a second name"
                 )
+        # A section is either a subject itself or a heading of subheadings.
+        section = subject.number[:1]
+        if alone.setdefault(section, subject.depth == 1) != (subject.depth == 1) or (
+            subject.depth == 1 and section in counts
+        ):
+            raise ValueError(f"{place} is a subject and a heading of subjects at once")
+        if subject.depth == 1:
+            counts[section] = 1
+            continue
         parent = subject.number[:2]
         counts[parent] = counts.get(parent, 0) + 1
         # A level 2 is either one subject or a run of them; the book prints no

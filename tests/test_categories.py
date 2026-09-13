@@ -31,6 +31,7 @@ God, our Father, we adore Thee!
 ENGLISH = "Praise and Worship—The Trinity"
 TRINITY = ("1", "1", "", "讚美和敬拜", "三一神", "", "Praise and Worship", "The Trinity", "")
 FIRE = ("2", "1", "", "聖靈", "火", "", "The Holy Spirit", "The Fire", "")
+PSALMS = ("2", "", "", "詩篇與經文片段", "", "", "Psalms and Scripture Portions", "", "")
 
 
 def table(directory: Path, rows: list[tuple[str, ...]]) -> Path:
@@ -69,6 +70,13 @@ class SubjectTest(TestCase):
         self.assertEqual(subject.english, "Praise and Worship—The Father (His Greatness)")
         self.assertEqual(subject.depth, 3)
 
+    def test_a_section_alone_is_printed_as_its_heading(self) -> None:
+        subject = Subject((18,), ("詩篇與經文片段",), ("Psalms and Scripture Portions",))
+
+        self.assertEqual(subject.chinese, "詩篇與經文片段")
+        self.assertEqual(subject.english, "Psalms and Scripture Portions")
+        self.assertEqual(subject.depth, 1)
+
 
 class TableTest(TestCase):
     """The hand-edited file, which has to say what it means or fail loudly."""
@@ -94,6 +102,16 @@ class TableTest(TestCase):
 
             self.assertEqual([s.number for s in read_table(path)], [(1, 1, 1), (1, 1, 2)])
 
+    def test_a_section_alone_round_trips_through_the_file(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "categories.tsv"
+            subjects = read_table(table(Path(directory), [TRINITY, PSALMS]))
+
+            write_table(subjects, path)
+
+            self.assertEqual(read_table(path), subjects)
+            self.assertEqual([s.number for s in subjects], [(1, 1), (2,)])
+
     def test_a_missing_header_is_named_as_the_problem(self) -> None:
         with TemporaryDirectory() as directory:
             path = Path(directory) / "categories.tsv"
@@ -114,7 +132,7 @@ class TableTest(TestCase):
             row = ("1", "1", "1", "讚美和敬拜", "聖父", "祂的偉大", "Praise", "The Father", "")
             path = table(Path(directory), [row])
 
-            with self.assertRaisesRegex(ValueError, "third level"):
+            with self.assertRaisesRegex(ValueError, "part of its level 3"):
                 read_table(path)
 
     def test_a_gap_in_the_numbering_is_rejected(self) -> None:
@@ -145,6 +163,23 @@ class TableTest(TestCase):
 
             with self.assertRaisesRegex(ValueError, "heading of subjects"):
                 read_table(path)
+
+    def test_a_level_3_without_a_level_2_is_rejected(self) -> None:
+        with TemporaryDirectory() as directory:
+            row = ("1", "", "1", "讚美和敬拜", "", "祂的偉大", "Praise", "", "His Greatness")
+            path = table(Path(directory), [row])
+
+            with self.assertRaisesRegex(ValueError, "without a level 2"):
+                read_table(path)
+
+    def test_a_section_that_is_a_subject_and_a_heading_is_rejected(self) -> None:
+        for rows in ([PSALMS, ("2", "1", "") + PSALMS[3:4] + ("甲", "") + PSALMS[6:7] + ("A", "")],
+                     [PSALMS, PSALMS]):
+            with self.subTest(rows=rows), TemporaryDirectory() as directory:
+                path = table(Path(directory), [TRINITY, *rows])
+
+                with self.assertRaisesRegex(ValueError, "heading of subjects"):
+                    read_table(path)
 
     def test_the_mapping_is_the_two_flattened_halves(self) -> None:
         with TemporaryDirectory() as directory:
