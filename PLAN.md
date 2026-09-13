@@ -114,7 +114,7 @@ Lowden` where the page prints `C. Harold Lowden`. That is D15, and D15 settled
 it back the way `data/` had it: the index contradicts itself at hymn 397, and
 the page's own copyright line repeats the Lowden it credits.
 
-### D3 — `ref` is inconsistent, monolingual, and partly redundant — **done, 41 now**
+### D3 — `ref` is inconsistent, monolingual, and partly redundant — **done, 41 now, and printed once**
 
 `data/` had eleven references, six English and five Chinese and none both:
 
@@ -174,12 +174,23 @@ forty-one are numbered books. So a two-language reference now names its halves
 the way a meter does; a one-language one stays flat. See
 [DEVELOPER.md](DEVELOPER.md#why-the-meter-and-the-reference-name-their-languages).
 
-**Left open.** On those thirty-one the hymn page now prints the citation twice
+**Closed since.** On those thirty-one the hymn page printed the citation twice
 — once inside the category, once as the reference — and punctuated differently,
 `約壹1:5–7` beside `約壹1:5-7`, because the two come from different printings.
-That is the book duplicating itself and the projection showing both, but it
-reads as a stutter, and whether the page should suppress one is a design
-question nobody has answered.
+That is the book duplicating itself and the projection showing both, and it
+read as a stutter.
+
+**The category gave the passage up.** A category is what many hymns share, and
+the index's subdivision of *Psalms and Scripture Portions* is one passage to one
+hymn — the hymn's `ref` in other clothes. Both pages print only the section
+over these hymns, with the passage on a line of its own, so the 31 subjects are
+now one: section XVIII is a subject by itself, and `data/categories.tsv` has 255
+rows where it had 285. The subject page names the passage beside each hymn
+instead, from `ref`, which is where the book's index had it.
+
+The hymn page still shows the passage a second time on these hymns, as the
+credit: the author index's *Source* column names the passage as the author, and
+`data/authors.tsv` carries that as printed.
 
 ### D4 — six `note`s have lost their English half — **done: the English edition prints no note**
 
@@ -1628,13 +1639,31 @@ holds lines of a stanza sung where the stanza ends, and that is a different
 shape; `check-repeats` names the *da capo* so that 355 is an exception on
 purpose rather than a hole.
 
-**And 745 has one too, which the check does not know about.** `zh/802` marks
-*Fine* after `好像作夢的人。` and *D.C.* at the end, and the Chinese lyrics
-write that da capo out as their last two lines. The English half does not, and
-splits `The Lord hath done great things for us; / Whereof we are glad.` over
-two more lines than the Chinese, so from line 10 on the two halves of the
-stanza no longer pair. Settling it means reading `en/812` and deciding whether
-a written-out da capo is lyrics or structure — not a quick fix, and left open.
+**745's is a repeat, and is held.** `en/812` and `zh/802` both mark *Fine*
+after the third line and *D.C.* at the end, and say so nowhere else: the hymn is
+sung A B C C A, where A is the three lines to *Fine*. 745 is one stanza with no
+chorus, so going back to the top sings A's own words again, and that is
+`repeat: {lines: [1, 2, 3]}` exactly. `check-repeats` names it in
+`SCORE_ASKS`, the hymns whose repeat only the score asks for, beside
+`WRITES_IT_OUT`.
+
+Getting there took the Chinese lyrics apart first. `data/` had written the
+*da capo* out as two extra Chinese lines no page prints, and had joined two
+pairs of lines the English keeps apart, so both halves came to twelve lines and
+nothing counted a difference — but every pair from line 5 on stood against the
+wrong line. The Chinese page sets the text continuously under the music, so the
+lines now break where the English breaks, as 824's did under D5, without a
+character moving.
+
+**How many more, as a guess.** Searching the text layer of both editions for
+*Fine* and *D.C.* (not read against the images) finds the marks on the pages of
+nine hymns besides 355 and 745: **167 or 168** (`en/184` holds both), **234**,
+**456**, **505**, **518** (`D.C. Chorus`), **742** and **753**, and in the
+Chinese layer alone `zh/176` and `zh/248` (167/168 and 234 again). The Chinese
+layer missed 745's own marks, which `zh/802` plainly prints, so this is a floor.
+Each is a hymn to read before anything is written down: a *D.C.* on a hymn with
+several stanzas may be 355's case — the score's way of sending the next stanza
+back to the verse — rather than a repeat of words at all.
 
 **The repeat slides are kept out of the search index.** They hold lines the
 stanza before them has already sung, so indexing them would put the same hymn
@@ -1723,7 +1752,8 @@ finding.
 `site/subject.md`, written by `md-to-site` from `data/categories.tsv` and the
 category on every `data/N.md`, and reachable from the navbar. 18 sections, 232
 subheadings, 57 third-level subjects, 848 hymn numbers each appearing exactly
-once, in the order the book prints them.
+once, in the order the book prints them. (201 subheadings since D3 folded the
+31 scripture passages into their section.)
 
 **A third source now checks it.** Both editions' *TABLE OF CONTENTS* pages
 (`en/002`, `zh/002`) print the eighteen sections against the hymns filed under
