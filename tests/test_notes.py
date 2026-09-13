@@ -143,8 +143,54 @@ class NoteTest(TestCase):
         )
 
     def test_a_direction_not_to_repeat_may_stand_over_a_written_repeat(self) -> None:
-        # 734's chorus is written out under every stanza and the note says to
-        # leave it off after the last, which is not a contradiction.
-        value = hymn(["一", "二", "二"], note=["第三節不唱“和”詩"])
+        # 734's note says to leave the chorus off after the last stanza, which
+        # does not contradict a line written twice.
+        value = sung(["一", "二", "二"], ["三"], ["四"], note="第三節不唱“和”詩", omitted=[3])
+
+        self.assertEqual(kinds(value), [])
+
+
+def sung(
+    *stanzas: list[str], note: str | None = None, omitted: list[int] | None = None
+) -> Hymn:
+    """Build a hymn of numbered stanzas with one chorus after the first."""
+
+    front = f"note:\n- {note}\n" if note else ""
+    front += "chorus-omitted:\n" + "".join(f"- {n}\n" for n in omitted) if omitted else ""
+    body = ""
+    for index, lines in enumerate(stanzas, start=1):
+        body += f"\n# {index}\n\n" + "".join(f"{line}\n" for line in lines)
+        if index == 1:
+            body += "\n# 1-chorus\n\n和\n"
+    return Hymn.from_markdown(f"---\ncategory: 甲——乙\n{front}---\n{body}")
+
+
+class OmissionTest(TestCase):
+    """A direction to leave the chorus out has to be written down, and match."""
+
+    def test_the_direction_and_the_field_agree(self) -> None:
+        value = sung(["一"], ["二"], note="Do not repeat chorus第二節不唱“和”歌", omitted=[2])
+
+        self.assertEqual(kinds(value), [])
+
+    def test_a_direction_nothing_acts_on(self) -> None:
+        value = sung(["一"], ["二"], note="Do not repeat chorus第二節不唱“和”歌")
+
+        self.assertEqual(kinds(value), ["a chorus a note leaves out is not written down"])
+
+    def test_a_chorus_left_out_that_no_note_leaves_out(self) -> None:
+        value = sung(["一"], ["二"], omitted=[2])
+
+        self.assertEqual(kinds(value), ["a chorus is left out that no note leaves out"])
+
+    def test_the_chorus_left_out_of_another_stanza(self) -> None:
+        value = sung(["一"], ["二"], ["三"], note="第三節不唱“和”詩", omitted=[2])
+
+        self.assertEqual(
+            kinds(value), ["a chorus is left out of another stanza than its note names"]
+        )
+
+    def test_the_english_half_alone_names_no_stanza(self) -> None:
+        value = sung(["一"], ["二"], note="Do not repeat chorus after the last verse.", omitted=[2])
 
         self.assertEqual(kinds(value), [])

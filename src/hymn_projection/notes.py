@@ -57,6 +57,12 @@ CHINESE_DIGITS = "一二三四五六七八九"
 # English one is missing, and what it says the English one has.
 WITHOUT = re.compile(r"英詩無第([一二三四五六七八九十、]+)[節詞]")
 ONLY = re.compile(r"英詩僅有([一二三四五六七八九十、]+)等")
+# `第二節不唱“和”歌`, `Do not repeat chorus after the last verse`: a stanza
+# the chorus is not sung after, which `chorus-omitted` writes down.  Only the
+# Chinese half names the stanza; both halves say that there is one.
+OMITS_CHORUS = re.compile(
+    r"第([一二三四五六七八九十、]+)節不唱“和”[歌詩]|(?i:do not repeat (?:the )?chorus)"
+)
 # `The Chinese version has 4 stanzas`: the same statement the other way round.
 COUNTED = re.compile(r"[Tt]he Chinese version has (\d+) stanzas")
 
@@ -175,7 +181,39 @@ def _note_findings(number: int, hymn: Hymn) -> list[Finding]:
                 number, "a repeat is both directed and written out",
                 f"{text!r}, but a stanza already ends with the line twice",
             ))
+    findings.extend(_omission_findings(number, hymn))
     return findings
+
+
+def _omission_findings(number: int, hymn: Hymn) -> list[Finding]:
+    """Hold a direction to leave the chorus out against `chorus-omitted`."""
+
+    directions = []
+    named: set[int] = set()
+    for note in hymn.note:
+        text = "".join(note.translations.values())
+        for match in OMITS_CHORUS.finditer(text):
+            directions.append(text)
+            if match.group(1):
+                named.update(chinese_numbers(match.group(1)))
+    omitted = set(hymn.chorus_omitted or ())
+    if directions and not omitted:
+        return [Finding(
+            number, "a chorus a note leaves out is not written down",
+            f"{directions[0]!r}, and chorus-omitted names no stanza",
+        )]
+    if omitted and not directions:
+        return [Finding(
+            number, "a chorus is left out that no note leaves out",
+            f"chorus-omitted names {sorted(omitted)}, and no note says so",
+        )]
+    if named and named != omitted:
+        return [Finding(
+            number, "a chorus is left out of another stanza than its note names",
+            f"{directions[0]!r} names {sorted(named)}, "
+            f"and chorus-omitted {sorted(omitted)}",
+        )]
+    return []
 
 
 def writes_the_repeat_out(hymn: Hymn) -> bool:
