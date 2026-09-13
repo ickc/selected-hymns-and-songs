@@ -101,9 +101,23 @@ sung again — not always a tail, because `en/71` sets hymn 57's repeat as the
 fourth line twice and then the third and fourth again. `stanzas` is every
 stanza unless it names some. It is not localized: every stanza of every hymn
 that carries a repeat has the same number of lines in both editions.
-`pixi run check-repeats` holds the three statements against one another, and a
-*da capo* — 355's `回頭再唱正歌一遍`, the whole verse again after the chorus —
-is the one form it does not hold.
+`pixi run check-repeats` holds the three statements against one another. A
+*da capo* is a `repeat` only where going back sings words again: 745 is one
+stanza, and its *D.C.* sings its first three lines a second time.
+
+**A chorus is sung after every stanza, unless `chorus-omitted` says not.** Two
+hymns end on a verse, and both pages of each say so — 355's
+`Do not repeat chorus` / `第二節不唱“和”歌`, 734's after its third stanza.
+
+```yaml
+chorus-omitted: [2]
+```
+
+355 is verse, chorus, verse. Its chorus ends *D.C. al Fine*, which `zh/377`
+glosses as `回頭再唱正歌一遍`: the second stanza goes back to the verse's music
+and stops at *Fine*. No words are sung twice, so that note is not a repeat.
+`pixi run check-notes` requires the field wherever a note leaves the chorus
+out, and the stanza it names.
 
 Neither is inferred from the words: what a note says is checkable against the
 hymn, and `pixi run check-notes` checks it. A gloss written as a direction, a

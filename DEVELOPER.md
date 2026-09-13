@@ -117,7 +117,7 @@ differently, and only for that reason. Both come from one parse of one
 | | `slides.py` | `pages.py` |
 |---|---|---|
 | a stanza over four lines | divided, to fit a screen | whole, as the hymnal prints it |
-| the chorus | repeated after every stanza it is sung with | once, where it is written |
+| the chorus | repeated after every stanza it is sung with, bar `chorus-omitted` | once, where it is written |
 | the meter | dropped; nobody reads it off a screen | kept; it is printed in the hymnal |
 | a `^[…]` instruction | lifted out of the lyric line | lifted out of the lyric line |
 
@@ -1214,7 +1214,8 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   What is checked: a gloss that reads as a direction; a gloss quoting a word
   its own line does not hold; a gloss naming a stanza other than the one it
   sits in; a note saying what the English edition lacks that `data/`
-  contradicts; a note counting the Chinese stanzas wrongly; and a hymn both
+  contradicts; a note counting the Chinese stanzas wrongly; a note leaving the
+  chorus out that `chorus-omitted` does not match, stanza for stanza; and a hymn both
   told to repeat its last line and printing the repeat already. That last one
   is the shape 274 had before D7 read its page, and it compares with the
   closing punctuation folded away: 82 writes its last line twice in every

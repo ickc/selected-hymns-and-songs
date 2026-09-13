@@ -1630,14 +1630,24 @@ The direction this section did take is the mirror image: the *note* is the
 source and the *structure* is derived from it, which is checkable in the one
 place it matters and never rewrites a page.
 
-#### Two things it does not hold, and one it moved
+#### What it does not hold, and what it moved
 
-**355's *da capo* is named rather than held.** `zh/377` prints
-`(回頭再唱正歌一遍)` and `en/387` prints *Fine* over the eighth line and
-*D.C. al Fine* over the last: the whole verse again, after the chorus. `repeat`
-holds lines of a stanza sung where the stanza ends, and that is a different
-shape; `check-repeats` names the *da capo* so that 355 is an exception on
-purpose rather than a hole.
+**355's *da capo* is not a repeat, and this section first said it was.** It
+called `(回頭再唱正歌一遍)` "the whole verse again, after the chorus" and named
+it as a shape `repeat` could not hold. Read with the second page it is nothing
+of the kind. Stanza 1 is the whole verse, with *Fine* at its end; the chorus
+ends *D.C. al Fine*; and stanza 2, on `en/388` and `zh/378`, is eight lines to
+the verse's music. So the hymn is verse, chorus, verse — A1 B A2 — and the
+*da capo* is only how the score sends the second stanza back to the verse.
+`zh/377`'s note glosses that mark, and read alone it can be taken for A1 B A1
+A2; with `第二節不唱“和”歌` beside it, it means A1 B A2.
+
+What was wrong was the deck, which sang the chorus after stanza 2 as well.
+`chorus-omitted: [2]` now ends it on the verse, and 734, whose pages leave the
+chorus off after its third stanza, carries `[3]` — the only two hymns that say
+so. `check-notes` ties the field to the direction and to the stanza its Chinese
+half names. The note stays as the page prints it, and `check-repeats` still
+reads it as ordering nothing.
 
 **745's is a repeat, and is held.** `en/812` and `zh/802` both mark *Fine*
 after the third line and *D.C.* at the end, and say so nowhere else: the hymn is

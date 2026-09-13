@@ -50,12 +50,14 @@ NAMES_LINES = re.compile(
 WRITTEN_NUMBERS = {
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
 }
-# A *da capo* is not a tail of a stanza sung again but the whole verse sung
-# after the chorus, and `repeat` cannot hold it: its lines are the stanza's own
-# and they are sung where the stanza ends.  355 is the only hymn whose note
-# asks for one -- `zh/377` prints `(回頭再唱正歌一遍)` and `en/387` prints *Fine*
-# over the eighth line and *D.C. al Fine* over the last -- so it is named here
-# rather than given a field that would say the wrong thing.
+# A *da capo* on a hymn of several stanzas sings no words twice.  355's chorus
+# ends *D.C. al Fine* on `en/387`, and `zh/377` glosses that as
+# `(回頭再唱正歌一遍)`, *go back and sing the verse once more*: the second
+# stanza goes back to the verse's music and ends at *Fine*, which is verse,
+# chorus, verse, and `chorus-omitted` is what ends it there.  So a note saying
+# it orders nothing `repeat` should hold.  745's *D.C.* is the other kind -- one
+# stanza, so going back sings its own opening lines again -- and it is a
+# `repeat`; see `SCORE_ASKS`.
 DA_CAPO = re.compile(r"回頭再唱|D\.C\.")
 # The four hymns whose repeat the book writes into the lyrics somewhere other
 # than the end of a stanza, where `notes.writes_the_repeat_out` looks.  Each
