@@ -22,11 +22,14 @@ def hymn(stanza: dict[object, list[dict[str, str]]], **fields: object) -> Hymn:
     return Hymn.from_dict({"category": {"zh": "分類"}, "stanza": stanza, **fields})
 
 
+SHORTENED = {"c": "chorus", "r": "repeat"}
+
+
 def labels(value: Hymn) -> list[str]:
-    """Return the label of each slide, with the chorus label shortened."""
+    """Return the label of each slide, with the bilingual ones shortened."""
 
     return [
-        "chorus" if slide.identifier.startswith("c") else slide.label
+        SHORTENED.get(slide.identifier[0], slide.label)
         for slide in slides(value)
     ]
 
@@ -72,6 +75,19 @@ class ChorusResolutionTest(TestCase):
              "Four", "Last refrain"],
         )
 
+    def test_a_stanza_the_book_leaves_without_its_chorus_ends_bare(self) -> None:
+        # Hymn 355: verse, chorus, verse. Its score sends the second stanza back
+        # to the verse with *D.C. al Fine*, and both pages say not to sing the
+        # chorus again.
+        value = hymn(
+            {1: [{"en": "One"}], "1-chorus": [{"en": "Refrain"}], 2: [{"en": "Two"}]},
+            **{"chorus-omitted": [2]},
+        )
+        sung = [slide.lines[0].translations["en"] for slide in slides(value)]
+
+        self.assertEqual(sung, ["One", "Refrain", "Two"])
+        self.assertEqual(chorus_shape(value), "single")
+
     def test_a_replacement_in_one_language_leaves_the_other_alone(self) -> None:
         # Hymn 668's shape: 3-chorus exists only in Chinese, so stanza 3 sings
         # the English of 1-chorus against a different Chinese chorus. The two
@@ -108,6 +124,50 @@ class ChorusResolutionTest(TestCase):
 
         self.assertEqual(chorus.lines[0].translations, {"en": "A", "zh": "丙"})
         self.assertEqual(chorus.lines[1].translations, {"en": "B"})
+
+
+class RepeatTest(TestCase):
+    """A repeat the book states in words is sung on a slide of its own."""
+
+    STANZAS = {1: [{"en": "One"}, {"en": "Two"}], 2: [{"en": "Three"}, {"en": "Four"}]}
+
+    def test_a_hymn_with_no_repeat_shows_each_stanza_once(self) -> None:
+        value = hymn(self.STANZAS)
+
+        self.assertEqual(labels(value), ["1", "2"])
+
+    def test_the_repeat_follows_every_stanza_it_is_sung_in(self) -> None:
+        value = hymn(self.STANZAS, repeat={"lines": [2]})
+
+        self.assertEqual(labels(value), ["1", "repeat", "2", "repeat"])
+
+    def test_the_repeat_holds_the_lines_it_names_in_the_order_it_names_them(
+        self,
+    ) -> None:
+        # 57's shape: `en/71` sings the fourth line twice and then the third
+        # and fourth again, which is no tail of the stanza.
+        value = hymn(self.STANZAS, repeat={"lines": [2, 2, 1, 2]})
+
+        repeated = [slide for slide in slides(value) if slide.identifier == "r1"]
+        self.assertEqual(
+            [line.translations["en"] for line in repeated[0].lines],
+            ["Two", "Two", "One", "Two"],
+        )
+
+    def test_a_repeat_naming_stanzas_is_sung_in_those_alone(self) -> None:
+        value = hymn(self.STANZAS, repeat={"lines": [2], "stanzas": [2]})
+
+        self.assertEqual(labels(value), ["1", "2", "repeat"])
+
+    def test_the_repeat_is_sung_before_the_chorus_not_after_it(self) -> None:
+        # The hymnal prints the direction under the stanza, not under the
+        # chorus, so that is where the repeat belongs.
+        value = hymn(
+            {1: [{"en": "One"}, {"en": "Two"}], "1-chorus": [{"en": "Sing"}]},
+            repeat={"lines": [2]},
+        )
+
+        self.assertEqual(labels(value), ["1", "repeat", "chorus"])
 
 
 class StanzaDivisionTest(TestCase):
@@ -154,12 +214,14 @@ class ProjectionTest(TestCase):
 
         self.assertEqual(title(value), {"en": "A Title"})
 
-    def test_a_singing_instruction_leaves_the_lyric_line(self) -> None:
-        value = hymn({1: [{"en": "We rise, O Lord, to build! ^[Repeat the last four lines]"}]})
+    def test_a_gloss_leaves_the_lyric_line(self) -> None:
+        value = hymn({1: [{"en": "From Beulah Land.^[Meaning, married (Isa, 62:4).]"}]})
         slide = slides(value)[0]
 
-        self.assertEqual(slide.lines[0].translations["en"], "We rise, O Lord, to build!")
-        self.assertEqual(slide.notes, [("en", "Repeat the last four lines")])
+        self.assertEqual(slide.lines[0].translations["en"], "From Beulah Land.")
+        self.assertEqual(
+            slide.glosses, [("en", "Meaning, married (Isa, 62:4).")]
+        )
 
     def test_the_document_language_follows_a_monolingual_hymn(self) -> None:
         self.assertEqual(document_language(hymn({1: [{"zh": "一"}]})), "zh-Hant")
@@ -169,14 +231,21 @@ class ProjectionTest(TestCase):
         value = hymn(
             {1: [{"en": "One", "zh": "一"}], "1-chorus": [{"en": "Refrain"}]},
             meter="8.7.8.7.",
-            note={"en": "A note"},
+            note=[{"en": "A note"}],
+            **{"credit-note": {"en": "Why the credit reads so"}},
         )
         markdown = to_markdown(value, 104)
 
         self.assertIn("format: revealjs", markdown)
         self.assertIn("number: 104", markdown)
         self.assertNotIn("meter", markdown)
-        self.assertIn("note: '[A note]{lang=en}'", markdown)
+        self.assertIn("note:\n  - '[A note]{lang=en}'", markdown)
+        # Hyphenated in the deck, as it is in `data/` and in the title-slide
+        # template that prints it; the dataclass spells it with an underscore
+        # because Python fields must.
+        self.assertIn(
+            "credit-note: '[Why the credit reads so]{lang=en}'", markdown
+        )
         self.assertIn("## 1 {#v1}", markdown)
         self.assertIn("[One]{lang=en}\\\n[一]{lang=zh-Hant}", markdown)
         self.assertIn("::: lyrics", markdown)

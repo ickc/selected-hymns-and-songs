@@ -2,13 +2,19 @@
 
 Enough to navigate the project. For what the checked-in Markdown means, see
 [FORMAT.md](FORMAT.md); for what the site is, see [README.md](README.md). The
-files themselves carry the reasoning behind each decision in comments.
+files themselves carry the reasoning behind each decision in comments. For what
+the data is still missing and what could be built from the book's front and
+back matter, see [PLAN.md](PLAN.md); the proposals that were taken up say so
+in their own headings.
 
 ## The shape of it
 
-One source, `data/`, and three projections of it: a lossless one back to the
-canonical YAML, and two one-way ones — the deck a hymn is sung from and the
-page its text is read against the scanned hymnal on.
+One source, `data/`, and its projections: a lossless one back to the YAML shape
+it was bootstrapped from, two one-way ones per hymn — the deck it is sung from
+and the page its text is read against the scanned hymnal on — and three about
+the collection, which are the book's own indexes of subject, tune and meter. `data/`
+is the source of record; see [the split from
+`selected-hymns`](#the-split-from-selected-hymns).
 
 Beside `data/` sits `scan/`, which is not a projection of anything here. It is
 the hymnal itself, copied in from
@@ -18,25 +24,45 @@ hymn is printed on. See [scan/README.md](scan/README.md).
 
 ```mermaid
 flowchart LR
-  yaml["../selected-hymns/data.yml<br/>canonical YAML"]
+  yaml["../selected-hymns/data.yml<br/>where data/ came from"]
   md["<b>data/N.md</b><br/>848 files, in git"]
   scan["<b>scan/</b><br/>1,776 page images<br/>+ 2 CSVs, in git"]
+  cats["<b>data/categories.tsv</b><br/>255 subjects, in git"]
+  tits["<b>data/titles.tsv</b><br/>778 names, in git"]
+  tuns["<b>data/tunes.tsv</b><br/>765 pairs, in git"]
+  auth["<b>data/authors.tsv</b><br/>764 rows, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
+  subject["site/subject.md"]
+  tune["site/tune.md"]
+  metrical["site/metrical.md"]
   index["site/index.md<br/>written, in git"]
+  preface["site/preface.md"]
   chorus["site/chorus.md<br/>developer mode"]
-  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, search.json"]
+  built["site/_site/<br/>848 decks, 848 pages,<br/>landing page, preface,<br/>subject index, index of tunes,<br/>metrical index, search.json"]
   pages["GitHub Pages"]
 
+  cats -- "apply-categories" --> md
+  tits -- "apply-titles" --> md
+  tuns -- "apply-tunes" --> md
+  auth -- "apply-authors" --> md
   yaml -- "yaml-to-md" --> md
   md -- "md-to-yaml" --> yaml
   md -- "md-to-site" --> slide
   md -- "md-to-site" --> page
   md -- "md-to-site" --> chorus
+  md -- "md-to-site" --> preface
+  md -- "md-to-site" --> subject
+  md -- "md-to-site" --> tune
+  md -- "md-to-site" --> metrical
+  cats -- "the book's order" --> subject
   scan -- "which pages" --> page
   slide -- "parallel Quarto workers" --> built
   page -- "parallel Quarto workers" --> built
+  subject -- "build" --> built
+  tune -- "build" --> built
   index -- "build" --> built
+  preface -- "build" --> built
   chorus -- "build" --> built
   scan -- "hard-linked after the render" --> built
   built -- "check-slides" --> checked{{"no deck overflows"}}
@@ -47,6 +73,18 @@ flowchart LR
 is generated, ignored, and rebuilt here and in CI — so it cannot be stale, and
 there is no generated file to review in a diff.
 
+`data/categories.tsv`, `data/titles.tsv`, `data/tunes.tsv` and
+`data/authors.tsv` are the four things that write *into* `data/`. All four are
+preprocessing, run when they change rather than on the way to the site, and all
+four were read out of the book's own front or back matter, which is the only
+place any of them exists. See [the category table](#the-category-table), [the
+title table](#the-title-table), [the tune table](#the-tune-table) and [the
+credits table](#the-credits-table). The category
+table is read a second time on the way *out*, as the subject index: a hymn
+knows its own subject, but only the table knows what order the subjects come
+in. The tune table is not — once applied, a hymn knows its own tune, and the
+[index of tunes](#the-index-of-tunes) is projected from the hymns.
+
 ## The Python
 
 | module | what it is |
@@ -55,6 +93,17 @@ there is no generated file to review in a diff.
 | `slides.py` | the **one-way** projection: `Hymn` → slide Markdown, plus the chorus report. |
 | `pages.py` | the other **one-way** projection: `Hymn` + `scan/` → page Markdown. |
 | `scans.py` | the segmentation CSVs, and linking the page images into the built site. |
+| `categories.py` | `data/categories.tsv`: the book's subject outline, and the **preprocessing** step that writes the English half of each hymn's category from it. |
+| `titles.py` | `data/titles.tsv`: the name the book's subject index files each hymn under, and the **preprocessing** step that writes it. |
+| `tunes.py` | `data/tunes.tsv`: the tune the English edition sets each hymn to, and the **preprocessing** step that writes it. |
+| `authors.py` | `data/authors.tsv`: who wrote the words and who wrote the music, why the credit reads that way on the three hymns the book credits twice over and differently, and the **preprocessing** step that writes them. |
+| `tuneindex.py` | The **projection** of the whole collection as the book's alphabetical index of tunes. |
+| `meterindex.py` | The **projection** of the same relation grouped the other way: the book's metrical index, meter then tune then hymns. |
+| `subjects.py` | the third **one-way** projection, and the only one about the collection: the table + every `Hymn` → the subject index page. |
+| `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere, and reading the meter the Chinese page prints rather than the English one's. |
+| `notes.py` | the second **check** with no output of its own: the two kinds of prose the hymnal prints beside a hymn — a direction in the front matter, a gloss in the lyric line — read back against the stanzas they describe. |
+| `punctuation.py` | the third **check** with no output of its own: each lyric line read against the marks its own edition of the hymnal sets, the rule that a mark stays on the side of the line break its text is on, and the pairing of quotation marks. |
+| `repeats.py` | the fourth **check** with no output of its own: the three places the hymnal states a repeat — written out, ordered in a note, marked in the meter — held against one another and against the `repeat` that says which lines. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
 The projections are separate from the codec on purpose. The codec must
@@ -68,7 +117,7 @@ differently, and only for that reason. Both come from one parse of one
 | | `slides.py` | `pages.py` |
 |---|---|---|
 | a stanza over four lines | divided, to fit a screen | whole, as the hymnal prints it |
-| the chorus | repeated after every stanza it is sung with | once, where it is written |
+| the chorus | repeated after every stanza it is sung with, bar `chorus-omitted` | once, where it is written |
 | the meter | dropped; nobody reads it off a screen | kept; it is printed in the hymnal |
 | a `^[…]` instruction | lifted out of the lyric line | lifted out of the lyric line |
 
@@ -82,6 +131,52 @@ lyric line, one language span per translation. Layout is the theme's business,
 which is how the same lines render interleaved, or as two aligned columns — the
 deck with `?grid` on the URL, the page whenever its pane is wide enough for
 them.
+
+### Why the meter and the reference name their languages
+
+Localized metadata is written into the front matter as one scalar, the English
+half then the Chinese, and cut apart again on the way back in by writing
+system: `category: The Word of God—Loving the Word神的話——愛慕神的話` is one
+line, and the boundary is where Latin stops and Han starts. That works for
+every field whose Chinese half is Han.
+
+A meter is mostly figures, and a figure belongs to no writing system, so there
+are two ways the cut goes wrong. `8.8.8.8.D. (A)` beside `8.8.8.8.D.` — the
+English edition marks the anapestic setting and the Chinese page does not — is
+Latin and digits throughout, with no boundary to cut at: run together, the pair
+would come back as one string. And `Irregular Meter` beside `10.10.10.8.5. 和`
+has a boundary, in the wrong place: the figures go to the Latin run on their
+left, and what comes back is `Irregular Meter10.10.10.8.5.` and `和`.
+
+So a localized meter is written as a mapping instead, and nothing about it is
+inferred from its characters:
+
+```yaml
+meter:
+  en: 10.10.10.8.5. with chorus
+  zh: 10.10.10.8.5. 和
+```
+
+A meter both editions print alike stays a scalar — `meter: 8.7.8.7.D.` — which
+is 466 of the 848. The other 382 name their two halves.
+
+A scripture reference is mostly figures for the same reason, and one of the two
+ways the cut goes wrong reaches it. `Psalm 133` beside `詩133` happens to cut
+where it should. `1 John 1:5-7` beside `約壹1:5-7` does not: the reference
+*begins* with a figure, the cut lands after the `1`, and the English half comes
+back without its book number. Three of the 41 are numbered books — 759, 761 and
+762 — so the field is written the same way, and cannot be broken by the next
+citation somebody adds:
+
+```yaml
+ref:
+  en: 1 John 1:5-7
+  zh: 約壹1:5-7
+```
+
+A reference only one edition prints has nothing to cut apart and stays a scalar
+— `ref: 以西結書第四十七章`, which `auto-lang` tags as Chinese from its
+characters, as it does every other single-language field.
 
 ### Why `chorus.md` is generated and `index.md` is not
 
@@ -99,6 +194,681 @@ book of 848 hymns: `hymns: 848` in `_quarto.yml`, `max="{{< meta hymns >}}"` in
 the page, and `goto.html` reads the range off the field. A constant kept where
 the site is configured, named once.
 
+`preface.md` is generated for the opposite reason to `index.md`: it carries no
+form and no constant, only prose, and that prose is
+`data/preface.en.markdown` and `data/preface.zh.markdown` — the source of
+record, edited there like a hymn. `md-to-site` stacks the two onto one page,
+English above Chinese, each wrapped in a `lang` div so a reader's font stack
+and a screen reader switch at the boundary. The navbar links it as
+**Preface 編者的話**.
+
+## The split from `selected-hymns`
+
+`data/` was bootstrapped from
+[`selected-hymns`](https://github.com/ickc/selected-hymns)`/data.yml`, and for
+a while the two said the same thing. They no longer do, and are not meant to.
+This repository is where the hymnal is now maintained: `data/N.md` is the
+source of record, and `data.yml` is the shape it started in.
+
+What has been added here and is not there:
+
+- **the English half of every category**, from
+  [the category table](#the-category-table);
+- **hymn 570's meter**, `8.6.8.6. with chorus` / `8.6.8.6. 和`, which the publisher's English
+  source had dropped along with the whole header line — leaving a placeholder
+  an editor had typed in its place sitting in the `title` field, the only
+  `title` in the collection and not a title at all. The hymnal prints no hymn
+  titles;
+- **corrections read off `scan/`**: hymn 108's subject (祂的得勝, not
+  祂的救贖), 832 and 833 (預備, as 654–656 have), 838 (我們的深切需要, as 690
+  has), the removal of `（參720）` from 840's, which is not printed on its page,
+  and a missing syllable in 845 (從未曾拒絕人來信, eight as its 8.8.8.5. meter
+  wants);
+- **138 hymns given the meter the hymnal prints and `data/` had lost.** The
+  first 93 were `Irregular Meter` / `特` — 36 of them `特.和`, which is what the
+  Chinese page writes when the chorus is sung to the same tune. The last 45 were
+  read one at a time off the page that prints them, which for 31 of them is the
+  Chinese page and nothing else. `data.yml` has no meter at all on any of the
+  138, and every hymn in the collection now carries one;
+- **twelve meters corrected against the book's own metrical index**, which
+  files every hymn 1–764 under a meter and so is a second printing of the same
+  fact. Where it disagreed with `data/`, the Chinese page was read as the third
+  witness, and on eleven of the twelve it sided with the index: `data/`'s meters
+  came from an old OCR of the English page. Hymn 384 had hymn **385**'s meter,
+  taken from the top of the next page. Hymn 6, the Doxology, is the one place
+  the *book* is wrong — its English page prints `8. 6. 8. 6. with chorus` over
+  four lines of eight with no chorus. See [D13](PLAN.md);
+- **hymn 772's `8.8.8.8.8.`**, which its page prints as `8.8.8.8.7.`, and
+  **hymn 777's `.8.6.8.6.6.6.7.5.`**, whose leading dot was a typo and whose
+  page marks a chorus `data/` had not;
+- **eighteen meters the English edition declines to count.** It files 111 hymns
+  under `Irregular Meter`; on eighteen of them the Chinese page prints figures,
+  and those figures are now what both halves carry. Fifteen of the eighteen
+  scan exactly as they say. `data.yml` has `Irregular Meter` on none of the 111
+  and no meter at all on most of them;
+- **eight more lines a syllable short**, found by counting rather than by
+  reading: 412 (但願我能像馬利亞), 430 (祂的豐盛我能倚), 441 (背起十架跟耶穌),
+  479 (將我恢復), 486 (主，我接受你作一切), 503 (我也禱告並立志), 704
+  (要我遠離罪俗) and 729 (沒有神，沒指望, which had a 有 too many). Each was
+  the one verse of its hymn that would not scan; see `meter-report` under
+  [Checking](#checking);
+- **two whole lines of 722's third verse**, `若沒有救主，雖暫能活着，` and
+  `但到要死時，將要怎辦？`, and two of 274's first in other words than the
+  page's — nineteen syllables and two lines that no count could have caught;
+- **nine more, found the same way once the check stopped confusing a missing
+  syllable with a moved line break**: 122 (以色列**民**被選族類, which its twin
+  123 has always had), 270 (隨同**所有**歡樂聖眾讚美), 298 (two 爲), 632
+  (勝利終必**要**得到), 685 (原本藏在天**上**父的心懷), 755
+  (這些東西**就**都要加給你們) and 834 (纔使撒冷對我**能**成爲盼望). Reading
+  those pages turned up four lines of the same length as what `data/` had and
+  not the same words -- 599's 抵擋仇敵 for 戰勝敵軍 and 向祂，我投倚 for
+  祂有信心, 632's 用十架對付“己，” for 應用十架在“己，, and 813's
+  處處**跟主**走窄路, which was the chorus's line standing in the verse's
+  place. No count could have found any of them, which is the D14 lesson again;
+- **nineteen line breaks moved back to where the tune puts them**, in 43, 107,
+  109, 229, 243, 323, 459, 469, 498, 599, 618, 624, 650, 673, 685, 706, 709,
+  711 and 723. Each verse held exactly what its meter and its own siblings ask
+  for and cut it somewhere it cannot be sung, so the fix adds and takes away
+  nothing;
+- **hymns 797 and 798, which were each other**. Not just their subjects: the
+  Chinese page 855 prints 求你揀選我道路 under 797 and page 857 prints
+  我無能力 under 798, and `data/` had both hymns entire under the other's
+  number;
+- **the English of 797, 824 and 845**, which `data/` did not have at all
+  although the English edition prints all three — and says so itself, in the
+  list of Chinese-only hymns on its own last page, which names 39 hymns and not
+  these. `data/` was missing English for a different 39, which is why the two
+  sets looked like each other for so long. See [PLAN.md](PLAN.md);
+- **a re-lineation, in 824**. The English page breaks its single stanza into
+  seven six-syllable lines; the Chinese page sets the text continuously under
+  the staff, and `data/` had it as the four lines of its 12.12.12.6. meter.
+  The Chinese is now broken at its own commas into the same seven, character
+  for character unchanged, so that the two languages pair line by line as they
+  do in every other bilingual stanza in the collection;
+- **twelve of hymn 480's twenty-four Chinese lines**, which were not the text
+  its page prints. Every one of them scans, so no syllable count could have
+  found them: 故祂這榮耀主人，取代了我 for the page's 故祂這榮耀的人，安家我心，
+  and 哦主，哦主，借著你的經營 for 哦主，哦主，藉著你的運行. What found them
+  was the chorus check — 480 is the one hymn whose choruses do not scan alike,
+  and reading the page to see whether the odd syllable was ours or the book's
+  showed the whole hymn had drifted. The odd syllable *is* the book's: the page
+  prints fifteen in the first chorus's second line and fourteen in the other
+  two, so 480 is still reported, and now for the right reason. The wording is
+  the page's; the orthography stays the collection's, which writes 你 and 著
+  everywhere and 祢 and 着 nowhere;
+- **hymn 365's first line**, which had `Love Divine, all love excelling` where
+  its page prints `all loves ex-cel-ling`. The subject index names the hymn
+  *Love Divine, all loves excelling*, and the disagreement between that name
+  and the lyric is what found it;
+- **hymn 583's subject**, which `data/` gave as `因著信靠祂` where its own page
+  (`zh/621`) prints `因著信靠主`, as the other twelve hymns under that subject
+  do. The subject index lists 583 in the run under 因着信靠主 and prints no
+  such second subject, so the table had carried two rows that flattened to one
+  English heading;
+- **the scripture reference every page prints under its meter**, on 41
+  hymns. `data/` had eleven of them, six English and five Chinese and none
+  both; it now has both halves wherever both editions print one. Ten are
+  ordinary hymns that versify a passage — 108–112 (*Psalm 45 - Part 1* /
+  詩篇第四十五篇(上), and four more), 189, 245–248 — and the other 31 are the
+  whole of *Psalms and Scripture Portions*, 734–764, where `data/` had the
+  reference only for 749. The citations `data/` did have were abbreviated
+  rather than transcribed: 啟三章 for the page's 啟示錄第三章, 以西結書第47章 for
+  以西結書第四十七章. Two things are worth knowing about the values. The
+  section's 31 are printed twice — once under the meter, once as the subject
+  the book's own index files the hymn under — and the two printings differ in
+  small ways, so the page's wording is what `ref` carries and the index's is
+  what `category` carries: the page writes `Psalm 16:5,8,9,11` where the index
+  writes `Psalm 16:5, 8, 9, 11`, and for 764 the page writes `Revelation
+  19:6,7` where the index and the Chinese page both write `19:6-7`. And where
+  the Chinese page encloses the line in parentheses (189 alone) or letter-spaces
+  the abbreviation from the figures, the parentheses and the spacing are the
+  page's own punctuation of that slot, not part of the citation, so neither is
+  carried;
+- **the repeat mark on hymn 470's Chinese meter**, `特.重` where `data/` had
+  `特`. Its page prints the mark; the English page prints `Irregular Meter` and
+  no `with repeat`, so the two editions differ, and both are now as printed.
+  This one was found because 470 also carries a `note` — 57 other hymns carry a
+  bare `特` and have not been checked for a trailing `.重` or `.和`;
+- **one normalisation that departs from `scan/`**: hymn 822's subject is
+  `因着祂足夠的恩典` here, though its page prints `足彀` — confirmed on
+  `scan/zh/884.png`, so it is the book and not the extraction. The other four
+  hymns under that subject print `足夠`, and a reader searching for one
+  spelling should not be shown four of the five. This is the one place
+  consistency is allowed to beat the page, and the reason is that **the
+  category is a key and a lyric is not**: `read_mapping` builds the
+  Chinese-to-English correspondence keyed by the Chinese string, and
+  `subjects._filed` groups the index page by it, so two spellings of one
+  subject would be two subjects. Everything else `data/` holds is a quotation
+  and takes the page's spelling — `彀` included, which the lyrics of 814 and
+  817 keep as printed. [D18](PLAN.md) is where this is written up as a rule,
+  with the variant pairs and the two that cannot be folded.
+
+What is kept here although the hymnal does not print it:
+
+- **the English lyrics of 779, 789 and 840**, three of the 39 hymns the English
+  edition's own list of Chinese-only hymns names. `scan/en.csv` gives them no
+  page, their Chinese pages carry no English line, and `data.yml` has full
+  English for each. Somebody supplied the original these Chinese texts were
+  translated from, and it is worth having, so it stays — but it is the one
+  place the hymn page shows English with no English scan beside it to check it
+  against. 840's is traceable: it is hymn **720**'s English, *There were ninety
+  and nine that safely lay*, differing only in where two lines break and one
+  closing quotation mark. 779's and 789's appear nowhere else in the
+  collection.
+
+`md-to-yaml` still works and is still lossless — that is a property of the
+projection, not a claim that the two repositories agree. **`yaml-to-md` is the
+task to be careful with**: run against the upstream file it would overwrite all
+of the above. Point it at a scratch directory if what you want is a comparison.
+
+## The category table
+
+The hymnal prints a subject over every hymn, and the two editions print
+different amounts of it. The Chinese page carries the whole path —
+`安慰與鼓勵－因着主的照顧` — while the English page carries only its first
+level, `Comfort and Encouragement`. The publisher's Chinese source, which
+`data/` descends from, therefore gave every hymn a Chinese category and no
+English one at all.
+
+The rest of the English path is in the book, in the subject index of the
+English edition (pages v–xvi). That index is numbered exactly as the Chinese
+one (pages 七–十一) is, three levels deep — `I. PRAISE AND WORSHIP`,
+`2. THE FATHER`, `(1) His Greatness` against `一．讚美和敬拜`, `2. 聖父`,
+`(1) 祂的偉大` — and each entry lists the hymns filed under it. Matching the
+two by those hymn numbers pairs 248 of the Chinese categories with one
+English heading and no ambiguity at all; the rest are named in
+`data/categories.tsv` itself.
+
+```
+n1  n2  n3  zh1        zh2  zh3      en1                en2         en3
+1   2   1   讚美和敬拜  聖父  祂的偉大  Praise and Worship  The Father  His Greatness
+```
+
+255 rows, one per subject, in the order the book prints them. Tab-separated
+because the names contain commas, quotation marks and parentheses and cannot
+contain a tab: a hand-edited row needs no quoting and cannot be misread. The
+English is title-cased, as the table of contents prints it, rather than the
+capitals of the index.
+
+The table stores the levels **apart** and joins them — Chinese with an em dash
+pair and the third parenthesised, English with one em dash and the third in
+round brackets — which is what the two editions print over a hymn and what
+`data/N.md` carries. Splitting that back into levels would mean parsing a
+format we control, and the parse would have to survive `The Son, His Person and
+Work`; joining cannot go wrong.
+
+**One section is a subject by itself.** The index subdivides *Psalms and
+Scripture Portions* by the passage each of hymns 734–764 versifies, one hymn
+to a passage. That is the hymn's `ref`, not a subject hymns share, and both
+pages print only the section over these hymns with the passage on its own line
+— so the table carries section XVIII as one row with no level 2, and the
+subject page names the passage beside each hymn instead. It used to carry the
+31 passages as subjects, which printed each one twice on the hymn page.
+
+**The Chinese is the book's orthography, which is not the publisher's.** The
+Chinese half of every category, and of every hymn's lyrics, came from
+`../selected-hymns/data.yml` — cleaned OCR, and so a reading like any other,
+not a fact. Checked against the pages it turned out to be in modern forms
+throughout where the book uses older ones: 着 not 著, 裏 not 裡, 爲 not 為, 藉
+not 借, 眞 not 真, 敎 not 教, 啓 not 啟. All seven were read off page images,
+because the extraction's text layer is wrong about several of them — it reports
+爲 as 為 more often than not. `data/` and the table were corrected together,
+since the table is keyed by the Chinese string.
+
+Two characters are **not** substitutions, and both were checked one at a time:
+hymn 458's 比晨星更著 is *zhù*, and hymn 556's 何必先借明天憂 is *borrow*. Both
+stand as they are printed. The remaining one, 你 for the book's reverential 祢,
+turns on who is addressed rather than on a glyph, and is [D17](PLAN.md)'s
+outstanding half. `data/preface.zh.markdown` is exempt: the Chinese preface is
+a modern publisher's note, and its page prints the modern forms.
+
+`n1 n2 n3` is the numbering the book prints (`I.` / `2.` / `(1)`), and it is
+the **only** record of the order. Sorting the subjects by their lowest hymn
+number does not recover it: under the Father the book runs Greatness, Glory,
+Majesty, Mercy, Love, and by first hymn number that comes out Greatness, Glory,
+Love, Redemption, Majesty. So the numbering is checked as it is read — every
+level has to run 1, 2, 3… under its parent, a heading has to keep one number
+throughout, a level 2 is either one subject or a run of them, and so is a
+section. A row
+inserted without renumbering fails rather than being filed in the wrong place.
+
+The order was read back off the Chinese subject index (`zh/003`–`zh/007`,
+主題目錄), whose OCR gives the headings in print order. The names were not
+taken from that reading — we already had them — only the sequence, and three
+things check it: all 285 subjects it had then matched, exactly once, with nothing left
+over; the 222 rows whose printed number the OCR read legibly all agree with the
+position they were given; and 703 of the 848 hymns appear in the OCR of the
+index line of the very subject they are filed under, the rest lost to wrapped
+lines and broken ranges rather than to disagreement.
+
+`pixi run apply-categories` writes the English half into every `data/N.md` and
+leaves the Chinese half alone — `data/N.md` is the authority on what the
+Chinese page says, and the table only ever supplies the English. It is
+idempotent, so it can be run at any time, and it fails rather than write if a
+category is missing from the table or a row of the table matches no hymn.
+`pixi run check-categories` reports the same without writing.
+
+This is deliberately *not* a step of the site build. `data/N.md` stays the
+source everything is built from; the table is how one field of it was derived
+once, and how a correction to that field is made again.
+
+The table is read a second time on the way *out*, by `subjects.py`, as
+`site/subject.md` — see [the subject index](#the-subject-index).
+
+## The title table
+
+**The hymnal prints no title over a hymn.** A page carries the subject as a
+running head, the meter, the number, the credits and the music — look at
+`scan/en/21.png`, which is hymn 8, and there is nothing else on it. The book's
+own back-matter index is headed *Index of First Lines and Choruses*, and says
+under that heading: "first lines are in lower case type; choruses in small
+caps". That is the book stating its convention — a hymn is known by the line it
+opens with, and by the chorus it is sung to.
+
+The one place it names each hymn once is the **subject index**: 764 entries in
+the main index (`en/004`–`en/015`) and 45 more in the supplement's own
+(`en/920`–`en/922`), all set in one lower-case face with nothing to mark which
+are names and which are opening lines. Counted against the line each hymn
+opens with:
+
+| | |
+|---|---|
+| the same line | 373 — 49% |
+| the index cuts that line short to fit its column | 148 — 19% |
+| **another name altogether** | **243 — 32%** |
+
+That third is the tune (`Abba` 19, `Higher ground` 395, `Spirit song` 181 —
+all three appear verbatim in the Alphabetical Index of Tunes), the chorus
+(`Up from the grave He arose` 101), or simply what the hymn is called
+(`How great Thou art` 8, `Leaning on the Everlasting Arms` 338).
+
+```
+number  en
+8       How great Thou art
+```
+
+778 rows: 764 − 31 scripture portions, plus 45 from the supplement. **The
+scripture portions, 734–764, have no name** — the index gives them a verse
+reference (`103:1`), and the reference is already in the category. And the
+table is **English**: the 主題目錄 lists bare numbers and the 首句索引 lists
+eight-character first lines, so no Chinese index names a hymn at all.
+
+**How the text was got, and why it is not OCR.** The index was read for *which
+line* each hymn is named by; the words come from `data/`, already proofread.
+Of the 778 named hymns, 720 match a span of their own hymn's English text
+closely enough to take that span verbatim — and because the span is matched
+against the printed extent, the book's truncations survive (`Behold, what love`
+stays short of `what boundless love`). The other 58 name something not in the
+lyrics, or the OCR mangled a word; each of those was read off the rendered page
+by eye. Where the index and the hymn page disagree on a word — `O God and
+Father` against the page's `O God our Father` — the page wins, as it does
+everywhere else here. Read the other way, that disagreement is a way of finding
+dropped words: hymn 365 was indexed *Love Divine, all loves excelling* and had
+*all love excelling* in `data/`, and its page (`scan/en/397.png`) prints
+`loves`.
+
+`pixi run apply-titles` writes the name into every `data/N.md`, and removes it
+from a hymn the table no longer names, so deleting a row is as complete as
+adding one. `pixi run check-titles` reports the same without writing.
+
+`slides.title()` fills the title in **per language**: the book's English name
+where there is one, the first line where there is not, and the Chinese first
+line always. So hymn 8's deck, page and index entry all read *How great Thou
+art* beside *當我思念，我主，你創造大工*.
+
+**What this cost.** It also confirmed [D6](PLAN.md) from a second direction:
+the supplement's subject index lists 45 of the 48 supplement hymns our `data/`
+gives English text to, and the three it omits are 779, 789 and 840 — exactly
+the three the book's own *Hymns Available In Chinese But Not In English* page
+names, and exactly the three PLAN.md says carry English the book does not
+print.
+
+## The tune table
+
+**The hymnal does not print the tune over the hymn either.** Look at
+`scan/en/159.png`, which is hymn 146: the subject, the meter `8. 6. 8. 6.`, the
+number, and — because this one hymn is printed to two settings — the words
+*First tune*. It does not name either tune. The names are in the back matter,
+and they are there **twice**:
+
+- *Alphabetical Index of Tunes*, `en/895`–`en/898`: tune, then the hymns set to
+  it.
+- *Metrical Index of Tunes*, `en/899`–`en/904`: meter, then tune, then the same
+  hymns.
+
+```
+hymn    tune
+146     Azmon
+146     Lyngham
+```
+
+765 rows: one per (hymn, tune) pair, covering hymns 1–764 — the English
+edition's own extent, with the supplement and the 39 Chinese-only hymns having
+no tune because neither index reaches them. 625 distinct tunes. One hymn, 146,
+carries two, in the order the indexes number them, `Azmon (1)` and
+`Lyngham (2)`, which is the *First tune* and *Second tune* its page prints; the
+field is a name or an ordered list of names, and never localized, because the
+Chinese edition names no tune at all.
+
+**Two printings of one relation is what makes the table trustworthy.** Each
+index was parsed on its own — three narrow columns per page, so the column has
+to be decided line by line from the bounding boxes, and rows clustered on the
+vertical centre rather than the top — and the two were then required to agree
+exactly, hymn for hymn and letter for letter:
+
+| | |
+|---|---|
+| both indexes give the same name | 632 hymns |
+| the two scans disagree; the printed page settles it | 132 hymns |
+| **left unresolved** | **none** |
+
+Every one of those 132 turned out to be the *scan* misreading a name the two
+indexes in fact print alike — `Ononville` for `Ortonville`, `Hennas` for
+`Hermas`, a nought for the `O` of `O Perfect Love`, a full stop for the comma
+of `Courage, Brother`. Not one was a real disagreement between the two printed
+indexes. What comes out is a relation covering exactly hymns 1 to 764 with no
+hymn missing and none past the end — a shape neither index states and neither
+could have been rigged to produce.
+
+`pixi run apply-tunes` writes the tune into every `data/N.md` and removes it
+from a hymn the table no longer names; `pixi run check-tunes` reports the same
+without writing. The tune is then shown on the hymn page beside the meter,
+which is where a hymnal reader looks for it: the two together are what say
+whether one text can be sung to another's music. It is not on a slide, for the
+same reason the meter is not.
+
+**What this paid for.** The metrical index also files each hymn under a meter,
+so it is a second opinion on the meter `data/N.md` already carries. 733 of the
+764 agreed; the other 31 were read off both editions' pages and settled, and
+759 now agree. That is [D13](PLAN.md), and it closed D1 as well: every hymn in
+the collection carries a meter.
+
+## The subject index
+
+`site/subject.md` is the third projection of `data/`, and the only one that is
+about the collection rather than about one hymn: the outline the hymnal is
+arranged by, eighteen sections deep in places, with every hymn a number under
+the subject it is filed in. It needs both sources and neither alone — a hymn
+knows its own subject but not where that subject comes in the book, and the
+table knows the order but not which hymns are under it.
+
+It is generated by `md-to-site` beside the decks and the pages, ignored by git
+like them, and reachable from the navbar. Every heading carries its numbering
+as its identifier (`#subject-1-2-1`), because two subjects under one heading are
+named the same often enough — the Father's Love and the Son's — that an
+identifier made of the words would collide.
+
+Each hymn is its number and what it is called, set in columns as the book's
+index is: the book's own name for it, from [the title
+table](#the-title-table), and its opening line where the book names it not at
+all. The name is English and the Chinese beside it is always the first line,
+because no Chinese index names a hymn.
+
+Two ways it is honestly less than the book, and the page says both:
+
+- The hymnal **orders** the hymns under a subject by that name; this orders
+  them by number, which is what the collection can be ordered by without
+  reading the index again.
+- The hymnal **cross-lists** a few hymns under a second subject — 13 is under
+  both *His Love* and *His Sonship* — and a single-valued `category` cannot
+  hold that. Each hymn appears once, under the subject its own page prints.
+
+### The strip of sections, and the third source that checks it
+
+The eighteen top headings are offered as a strip to jump by, and each carries
+the hymns it covers — `V. The Church Life 教會生活 220–280, 779–789`. The
+numbers are **computed** from the hymns filed below, not stored, so the strip
+cannot come to disagree with the entries it sits above.
+
+That computation is worth stating because the book prints the same fact in a
+third place, and it agrees. Both editions open with a table of contents —
+`en/002` *TABLE OF CONTENTS*, `zh/002` 分類目錄 — which is the eighteen
+sections against the hymns filed under each, and nothing else. Neither page
+was used to build anything here; both were read afterwards, against a
+computation already made. All eighteen agree, in both editions, for all 848
+hymns. Two sections are expanded into their subheadings on both pages — I into
+its three and V into its six — and those nine agree too.
+
+That is a real check and not a tautology. The categories came from the two
+**subject** indexes, and the level‑1 assignment of the 84 supplement hymns in
+particular rested on the Chinese one alone; the contents page states it
+independently, and states it as ranges, so a hymn filed one section out would
+show as a range that does not close. The English contents page prints only the
+main body, `1`–`764`, which is the English edition's extent; the Chinese one
+prints both runs and is what the supplement halves were checked against.
+
+Two things the reading found, neither of which changes anything here:
+
+- **The Chinese contents page loses its eighteenth heading.** It prints the
+  range `734-764` against an empty name. The English page prints `XVIII. Psalms
+  and Scripture Portions`; the Chinese subject index prints the subject too.
+  The omission is the book's, on that page only.
+- **One subject was named differently here from anywhere in the book.** The
+  Chinese contents page, the Chinese subject index and hymns 279 and 280's own
+  pages all call V.6 神的醫治; `data/` called it 醫病, which is printed nowhere
+  and came from the publisher's YAML. That is not a disagreement between two
+  printed sources, and chasing it down opened [D17](PLAN.md) — the Chinese half
+  of `data/` was in a different orthography from the book's throughout. It is
+  now corrected, and V.6 is 神的醫治.
+
+The contents page's own punctuation is not kept. Both editions separate the two
+runs with a full stop — `220-280. 779-789` — which reads as a decimal point
+beside figures; the strip uses a comma and an en dash. The numbers are the
+book's.
+
+## The index of tunes
+
+`site/tune.md` is the fourth projection, and the second about the collection
+rather than about one hymn: every tune the English edition names, and the hymns
+set to it. Unlike the subject index it needs no table on the way out — once
+`apply-tunes` has run, each hymn carries its own tune, and the page is the
+collection inverted.
+
+**The order is the hymnal's, and it is not plain alphabetical.** The book files
+a name word by word, so `A Friend` precedes `Abba` and `Alford` precedes `All
+for Jesus`; it expands a leading `St.` to the word it stands for, so `St.
+Thomas` sits between `Sagina` and `Sandon`; and it lets a comma or an
+apostrophe sort before a letter, so `Behold What Manner of Love` precedes
+`Behold, What Love` and `I Will Guide Thee` precedes `I'd Rather Have Jesus`.
+Sorting the 625 names by that rule reproduces the book's printed sequence
+exactly but for two entries, where the book's own index disagrees with itself
+(`Come, Let us Anew` is filed as though the comma were not there, and `Let the
+Beauty of Jesus Seen in Me` is simply out of order).
+
+The metrical index is the same relation grouped the other way, and the book
+prints both. It is the next section.
+
+## The credits table
+
+`data/authors.tsv` is who wrote the words and who wrote the music: 764 rows,
+one per hymn the English edition indexes, 704 authors and 708 composers, and
+747 hymns that gain at least one name where `data/` carried four. It is read
+out of the *Index of Authors and Composers*, `en/879`–`en/894`, and — on the
+songs that carry their credit over the hymn as well — corrected against that.
+
+**The index was built as the one table with no second source.** The categories
+could be checked against the table of contents, the titles against the index of
+first lines, the tunes against a *second* printed index listing the same
+relation — 632 hymns got the same name from both outright, and that agreement
+is what made `data/tunes.tsv` trustworthy. The index of authors is printed
+once. Nothing else in the book says who wrote hymn 393, so the verification had
+to be built:
+
+- **The structure is machine-derived, not read.** `en/879.txt` extracts as a
+  bare list of hymn numbers with both text columns dropped, and two other pages
+  do the same. The `.json` beside it carries every line's x and y, which say
+  which column a line is in and which row it is on. Parsing that recovered 764
+  rows, 1 to 764, with no gaps and no duplicates.
+- **The numbering is positional.** Five printed numbers are corrupt — `IOI`,
+  `Ill`, `I 16`, `I 17`, `31 I` — so each page's first hymn is decided by a
+  vote among its legible ones and a corrupt one is outvoted rather than
+  believed. Every page's start then landed on the previous page's end plus one
+  without being told to, which is sixteen independent agreements.
+- **The characters were read off the page images**, a reader per page, against
+  the parsed rows rather than from scratch. That is what caught `Gennan` for
+  German, `Heam` for Hearn, `Coilectio11` for Collection, `Tourjee` for
+  Tourjée, and O read as zero throughout.
+- **A one-off spelling near a recurring one was looked at by eye.** Of 509
+  names appearing exactly once, five are a letter from a name appearing twice
+  or more. Four are the book's own inconsistencies, kept as printed: `G. C.
+  Martin` beside `W. C. Martin`, `Williams G. Tomer` beside `William G.
+  Tomer`, `E. Mary Grimes` beside `E. May Grimes`, and `Thomas D. Chisholm`
+  beside `Thomas O. Chisholm`. The fifth was a misreading and was fixed.
+
+**One reader earned the whole exercise.** The page-881 reader reported the
+composer column shifted a row against the page. It had: this parser matched a
+cell to the *first* row within tolerance rather than the *nearest*, with a
+tolerance of 4 against a row pitch of 8.5, so a cell that fell between two rows
+went to the upper one. Fixing it moved nine cells across four more pages, and
+the readers of two of those pages confirmed the correction independently
+without being told what it was.
+
+**Two marks of the book's own.** A blank cell is not a gap in the reading — the
+index heads itself *(Blanks indicate untraceable sources)*, so a blank is the
+book saying it could not trace one, and 17 hymns have neither name. And `†`
+stands where an author would be on 34 hymns; its legend is printed once, under
+the table on the last page, and reads *(† indicates compiler)*. The table keeps
+the page's mark. A hymn file gets the word `compiler` instead, because a dagger
+belongs to no writing system and `auto-lang` has nothing to tag it as — the
+same problem [the meter has](#why-the-meter-names-its-languages-and-nothing-else-does),
+except that here the book supplies the wording itself: hymn 473's author is
+printed `vv.2-5, compiler`.
+
+### The second printing, and the three shapes it comes in
+
+**A second source did turn up, on the songs under copyright.** The English
+preface says the names are in the back "except for copyright-bearing songs" —
+and those pages carry the credit themselves, above the first staff. It covers
+71 cells of the 605 hymns that begin their own page, so it is a check and not a
+census, but it is a real one.
+
+**It does not have the index's shape.** Reading the pages the two printings
+disagree on finds three layouts:
+
+| layout | left margin | right margin | hymns |
+| --- | --- | --- | --- |
+| split | the author | the composer | 144, 286, 363, 378, 430, 439, 492 |
+| joint | *empty* | the whole credit | 11, 54, 118, 128, 216, 234, 266 |
+| joint, stacked | *empty* | two names, one per line | 219, 505 |
+
+So the right margin means the composer on a split page and the whole credit on
+a joint one, and **position alone does not say which**. The index, having two
+columns to fill, resolves a joint credit by writing it into both — 110 rows
+carry the same name twice — and `data/authors.tsv` keeps that convention,
+because it is the book's own and because the alternative is a third
+representation for a hundred hymns.
+
+**Which is also how the first reading of these pages went wrong.** The
+heuristic that found the disagreement took *the bottom line on each margin*,
+which is right for a split page and silently halves a stacked one: it reported
+`Tommy Coomes` for 219 and lost `Morris Chapman`, reported `Randy Rigby` for
+505 and lost `Danny Daniels`, and on 144 read `Jennie Hussey` off a page that
+prints `Jennie E. Hussey`. Reading the eleven page images settled all three.
+The lesson is the general one — a coordinate heuristic over a text layer finds
+candidates, and only a page settles them.
+
+**Where they disagree, the fuller printing wins.** Ten rows keep the index's
+name because it spells out what the page abbreviates (`Alfred H. Ackley` for
+`A. H. Ackley`, `Graham Kendrick and Chris Rolinson` where the page prints only
+Kendrick); five take the page's for the same reason (`Frederick M. Lehman`,
+`Jack W. Hayford`, `Debby Kerner Rettino`, `Danny Daniels and Randy Rigby`, and
+hymn 54's `Naida Hearn`, where the index's `Nalda` is a misprint). Hymn 439
+takes the page on both cells: the page prints `Thomas O. Chisholm` where the
+index prints `Thomas D.` and contradicts itself at hymn 397, and its own
+copyright line repeats the `C. Harold Lowden` it credits.
+
+**On three the two printings name different people, and there the table says
+so.** A fourth column carries a note, and it is the one cell in `data/` that is
+not read off a page:
+
+| hymn | the page | the index | `data/` |
+| --- | --- | --- | --- |
+| 266 | `Dale Garratt` | `Michael Ryan` | both, page first |
+| 430 | `George Stebbins` | `I. H. Meredith` | both, page first |
+| 378 | `W. H. Hammontree` | `Homer Hammontree` | the index's, as the fuller name |
+
+Combining asserts a co-authorship that is probably false — one printing is
+simply wrong, and nothing in the book says which — so the note is what makes
+the row honest rather than a decoration on it. It reaches the hymn as
+`credit-note`, beside the credit and not inside it, so the front matter still
+answers "who wrote this" in the field that question is asked of. It is shown on
+the hymn page under the note and on the deck's title slide, italic in both
+places, because it is the only line in either heading that the hymnal does not
+print.
+
+**The comparison is a floor, and a measured one.** It ran over the 605 hymns of
+1–764 that begin their own page, so it never looked at the 159 that begin below
+another hymn, nor at the supplement, nor at about thirty cells it discarded as
+speckle. Sampling the first of those — the 20 shared-page hymns whose index row
+is a joint credit, which is the signature of a page that prints one — found ten
+printing a credit, of which seven agree and three do not (hymns 19, 64 and
+329). So the unexamined pages are unexamined, not clean.
+
+**Scope, stated rather than hidden.** The index covers hymns 1 to 764. The
+English back matter's supplement has a table of contents, a first-lines index,
+a subject index and the list of Chinese-only hymns, and no authors — so the 84
+supplement hymns have no credits, and `apply-authors` removes any they somehow
+acquired. The names are English-only: the Chinese edition credits nobody.
+
+`pixi run apply-authors` writes both names and any note into every
+`data/N.md`; `pixi run check-authors` reports the same without writing. Both
+names are shown on the hymn page at the end of the meta line, each marked with
+the character a Chinese hymnal heads that credit with — 曲 for the music, 詞 for
+the words — because two personal names side by side are the first pair on that
+line a reader could not tell apart from the text alone. A deck's title slide
+shows the author alone; the composer is carried in its front matter and left
+untemplated, on the grounds that nobody sings a tune by knowing who wrote it.
+
+## The metrical index
+
+`site/metrical.md` is the fifth projection: meter, then tune, then the hymns
+set to that tune. It is what a metrical index is consulted for — that 46 and
+607 are the same tune, and that a text in `6.5.6.5.D.` can be sung to any of
+the seven filed under it. Like the index of tunes it needs no table: both
+levels are already fields on the hymn, `meter` from [D1 and D13](PLAN.md) and
+`tune` from `data/tunes.tsv`, so there is no third copy of either fact to keep
+true. It was blocked until D13 settled the 30 hymns of the 764 that did not
+agree with the book about their meter.
+
+**The order is the hymnal's, and it is neither numeric nor alphabetical.** A
+meter is filed by its figures read as a *sequence*: `10.` after `9.`, not
+between `1.` and `2.`, and a shorter run before the run that extends it, so
+`10.10.` precedes `10.10.9.6. with Chorus`. Where the figures are the same the
+book prints the plain form, then the one marked `(A)` or `(I)`, then `with
+Repeat`, then `with Chorus` — and the doubled form, with that same run of
+qualifiers under it, after all of them. `Irregular Meter` goes last, as the
+book's `Irregular Meters` does.
+
+**That rule was checked against the book.** The printed index's 212 headings
+were read out of `en/899`–`en/904` in the order they appear, normalised to the
+notation `data/N.md` writes, and sorted by this key: all 212 came back in the
+printed sequence, none out of place. A meter the key cannot parse raises
+rather than sorting somewhere arbitrary.
+
+**Three ways it is more than the printed index**, each said on the page itself:
+
+- **It covers all 848 hymns.** The book's stops at 764, because the tune
+  indexes it is drawn from do. Every hymn now carries a meter (D1), so the 84
+  supplement hymns file under theirs with the word *supplement* where a tune
+  name would be — which is still the fact the page is consulted for.
+- **Eighteen hymns file under a count rather than under a refusal to count.**
+  The English edition files 111 under `Irregular Meters`; on eighteen of them
+  the Chinese page prints figures, and D13 made those figures the meter. 93
+  hymns are left under `Irregular Meter` here.
+- **The heading carries both editions.** The printed index is English. A meter
+  is the one field whose two halves this collection names separately, so
+  `7.6.7.6.D. with chorus` heads its section beside `7.6.7.6.D. 和`, as the
+  hymn page shows them. Grouping is by the English half, which determines the
+  Chinese one everywhere but `Irregular Meter` — whose three Chinese forms
+  (`特`, `特.和`, `特.重`) differ by a qualifier belonging to the hymn rather
+  than to the heading, so the heading says `特`.
+
+**One thing on the page is not in `data/`.** The book annotates three headings
+with the names English hymnody knows them by — `(Short Meter)`,
+`(Common Meter)`, `(Long Meter)`. Those are a property of the figures, not of
+any hymn, so `meterindex.py` writes them rather than `data/` storing them 62
+times over.
+
 ## The site
 
 `site/` is a Quarto project. `site/slide/*.md` and `site/hymn/*.md` are written
@@ -109,6 +879,10 @@ flowchart TD
   idx["index.md<br/>written, in git"]
 
   subgraph gen["written by md-to-site"]
+    prf["preface.md<br/>the two editions' front matter"]
+    sub["subject.md<br/>the book's outline"]
+    tun["tune.md<br/>the index of tunes"]
+    met["metrical.md<br/>the metrical index"]
     chr["chorus.md<br/>developer mode"]
     dck["slide/N.md × 848"]
     pge["hymn/N.md × 848"]
@@ -127,6 +901,10 @@ flowchart TD
   end
 
   idx --> fmt_html
+  prf --> fmt_html
+  sub --> fmt_html
+  tun --> fmt_html
+  met --> fmt_html
   chr --> fmt_html
   pge --> fmt_html
   dck --> fmt_reveal
@@ -211,6 +989,9 @@ A half-remembered line therefore finds the hymn *and* opens at the stanza that
 sings it, and the results group by hymn with the other matching stanzas behind
 "more matches in this document".
 
+The subject index is in the index too, one entry per section, so a subject can
+be searched for by name in either language.
+
 Two documents opt out with `search: false`. The chorus report is developer-only
 rather than part of the site's discovery surface. Every `hymn/N.md` opts out
 because it holds the same words as the deck beside it: indexing it would double
@@ -221,6 +1002,60 @@ landing page, or the link on the deck's own page — not the search box.
 This is why the html format has a theme rather than `theme: none`: without one
 there is no navbar to put the box in, and Quarto finds nothing it recognizes as
 content on the two pages, so neither would be in the index.
+
+### Folding the orthography, which is ours
+
+`site/search-fold.html` is the exception to "none of this is ours". `data/` is
+in the hymnal's own typesetting — 着 not 著, 裏 not 裡, 爲 not 為 — because a
+lyric is a quotation and the page decides how it is spelled. **2,698 of the
+6,906 entries carry at least one of these characters**, and none of them is
+what a modern IME produces: without the fold, a reader searching for 裡面 or
+教會 is told the hymnal does not contain them.
+
+Both ends of the search go through one object — fuse.js is handed each indexed
+document by `add` and each query by `search` — so the include patches those two
+methods and folds both into the form `data/` carries. Folding **both** is what
+makes it symmetric, and it is not redundant: the eleven places the site does
+print the other form would otherwise become unreachable. The Chinese preface is
+a modern publisher's note and prints 為; hymn 458's 更顯著 is *zhù* rather than
+the particle; 814 and 817 keep the 彀 their pages print where the other hymns
+under that subject print 夠. Folded on both sides, each of those is found by
+either spelling.
+
+There are **two tables**, and the difference between them is the whole point.
+
+`VARIANTS` is eight orthographic pairs — two shapes of one character — seven
+pointing at the older shape and 彀 → 夠 pointing the other way, because there
+the book's own dominant form is the modern one. PLAN.md's D18 says where each
+was read off a page image.
+
+`PRONOUNS` folds the four ways the hymnal writes *nǐ*: 你 neutral, 妳 feminine,
+祢 reserved for God, and 袮 a second shape of 祢. This is **not** an
+orthographic pair, and that is why it needs a table of its own. Which one a
+line takes is a reading of who is being addressed — Psalm 45's "O daughter" in
+hymn 109 and the Church addressed as herself in 105 are correctly 妳 — so
+`data/` may not fold them, and D17 still owes the collection a pass over 你/祢.
+A search is under no such obligation: nobody recalls a line by its pronoun, and
+all four are one word said to a different hearer. They fold to 你, the
+undifferentiated one.
+
+That asymmetry is the licence the whole include runs on. **The fold may be more
+lenient than `data/` is**, because a search result is an offer of candidates and
+not an assertion about the page: a reader who cannot remember which shape a line
+was set in should be handed both and left to pick.
+
+What this does *not* touch is `data/` or any rendered page, which keep the
+book's spelling exactly. The one visible effect beyond finding more is that a
+result's snippet shows the folded form — **19 characters in 12 of the 6,906
+entries**. `tests/test_search_fold.py` reads both tables back out of the file;
+it checks `VARIANTS` against `data/`, so a pair that stops being true of the
+collection — D17 rewrote its orthography once already, and D18 leaves a sweep
+of the lyrics open — fails there rather than quietly searching for a character
+that is no longer present. It checks `PRONOUNS` only for shape: no count in
+`data/` can confirm or refute a claim about what readers remember, and once
+D17's pass lands and 祢 becomes common, checking it against `data/` would fail
+for the wrong reason. What *would* deserve revisiting then is what a snippet
+displays; what it finds will still be right, because both ends are folded.
 
 ### Parallel rendering
 
@@ -236,8 +1071,8 @@ and its page go to the same worker: they are two renders of one hymn, and a
 worker's share is then one contiguous idea rather than two partitions that
 could disagree. After all workers succeed, it combines the disjoint output,
 verifies shared assets are identical, and merges their per-slide search
-entries. Worker 1 also builds the landing page and developer-only chorus
-report. Nothing partial replaces `site/_site` until every worker and the merge
+entries. Worker 1 also builds the landing page, the preface, the subject,
+tune and metrical indexes, and the developer-only chorus report. Nothing partial replaces `site/_site` until every worker and the merge
 have succeeded.
 
 `scan/` is not in the copies. It is 45 MB of PNG, and inside the project each
@@ -264,7 +1099,9 @@ flowchart LR
   projection --> chorus["chorus.md<br/>developer mode"]
   slides --> split{{"round-robin split<br/>by hymn"}}
   pages --> split
+  projection --> preface["preface.md"]
   index["index.md"] --> w1
+  preface --> w1
   chorus --> w1
   split --> w1["isolated worker 1"]
   split --> w2["isolated worker 2"]
@@ -345,14 +1182,204 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   in the headless browser Quarto installs, fails on one whose lyrics overflow
   or whose fitting never ran, and reports the decks whose type ended up small
   enough to want a second look at how the stanza was divided.
+- `scripts/apply_categories.py --check` (`pixi run check-categories`) fails if
+  any hymn's category has drifted from `data/categories.tsv`, so an edit to one
+  without the other cannot be committed unnoticed. Reading the table at all
+  checks its numbering, so a subject inserted without renumbering fails here
+  and in every build.
+- `scripts/apply_titles.py --check` (`pixi run check-titles`) does the same for
+  `data/titles.tsv`, and also fails if a row names a hymn that is not there.
+- `scripts/apply_tunes.py --check` (`pixi run check-tunes`) does the same for
+  `data/tunes.tsv`.
+- `scripts/apply_authors.py --check` (`pixi run check-authors`) does the same
+  for `data/authors.tsv`.
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
+- `scripts/check_notes.py` (`pixi run check-notes`) reads the hymnal's own
+  prose about a hymn back against the hymn. This one **is** a gate: nothing in
+  `data/` fails it, and every rule in it was broken somewhere before the two
+  kinds of prose were told apart.
+
+  **A direction is front matter and a gloss is in the line.** A direction
+  governs the singing — which lines to repeat, which stanza leaves the chorus
+  out, which stanzas the other edition has not, why no music is printed — and
+  the page sets it apart from the stanza, so `data/` carries it under `note`,
+  which is a list because a hymn can print more than one. A gloss is a word
+  about a word — `Meaning, married ( Isa, 62:4).` under 324, `(第一節“眞”指基
+  督)` under 768 — and the page anchors it to that word, so it stays in the
+  lyric line as `^[...]`, where the report strips it before counting and the
+  page shows it under the stanza.
+
+  What is checked: a gloss that reads as a direction; a gloss quoting a word
+  its own line does not hold; a gloss naming a stanza other than the one it
+  sits in; a note saying what the English edition lacks that `data/`
+  contradicts; a note counting the Chinese stanzas wrongly; a note leaving the
+  chorus out that `chorus-omitted` does not match, stanza for stanza; and a hymn both
+  told to repeat its last line and printing the repeat already. That last one
+  is the shape 274 had before D7 read its page, and it compares with the
+  closing punctuation folded away: 82 writes its last line twice in every
+  stanza and closes the first copy with a comma and the second with an
+  exclamation mark, and matching exactly would miss five of its eight
+  stanza-halves. See [D21](PLAN.md) for what else that measurement showed.
+
+- `scripts/check_punctuation.py` (`pixi run check-punctuation`) reads each
+  lyric line against the marks its own edition sets. Also a gate; `--kinds`
+  counts the findings by kind instead of listing them. Punctuation is not sung,
+  so nothing that counts syllables can see it, and it survived every check
+  built before this one.
+
+  **Each edition has its own alphabet.** A Chinese lyric line holds Han and
+  `，。、；：！？“”（）——…`; an English one holds Latin and
+  `,.;:!?-—()[]“”’`, with a space. Everything `data/` had wrong fell out of
+  that: a halfwidth `,` among 15,642 `，`, 173 apostrophes typed `'` or `‘`,
+  112 corner brackets in hymns no page sets them in, 87 fullwidth hyphens for
+  the dash, 98 ideographic spaces padding a line out to a printed column.
+
+  **Do not normalise the English toward ASCII.** Storing `'tis` and letting
+  Pandoc curl it prints `‘tis`, because `smart` reads a leading `'` as an
+  opening quote and the mark is an elision. `PANDOC_MARKDOWN` disables `smart`
+  for exactly this reason, so the normalisation runs the other way.
+
+  **Two marks are in the alphabet for one line each, and each names its page.**
+  418 ends `不知如何方能重新…`, and `zh/439` prints the three dots. 797 sets
+  `Thy way – Thy chosen way,` with a spaced en dash, and `en/847` prints it --
+  the later material, 765-848, is typeset in a modern face with its own
+  conventions, where the rest of the collection sets an unspaced em dash.
+
+  **The line-boundary rule is the one the re-lineations were done under**, and
+  nothing stated it until now: a closing mark stays with the line it closes and
+  an opening mark goes with the line it opens. The dash counts as closing,
+  because it breaks off from what precedes it and the pages set it there. Three
+  Chinese lines began with `”` and five with `——`.
+
+  **Quotation marks pair strictly in Chinese and loosely in English**, because
+  English sets a speech running over several stanzas by opening each of them
+  and closing only the last, which 345 does. So the English rule is only that a
+  quotation is never closed before it is opened -- which found three lines that
+  had opened one with `”` -- while the Chinese counts have to match, which
+  found 720's unclosed quotation and through it the whole corner-bracket class.
+
+- `scripts/check_repeats.py` (`pixi run check-repeats`) holds the hymnal's
+  three statements of a repeat against one another. Also a gate; `--kinds`
+  counts by kind.
+
+  **The book says *sing this again* three ways and relates none of them.** It
+  writes the lines out a second time; it prints a direction under the last
+  stanza, *Repeat the last line of each stanza* / `每節重唱最後一行`; or it
+  marks the meter, `重` and `with repeat`, and leaves the shape to the music.
+  Only the first is in `data/` in a form anything can act on, which is why a
+  deck used to print the sentence on its title slide and then show each stanza
+  once. `repeat` in the front matter is the other two written down: which of
+  the stanza's lines are sung again, in the order they are sung, and in which
+  stanzas. `slides.py` sings it; `pages.py` leaves the book's shape alone.
+
+  **A repeat is not always a tail, and not always the tune's whole point.**
+  `en/71` sets hymn 57's `8.6.8.6. with repeat` as the fourth line twice and
+  then the third and fourth again — the same four lines hymn 678 writes out as
+  `1-chorus` under the same meter. So `lines` is a sequence of the stanza's own
+  line numbers rather than a count of trailing ones, and 54's is the whole
+  stanza, which `en/69` prints as an *Optional Repeat* and the English meter
+  records as the `D.` of `7.8.7.8.D.` over four written lines.
+
+  **It is not localized.** Every stanza of every hymn that carries a repeat has
+  the same number of lines in both editions. 242 looks like the counter-example
+  — `en/266` prints *Repeat the last four lines* and `zh/258` prints
+  `第四節末兩行重唱一遍` — and is not: the Chinese pages set their stanzas in
+  two columns, so two of those rows are four of these lines, and both pages
+  print the direction under the fourth stanza and mean that stanza alone. It is
+  also why the check reads the English half of a direction and not the Chinese:
+  an English row is one line.
+
+  What is checked: a meter marked `重` with no repeat anywhere; a note ordering
+  one with no repeat anywhere; a repeat both written down and written out,
+  which would sing it twice over; a repeat nothing asks for; and, on twenty of
+  the twenty-eight, the number of lines the English direction names against the
+  number the field holds. A repeat naming a line or a stanza the hymn has not
+  is refused by the model before the check runs.
+
+  **What accounts for a repeat that is not written down** is
+  `notes.writes_the_repeat_out` — a tail of a stanza sung again, punctuation
+  folded — plus four hymns named in `WRITES_IT_OUT` with their reasons, because
+  those four write it somewhere no rule over the text could find. 534 sets
+  `Or on this earthly ball, Or on this earthly ball.` on one line and 321 sets
+  `Full salvation! Full salvation!` on one line, and only one of them is a
+  repeat. And 355's `回頭再唱正歌一遍` is named rather than held: a *da capo*
+  sends the singer back through the whole verse after the chorus, which is not
+  a tail of a stanza sung where the stanza ends.
+
+- `scripts/check_meters.py` (`pixi run meter-report`) counts the syllables of
+  every Chinese lyric line against the meter printed over the hymn. A meter is
+  a syllable count and Chinese is one syllable to the character, so this is not
+  a heuristic. It is still a report and not a gate -- `--strict` makes it one --
+  because 64 hymns disagree.
+
+  **The meter it counts against is the Chinese page's.** A hymn may state two,
+  and they need not state the same lengths: 45's English page prints
+  `13. 13. 13. 14. with chorus` where its Chinese page prints `8.5.8.5.雙.和`,
+  and only the second describes the Chinese lyrics. The Chinese edition also
+  writes its own marks -- `雙` for `D.`, `重` for `with repeat`, `和` for
+  `with chorus`, `特` for `Irregular Meter` -- and `printed()` reads them.
+
+  **A verse and a meter can disagree in two ways, and the report keeps them
+  apart**, because only one of them is about the text. They can hold different
+  syllables, which means a character has gone missing or the meter was
+  mistyped. Or they can hold the same syllables and cut them into different
+  lines, which is usually neither party's mistake: a meter names the lines of
+  the *tune*, a page prints the lines of the *stanza*, and where the tune's
+  lines are short the page prints two of them to a row. The hymnal does this
+  both ways -- 617's page states `7.6.7.6.雙` over rows of thirteen characters
+  and 137's states `13.13.13.13.` over exactly the same shape -- so a meter
+  that joins or splits the lyrics' lines at boundaries both agree on is
+  reported as that and not as a missing syllable. 56 of the 64 are this. The
+  sharpest finding is the third kind: the verse holds what the meter asks and
+  cuts it somewhere it cannot be sung, which means one of the two readings of
+  that verse is wrong and the other verses say which.
+
+  **What is not counted.** Punctuation, which is not sung. A stanza with no
+  Chinese at all, which is a verse the Chinese edition does not have rather
+  than one that lost its syllables -- 789, 813 and 840 print more English
+  stanzas than Chinese ones, and 840's English page says so. The repeat a
+  `重` asks for, which states its lengths once however many times a verse
+  writes them out -- and each verse of one hymn may take a different one of
+  the runs the repeat allows, because 274 writes its repeat out under the music
+  and leaves it to the singer in the verses printed as text. Which tail the
+  mark means is not in the mark, so where the hymn carries no `repeat` every
+  tail is admitted and the verses choose; where it does, that one run is
+  offered and the guessing stops. A gloss, the hymnal's word about a word
+  printed at the foot of the page rather than words sung in the verse. And the
+  speaker a responsive chorus names before its line, `（姊妹）` / `（弟兄）` /
+  `（全體）`, which 491, 532, 533 and 761 print and nobody sings.
+
+  The metrical index confirms many of these meters independently, which still
+  does not by itself convict the lyrics: 329's two editions agree with each
+  other and with neither, because a meter describes the *tune* and a
+  translation may sit a syllable differently on it. Four hymns are reported
+  for exactly that and always will be -- 48, 112, 329, 799. So is 393, whose
+  eighth stanza prints its last line twice on both pages where its other seven
+  print it once. See [PLAN.md](PLAN.md).
+
+  Two counts have no meter to check against and are checked anyway. Where the
+  hymnal prints `Irregular Meter` it names no lengths, but the verses can still
+  be counted against each other, which is the only check the 93 irregular hymns
+  can have -- 11 of them fail it. And a hymn that writes a chorus out under
+  every stanza sings all of them to one strain, so their lines have to agree
+  even where the words do not; nothing else in the collection would catch a
+  syllable lost from a chorus. `--shape` prints the counts themselves, hymn by
+  hymn and stanza by stanza. None of them is written into `data/N.md`: the
+  meter there is what the book prints, and a derived one beside it would be a
+  second thing to keep true.
 
 `pixi run test` is the unit suite: `tests/test_conversion.py` covers the
 lossless codec, `tests/test_slides.py` the slide projection, `tests/test_pages.py`
 the page projection — including the ways it deliberately differs from the deck —
-`tests/test_scans.py` the segmentation CSVs and the staging of their images, and
+`tests/test_scans.py` the segmentation CSVs and the staging of their images,
+`tests/test_categories.py` the subject table and the step that applies it,
+`tests/test_subjects.py` the subject index built from it,
+`tests/test_titles.py` the title table and the step that applies it,
+`tests/test_meters.py` the syllable check, `tests/test_notes.py` the check on
+the hymnal's own prose, `tests/test_punctuation.py` the check on its marks,
+`tests/test_repeats.py` the check on what it sings twice, and
 `tests/test_build_site.py` the partitioning and merge.
 
 The hymn pages have no equivalent of `check-slides`. A deck can fail invisibly,
@@ -362,23 +1389,38 @@ such failure to hunt for.
 ## Tasks
 
 ```
-yaml-to-md     Render the canonical YAML collection as data/N.md
-md-to-yaml     Rebuild the canonical YAML from data/N.md
-md-to-site     Project data/N.md as the slide and page Markdown, and the report
-build          Regenerate the projections and render every deck and page in parallel
-build-serial   Regenerate the projections and render in one Quarto process
-serve          Preview the site on $QUARTO_PORT (8020)
-check-slides   Measure every rendered deck in a browser; fail on overflow
-chorus-report  List the hymns whose chorus the projection resolves
-test           Run the conversion and projection tests
-setup-chrome   Install the headless browser check-slides needs
-clean          Remove everything the projection and the render generate
+yaml-to-md        DESTRUCTIVE: overwrite data/N.md with the upstream YAML
+md-to-yaml        Rebuild the canonical YAML from data/N.md
+md-to-site        Project data/N.md as the slides, the pages, the two indexes and the report
+apply-categories  Rewrite each hymn's category from data/categories.tsv
+check-categories  Fail if any hymn's category disagrees with that table
+apply-titles      Rewrite each hymn's title from data/titles.tsv
+check-titles      Fail if any hymn's title disagrees with that table
+apply-tunes       Rewrite each hymn's tune from data/tunes.tsv
+check-tunes       Fail if any hymn's tune disagrees with that table
+check-notes       Fail if a hymn's own notes and glosses disagree with its stanzas
+check-punctuation Fail if a lyric line is not written with its edition's marks
+check-repeats     Fail if a hymn's three statements of what is sung twice disagree
+build             Regenerate the projections and render every deck and page in parallel
+build-serial      Regenerate the projections and render in one Quarto process
+serve             Preview the site on $QUARTO_PORT (8020)
+check-slides      Measure every rendered deck in a browser; fail on overflow
+chorus-report     List the hymns whose chorus the projection resolves
+meter-report      List the hymns whose Chinese lyrics do not scan as their meter
+test              Run the conversion and projection tests
+setup-chrome      Install the headless browser check-slides needs
+clean             Remove everything the projection and the render generate
 ```
 
-`yaml-to-md` and `md-to-yaml` are the only tasks that need the canonical
-collection checked out beside this repository at `../selected-hymns`. Nothing
+`yaml-to-md` and `md-to-yaml` are the only tasks that need `../selected-hymns`
+checked out beside this repository. **`yaml-to-md` overwrites all 848 files
+with what upstream says**, which undoes everything `data/` has gained since it
+was bootstrapped from there — see [the
+split](#the-split-from-selected-hymns). Point it at a scratch directory if what
+you want is a comparison; `md-to-yaml` is the direction to use. Nothing
 needs `../selected-hymns-and-songs-pdf`: what the site uses of it is copied into
-`scan/` and carried in git.
+`scan/` and carried in git, and `data/categories.tsv`, `data/titles.tsv` and
+`data/tunes.tsv` are the reading of its front and back matter, already made.
 
 ## Getting set up
 

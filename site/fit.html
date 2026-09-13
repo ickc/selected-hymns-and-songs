@@ -30,7 +30,7 @@
       slide.style.visibility = 'hidden';
 
       var available = height;
-      slide.querySelectorAll(':scope > h2, :scope > .singing-note').forEach(function (other) {
+      slide.querySelectorAll(':scope > h2, :scope > .gloss').forEach(function (other) {
         available -= other.offsetHeight + 8;
       });
 
@@ -55,7 +55,7 @@
       slide.style.display = 'block';
       slide.style.visibility = 'hidden';
       var available = height;
-      slide.querySelectorAll(':scope > h2, :scope > .singing-note').forEach(function (other) {
+      slide.querySelectorAll(':scope > h2, :scope > .gloss').forEach(function (other) {
         available -= other.offsetHeight + 8;
       });
       overflow = Math.max(overflow, block.scrollHeight - available);

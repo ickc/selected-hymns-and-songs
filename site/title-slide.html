@@ -10,7 +10,10 @@ $endif$
 $if(ref)$
   <div class="hymn-ref">$ref$</div>
 $endif$
-$if(note)$
+$for(note)$
   <div class="hymn-note">$note$</div>
+$endfor$
+$if(credit-note)$
+  <div class="hymn-credit-note">$credit-note$</div>
 $endif$
 </section>

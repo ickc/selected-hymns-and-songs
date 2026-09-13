@@ -28,8 +28,8 @@ from .model import LANGUAGE_ORDER, Hymn, Stanza
 from .scans import SCAN_LANGUAGES, Edition
 from .slides import (
     BCP47,
-    INLINE_NOTE,
-    _extract_notes,
+    GLOSS,
+    _extract_glosses,
     _localized_inline,
     _yaml_scalar,
     chorus_shape,
@@ -72,19 +72,21 @@ def _fence(width: int, classes: str, body: str) -> str:
 
 
 def _plain(text: str) -> str:
-    """Strip singing instructions from text bound for a plain-text field."""
+    """Strip the glosses from text bound for a plain-text field."""
 
-    return INLINE_NOTE.sub("", text).strip()
+    return GLOSS.sub("", text).strip()
 
 
 def _lyrics(stanza: Stanza) -> str:
-    """Render one stanza's lines, one paragraph each, notes lifted out.
+    """Render one stanza's lines, one paragraph each, glosses lifted out.
 
     The same shape the slides carry, so one stylesheet aligns the two languages
-    into columns for either.
+    into columns for either.  The hymnal prints a gloss at the foot of the page;
+    this page is one hymn long and the language switch selects whole blocks, so
+    the gloss sits under the stanza whose word it explains instead.
     """
 
-    lines, notes = _extract_notes(stanza.lines)
+    lines, glosses = _extract_glosses(stanza.lines)
     paragraphs = [
         "\\\n".join(
             span(text, language) for language, text in line.translations.items()
@@ -92,11 +94,11 @@ def _lyrics(stanza: Stanza) -> str:
         for line in lines
     ]
     block = _fence(3, ".lyrics", "\n\n".join(paragraphs))
-    if not notes:
+    if not glosses:
         return block
-    ordered = sorted(notes, key=lambda note: LANGUAGE_ORDER[note[0]])
+    ordered = sorted(glosses, key=lambda gloss: LANGUAGE_ORDER[gloss[0]])
     body = "\\\n".join(span(text, language) for language, text in ordered)
-    return block + "\n\n" + _fence(3, ".singing-note", body)
+    return block + "\n\n" + _fence(3, ".gloss", body)
 
 
 def _stanza_label(stanza: Stanza, choruses: list[str]) -> str:
@@ -138,7 +140,7 @@ def _resolution(hymn: Hymn, name: str) -> str:
 
     if chorus_shape(hymn) != "mixed":
         return ""
-    sources = chorus_sources(hymn.stanzas)
+    sources = chorus_sources(hymn.stanzas, hymn.chorus_omitted or ())
     stanzas = {
         language: [
             number
@@ -187,13 +189,45 @@ def _heading(hymn: Hymn, number: int) -> str:
             else _localized_inline(hymn.meter.translations)
         )
         meta.append(meter)
-    for field in ("author", "ref"):
+    if hymn.tune is not None:
+        # Beside the meter, which is where a hymnal reader looks for it: the
+        # two together are what say whether one text can be sung to another's
+        # music. The name is English -- no Chinese index names a tune.
+        names = hymn.tune if isinstance(hymn.tune, list) else [hymn.tune]
+        meta.append(span(", ".join(names), "en"))
+    # Who wrote the words and who wrote the music, in that order and each in
+    # its own class: they are the first pair on this line a reader could not
+    # tell apart from the text alone, so `page.scss` marks which is which.
+    for field, kind in (("composer", "hymn-composer"), ("author", "hymn-author")):
         value = getattr(hymn, field)
         if value is not None:
-            meta.append(_localized_inline(value.translations))
+            meta.append(f"[{_localized_inline(value.translations)}]{{.{kind}}}")
+    if hymn.ref is not None:
+        meta.append(_localized_inline(hymn.ref.translations))
     parts.append(_fence(3, ".hymn-meta", " · ".join(meta)))
-    if hymn.note is not None:
-        parts.append(_fence(3, ".hymn-note", _localized_inline(hymn.note.translations)))
+    if hymn.note:
+        # One under another, as the hymnal sets them, rather than run together.
+        parts.append(
+            _fence(
+                3,
+                ".hymn-note",
+                "\\\n".join(
+                    _localized_inline(value.translations) for value in hymn.note
+                ),
+            )
+        )
+    # Under the note, and in a class of its own: the note is the book speaking
+    # and this is not. It says where a credit came from when the edition prints
+    # two that disagree, which is exactly the question the scan beside it
+    # invites, so the page that shows both is the page it belongs on.
+    if hymn.credit_note is not None:
+        parts.append(
+            _fence(
+                3,
+                ".hymn-credit-note",
+                _localized_inline(hymn.credit_note.translations),
+            )
+        )
     return _fence(5, ".hymn-heading", "\n\n".join(parts))
 
 

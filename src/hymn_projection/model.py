@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cache
-from os.path import commonprefix
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +22,6 @@ PANDOC_MARKDOWN = (
 LANGUAGES = frozenset(("en", "zh"))
 LANGUAGE_ORDER = {"en": 0, "zh": 1}
 STANZA_NAME = re.compile(r"[1-9][0-9]*-chorus")
-METER_PREFIX = re.compile(r"^(?:[0-9]+\.)+(?:D\.)?\s+")
 AUTO_LANG = {"Han": "zh", "Latin": "en"}
 FILTER_DIRECTORY = Path(__file__).with_name("filters")
 AUTO_LANG_FILTER = FILTER_DIRECTORY / "auto-lang.lua"
@@ -128,68 +126,75 @@ def _localized_from_metadata(value: pf.MetaValue, description: str) -> Localized
     return LocalizedText(translations)
 
 
-def _meter_metadata(value: LocalizedText) -> pf.MetaInlines:
-    """Factor a localized meter's shared notation out of its translations."""
+def _named_metadata(value: LocalizedText, description: str) -> pf.MetaMap:
+    """Name the halves of a localized value instead of running them together.
+
+    Most localized fields are flattened into one scalar and cut apart again by
+    writing system, which works because their Chinese half is Han and their
+    English half is not. Two fields are mostly figures, and a figure belongs to
+    no script.
+
+    A meter: ``8.8.8.8.D. (A)`` beside ``8.8.8.8.D.`` offers no boundary to cut
+    at, and ``Irregular Meter`` beside ``10.10.10.8.5. 和`` offers one in the
+    wrong place.
+
+    A scripture reference: ``Psalm 133`` beside ``詩133`` happens to cut in the
+    right place, but ``1 John 1:5-7`` beside ``約壹1:5-7`` begins with a figure,
+    so the cut lands after ``1`` and the English half loses its book number.
+    Three of the forty-one references are numbered books, and the field would
+    be one imported citation away from breaking again.
+
+    So both name their languages, and nothing about either is inferred from its
+    characters.
+    """
 
     if len(value.translations) < 2:
-        raise ValueError("a localized meter needs two languages to remain distinguishable")
-    shared = commonprefix(list(value.translations.values()))
-    if not METER_PREFIX.fullmatch(shared):
-        raise ValueError("localized meter translations must share their meter notation")
-    return pf.MetaInlines(
-        pf.Str(shared),
-        *(
-            pf.Span(
-                pf.RawInline(text[len(shared) :], format="markdown"),
-                attributes={"lang": language},
-            )
+        raise ValueError(
+            f"a localized {description} needs two languages to remain distinguishable"
+        )
+    return pf.MetaMap(
+        **{
+            language: pf.MetaInlines(pf.RawInline(text, format="markdown"))
             for language, text in value.translations.items()
-        ),
+        }
     )
 
 
-def _meter_from_metadata(value: pf.MetaValue) -> str | LocalizedText:
-    """Recover a scalar meter or expand shared notation over its translations."""
+def _notes_from_metadata(value: pf.MetaValue) -> list[LocalizedText]:
+    """Recover the hymn's notes, in the order the page prints them."""
 
-    if not isinstance(value, pf.MetaInlines):
-        return pf.stringify(value)
+    items = value.content if isinstance(value, pf.MetaList) else [value]
+    return [_localized_from_metadata(item, "note") for item in items]
 
-    languages = [
-        language
-        for element in value.content
-        if (language := _language(element)) is not None
-    ]
-    if len(set(languages)) <= 1:
-        # A scalar meter such as ``C.M.`` may itself be tagged as Latin.  A
-        # localized meter in this collection always has both en and zh runs.
-        return pf.stringify(value)
 
-    rendered = _exact_text(value.content)
-    match = METER_PREFIX.match(rendered)
-    if not match:
-        raise ValueError("localized meter must begin with shared meter notation")
-    shared = match.group()
+def _tune_metadata(value: str | list[str]) -> pf.MetaValue:
+    """Represent one tune name, or an ordered list of them, as metadata."""
 
-    translations: dict[str, str] = {}
-    offset = 0
-    for element in value.content:
-        text = _text_piece(element)
-        language = _language(element)
-        if language:
-            # ``D`` is Latin, so auto-lang may put the tail of a shared
-            # ``7.7.7.7.D.`` prefix inside the English span.  Keep only the
-            # part of each span which follows the shared prefix.
-            suffix = text[max(len(shared) - offset, 0) :]
-            if suffix:
-                translations[language] = translations.get(language, "") + suffix
-        elif offset + len(text) > len(shared):
-            raise ValueError("localized meter has untagged text after its shared prefix")
-        offset += len(text)
+    if isinstance(value, str):
+        return pf.MetaInlines(pf.RawInline(value, format="markdown"))
+    return pf.MetaList(*(_tune_metadata(name) for name in value))
 
-    if set(translations) != set(languages):
-        raise ValueError("each localized meter language must have a distinct suffix")
+
+def _tune_from_metadata(value: pf.MetaValue) -> str | list[str]:
+    """Recover the tune names, keeping the order the hymnal numbers them in."""
+
+    if isinstance(value, pf.MetaList):
+        return [_tune_from_metadata(item) for item in value.content]
+    return pf.stringify(value).strip()
+
+
+def _named_from_metadata(value: pf.MetaValue) -> LocalizedText | None:
+    """Recover a named pair, or nothing when the value is a plain scalar."""
+
+    if not isinstance(value, pf.MetaMap):
+        return None
     return LocalizedText(
-        {language: shared + suffix for language, suffix in translations.items()}
+        {
+            language: _exact_text(text.content).strip()
+            if isinstance(text, pf.MetaInlines)
+            else pf.stringify(text)
+            for language, text in value.content.items()
+        }
     )
 
 
@@ -271,6 +276,111 @@ class LyricLine:
 
 
 @dataclass
+class Repeat:
+    """Which of a stanza's lines the hymnal sings again after it.
+
+    The book states a repeat in three places and relates none of them: it
+    writes the lines out a second time, it prints a direction under the last
+    stanza, or it marks the meter ``重`` / ``with repeat``.  Where the lines
+    are written out, `data/` already holds them and this is absent.  This is
+    for the other two, and it says the one thing they leave to the singer --
+    *which* lines -- so that a projection can sing what the book only names.
+
+    ``lines`` are the stanza's own lines, numbered from one, in the order they
+    are sung again.  They are not always a tail: `en/71` sets hymn 57's
+    ``8.6.8.6. with repeat`` as the fourth line twice and then the third and
+    fourth again, which is the same shape hymn 678 writes out as a chorus.
+
+    ``stanzas`` is every stanza unless it names some.  242 is the one that
+    names any: both its pages print the direction under the fourth stanza, and
+    both mean that stanza alone.
+
+    Not localized, because the structure is the tune's and both editions sing
+    it.  Every stanza of every hymn that carries a repeat has the same number
+    of lines in both languages, so the numbers mean the same thing on either
+    side.  242 looks like a counter-example and is not: `en/266` prints
+    *Repeat the last four lines* and `zh/258` prints ``第四節末兩行重唱一遍``,
+    and the Chinese page sets its stanzas in two columns, so two of its rows
+    are four of these lines.
+    """
+
+    lines: list[int]
+    #: The stanzas this repeat is sung in, or ``None`` for every one of them.
+    stanzas: list[int] | None = None
+
+    def __post_init__(self) -> None:
+        for name, value in (("lines", self.lines), ("stanzas", self.stanzas)):
+            if value is None:
+                continue
+            if not isinstance(value, list) or not value:
+                raise ValueError(f"repeat {name} must be a non-empty list")
+            if not all(
+                isinstance(number, int)
+                and not isinstance(number, bool)
+                and number > 0
+                for number in value
+            ):
+                raise ValueError(f"repeat {name} must be positive line numbers")
+        if self.stanzas is not None and len(self.stanzas) != len(set(self.stanzas)):
+            raise ValueError("repeat stanzas must be distinct")
+
+    @classmethod
+    def from_dict(cls, value: object) -> Repeat:
+        """Validate and construct a repeat from a YAML value."""
+
+        mapping = _mapping(value, "repeat")
+        unknown = set(mapping) - {"lines", "stanzas"}
+        if unknown:
+            raise ValueError(f"unknown repeat fields: {sorted(unknown)!r}")
+        if "lines" not in mapping:
+            raise ValueError("a repeat must say which lines are sung again")
+
+        def numbers(name: str) -> list[int] | None:
+            if name not in mapping:
+                return None
+            value = mapping[name]
+            if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+                raise ValueError(f"repeat {name} must be a list")
+            # Pandoc metadata has no numbers, only inlines, so a value read
+            # back out of `data/N.md` arrives as a string either way.
+            return [int(number) for number in value]
+
+        return cls(lines=numbers("lines") or [], stanzas=numbers("stanzas"))
+
+    def to_dict(self) -> dict[str, list[int]]:
+        """Return an independent YAML-compatible mapping."""
+
+        result: dict[str, list[int]] = {"lines": list(self.lines)}
+        if self.stanzas is not None:
+            result["stanzas"] = list(self.stanzas)
+        return result
+
+    def to_metadata(self) -> pf.MetaMap:
+        """Represent this repeat as Pandoc metadata."""
+
+        def listing(numbers: list[int]) -> pf.MetaList:
+            return pf.MetaList(
+                *(pf.MetaInlines(pf.Str(str(number))) for number in numbers)
+            )
+
+        content: dict[str, pf.MetaValue] = {"lines": listing(self.lines)}
+        if self.stanzas is not None:
+            content["stanzas"] = listing(self.stanzas)
+        return pf.MetaMap(**content)
+
+    def sung_in(self, name: int | str) -> bool:
+        """Say whether this repeat is sung in the named stanza.
+
+        A chorus is never one: the repeat belongs to the verse, and a chorus
+        that repeats its own lines is written out where the book writes it.
+        """
+
+        if not isinstance(name, int):
+            return False
+        return self.stanzas is None or name in self.stanzas
+
+
+@dataclass
 class Stanza:
     """A numbered verse or named chorus and its lyric lines."""
 
@@ -312,10 +422,47 @@ class Hymn:
     category: LocalizedText
     stanzas: list[Stanza]
     author: LocalizedText | None = None
+    #: Who set the hymn to music, as the *Index of Authors and Composers*
+    #: credits it -- a name, an arranger, or the collection a melody came out
+    #: of.  Localized like ``author`` because it is written the same way, and
+    #: English-only for the same reason: the index is the English edition's.
+    composer: LocalizedText | None = None
+    #: Why this hymn's credit is not simply what one page prints.  The English
+    #: edition prints its credits twice -- in the *Index of Authors and
+    #: Composers* and, on a copyrighted song, over the hymn itself -- and on
+    #: three hymns the two name different people.  Where `data/` had to choose
+    #: or combine, this says so, so that a reader who checks either printing
+    #: finds the discrepancy recorded rather than a silent third reading.
+    #: English-only, like the credits it is about.
+    credit_note: LocalizedText | None = None
+    #: The stanzas the chorus is not sung after, where the book says so.  A
+    #: chorus is otherwise sung after every stanza, and both 355 and 734 end on
+    #: a verse: 355 is verse, chorus, verse -- its *D.C. al Fine* is how the
+    #: score sends the second stanza back to the verse's music -- and both
+    #: print a direction not to sing the chorus again.  The numbers are the
+    #: stanzas', which the Chinese half of each direction names.
+    chorus_omitted: list[int] | None = None
     meter: str | LocalizedText | None = None
-    note: LocalizedText | None = None
+    #: What the hymnal says about singing this hymn, in its own words: which
+    #: lines to repeat, which stanza leaves the chorus out, which stanzas the
+    #: other edition does not have.  A list, because the book prints more than
+    #: one on a hymn -- 355 carries a direction under each of its two stanzas.
+    #:
+    #: A note is set apart from the stanza on the page and governs how the hymn
+    #: is sung, which is why it is here and not in the lyrics.  A note *about a
+    #: word* -- what `Beulah` means, that `Christ` may be sung as `Jesus` -- is
+    #: the other thing the book prints, and stays in the line as an inline
+    #: footnote, anchored where it belongs.
+    note: list[LocalizedText] = field(default_factory=list)
     ref: LocalizedText | None = None
+    #: Which lines the hymn sings again, where the book says so without
+    #: writing them out.  See ``Repeat``.
+    repeat: Repeat | None = None
     title: LocalizedText | None = None
+    #: The tune the English edition sets the hymn to, and the second one where
+    #: it prints two.  Not localized: a tune has one name, in the edition that
+    #: names it.
+    tune: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.category, LocalizedText):
@@ -327,17 +474,65 @@ class Hymn:
             raise ValueError("stanza names must be unique")
         if self.meter is not None and not isinstance(self.meter, (str, LocalizedText)):
             raise ValueError("meter must be a string or localized text")
-        for name in ("author", "note", "ref", "title"):
+        if self.tune is not None:
+            tunes = self.tune if isinstance(self.tune, list) else [self.tune]
+            if not tunes or not all(isinstance(name, str) and name for name in tunes):
+                raise ValueError("tune must be a name or a list of names")
+            if len(tunes) != len(set(tunes)):
+                raise ValueError("a hymn cannot be set to one tune twice")
+        for name in ("author", "composer", "credit_note", "ref", "title"):
             value = getattr(self, name)
             if value is not None and not isinstance(value, LocalizedText):
                 raise ValueError(f"{name} must be localized text")
+        if not isinstance(self.note, list) or not all(
+            isinstance(value, LocalizedText) for value in self.note
+        ):
+            raise ValueError("note must be a list of localized text")
+        if self.chorus_omitted is not None:
+            numbered = {stanza.name for stanza in self.stanzas if isinstance(stanza.name, int)}
+            omitted = self.chorus_omitted
+            if not isinstance(omitted, list) or not omitted or not all(
+                isinstance(number, int) and not isinstance(number, bool)
+                for number in omitted
+            ):
+                raise ValueError("chorus-omitted must be a non-empty list of stanza numbers")
+            if len(omitted) != len(set(omitted)):
+                raise ValueError("chorus-omitted stanzas must be distinct")
+            for number in omitted:
+                if number not in numbered:
+                    raise ValueError(
+                        f"chorus-omitted names stanza {number}, which this hymn has not"
+                    )
+            if len(numbered) == len(names):
+                raise ValueError("chorus-omitted is given for a hymn with no chorus")
+        if self.repeat is not None and not isinstance(self.repeat, Repeat):
+            raise ValueError("repeat must be a Repeat")
+        if self.repeat is not None:
+            names = {stanza.name for stanza in self.stanzas}
+            for name in self.repeat.stanzas or ():
+                if name not in names:
+                    raise ValueError(f"repeat names stanza {name}, which this hymn has not")
+            # Every stanza it is sung in, not only the longest: a projection
+            # reads the named lines out of each one.
+            for stanza in self.stanzas:
+                if not self.repeat.sung_in(stanza.name):
+                    continue
+                for line in self.repeat.lines:
+                    if line > len(stanza.lines):
+                        raise ValueError(
+                            f"repeat names line {line} of stanza {stanza.name},"
+                            f" which has {len(stanza.lines)}"
+                        )
 
     @classmethod
     def from_dict(cls, value: object) -> Hymn:
         """Validate and construct a hymn from a YAML-compatible mapping."""
 
         mapping = _mapping(value, "hymn")
-        allowed = {"author", "category", "meter", "note", "ref", "stanza", "title"}
+        allowed = {
+            "author", "category", "chorus-omitted", "composer", "credit-note",
+            "meter", "note", "ref", "repeat", "stanza", "title", "tune",
+        }
         unknown = set(mapping) - allowed
         missing = {"category", "stanza"} - set(mapping)
         if unknown:
@@ -356,19 +551,58 @@ class Hymn:
             else:
                 raise ValueError("meter must be a string or localized mapping")
 
+        tune: str | list[str] | None = None
+        if "tune" in mapping:
+            tune_value = mapping["tune"]
+            if isinstance(tune_value, str):
+                tune = tune_value
+            elif isinstance(tune_value, Sequence):
+                tune = [str(name) for name in tune_value]
+            else:
+                raise ValueError("tune must be a name or a list of names")
+
+        chorus_omitted: list[int] | None = None
+        if "chorus-omitted" in mapping:
+            omitted_value = mapping["chorus-omitted"]
+            if isinstance(omitted_value, (str, bytes)) or not isinstance(
+                omitted_value, Sequence
+            ):
+                raise ValueError("chorus-omitted must be a list")
+            # Read back out of `data/N.md` these arrive as strings, as a
+            # repeat's do: Pandoc metadata has no numbers.
+            chorus_omitted = [int(number) for number in omitted_value]
+
         def optional_text(name: str) -> LocalizedText | None:
             if name not in mapping:
                 return None
             return LocalizedText.from_dict(mapping[name], name)
 
+        # The upstream collection carries at most one note per hymn and writes
+        # it as a bare mapping; the hymnal prints as many as it needs to.  One
+        # is read as a list of one so that nothing has to know which it was.
+        note_value = mapping.get("note", [])
+        notes = [
+            LocalizedText.from_dict(item, "note")
+            for item in (
+                note_value if isinstance(note_value, Sequence)
+                and not isinstance(note_value, (str, Mapping))
+                else [note_value]
+            )
+        ]
+
         return cls(
             category=LocalizedText.from_dict(mapping["category"], "category"),
+            repeat=Repeat.from_dict(mapping["repeat"]) if "repeat" in mapping else None,
             stanzas=[Stanza.from_yaml(name, lines) for name, lines in stanza_mapping.items()],
             author=optional_text("author"),
+            chorus_omitted=chorus_omitted,
+            composer=optional_text("composer"),
+            credit_note=optional_text("credit-note"),
             meter=meter,
-            note=optional_text("note"),
+            note=notes,
             ref=optional_text("ref"),
             title=optional_text("title"),
+            tune=tune,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -378,19 +612,29 @@ class Hymn:
         if self.author is not None:
             result["author"] = self.author.to_dict()
         result["category"] = self.category.to_dict()
+        if self.chorus_omitted is not None:
+            result["chorus-omitted"] = list(self.chorus_omitted)
+        if self.composer is not None:
+            result["composer"] = self.composer.to_dict()
+        if self.credit_note is not None:
+            result["credit-note"] = self.credit_note.to_dict()
         if self.meter is not None:
             result["meter"] = (
                 self.meter.to_dict()
                 if isinstance(self.meter, LocalizedText)
                 else self.meter
             )
-        if self.note is not None:
-            result["note"] = self.note.to_dict()
+        if self.note:
+            result["note"] = [value.to_dict() for value in self.note]
         if self.ref is not None:
             result["ref"] = self.ref.to_dict()
+        if self.repeat is not None:
+            result["repeat"] = self.repeat.to_dict()
         result["stanza"] = {stanza.name: stanza.to_yaml() for stanza in self.stanzas}
         if self.title is not None:
             result["title"] = self.title.to_dict()
+        if self.tune is not None:
+            result["tune"] = list(self.tune) if isinstance(self.tune, list) else self.tune
         return result
 
     def to_document(self) -> pf.Doc:
@@ -413,18 +657,38 @@ class Hymn:
         if self.author is not None:
             metadata["author"] = _localized_metadata(self.author)
         metadata["category"] = _localized_metadata(self.category)
+        if self.chorus_omitted is not None:
+            metadata["chorus-omitted"] = pf.MetaList(
+                *(pf.MetaInlines(pf.Str(str(number))) for number in self.chorus_omitted)
+            )
+        if self.composer is not None:
+            metadata["composer"] = _localized_metadata(self.composer)
+        if self.credit_note is not None:
+            metadata["credit-note"] = _localized_metadata(self.credit_note)
         if self.meter is not None:
             metadata["meter"] = (
-                _meter_metadata(self.meter)
+                _named_metadata(self.meter, "meter")
                 if isinstance(self.meter, LocalizedText)
                 else pf.MetaInlines(pf.RawInline(self.meter, format="markdown"))
             )
-        if self.note is not None:
-            metadata["note"] = _localized_metadata(self.note)
+        if self.note:
+            metadata["note"] = pf.MetaList(
+                *(_localized_metadata(value) for value in self.note)
+            )
         if self.ref is not None:
-            metadata["ref"] = _localized_metadata(self.ref)
+            # One language has nothing to cut apart, so it is written flat like
+            # every other localized field; two are named.
+            metadata["ref"] = (
+                _named_metadata(self.ref, "reference")
+                if len(self.ref.translations) > 1
+                else _localized_metadata(self.ref)
+            )
+        if self.repeat is not None:
+            metadata["repeat"] = self.repeat.to_metadata()
         if self.title is not None:
             metadata["title"] = _localized_metadata(self.title)
+        if self.tune is not None:
+            metadata["tune"] = _tune_metadata(self.tune)
         document = pf.Doc(*blocks, metadata=metadata)
         # Panflute 2.0 defaults to an API version rejected by Pandoc 3.8.
         document.api_version = pandoc_api_version()
@@ -467,10 +731,15 @@ class Hymn:
             "auto-lang",
             "author",
             "category",
+            "chorus-omitted",
+            "composer",
+            "credit-note",
             "meter",
             "note",
             "ref",
+            "repeat",
             "title",
+            "tune",
         }
         unknown = set(plain_metadata) - allowed_metadata
         if unknown:
@@ -488,14 +757,45 @@ class Hymn:
             document.metadata["category"], "category"
         ).to_dict()
 
+        if "composer" in document.metadata:
+            metadata["composer"] = _localized_from_metadata(
+                document.metadata["composer"], "composer"
+            ).to_dict()
+
+        if "credit-note" in document.metadata:
+            metadata["credit-note"] = _localized_from_metadata(
+                document.metadata["credit-note"], "credit-note"
+            ).to_dict()
         if "meter" in document.metadata:
-            meter = _meter_from_metadata(document.metadata["meter"])
-            metadata["meter"] = meter.to_dict() if isinstance(meter, LocalizedText) else meter
-        for name in ("note", "ref"):
-            if name in document.metadata:
-                metadata[name] = _localized_from_metadata(
-                    document.metadata[name], name
-                ).to_dict()
+            meter = _named_from_metadata(document.metadata["meter"])
+            metadata["meter"] = (
+                meter.to_dict()
+                if meter is not None
+                else pf.stringify(document.metadata["meter"])
+            )
+        if "tune" in document.metadata:
+            metadata["tune"] = _tune_from_metadata(document.metadata["tune"])
+        if "note" in document.metadata:
+            metadata["note"] = [
+                value.to_dict()
+                for value in _notes_from_metadata(document.metadata["note"])
+            ]
+        if "ref" in document.metadata:
+            reference = _named_from_metadata(document.metadata["ref"])
+            metadata["ref"] = (
+                reference.to_dict()
+                if reference is not None
+                else _localized_from_metadata(document.metadata["ref"], "ref").to_dict()
+            )
+
+        if "chorus-omitted" in plain_metadata:
+            metadata["chorus-omitted"] = plain_metadata["chorus-omitted"]
+
+        if "repeat" in plain_metadata:
+            # Read from the plain metadata rather than the tagged tree: these
+            # are numbers, and a number belongs to no writing system, so
+            # `auto-lang.lua` leaves them alone.
+            metadata["repeat"] = plain_metadata["repeat"]
 
         stanza: dict[int | str, list[dict[str, str]]] = {}
         current_name: int | str | None = None

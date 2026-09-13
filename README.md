@@ -8,10 +8,23 @@ one way. 848 hymns, English and Traditional Chinese together.
 `data/N.md` — one Markdown file per hymn, numbered as the hymnal numbers them.
 This is the source everything else is built from.
 
-It is a lossless projection of the canonical YAML collection in
-[`selected-hymns`](https://github.com/ickc/selected-hymns): each hymn can be
-converted back to the canonical shape and comes out unchanged.
-[FORMAT.md](FORMAT.md) describes what the Markdown looks like and why.
+It began as a projection of the YAML collection in
+[`selected-hymns`](https://github.com/ickc/selected-hymns) and can still be
+converted back to that shape unchanged, but the two have since diverged: the
+hymnal is maintained here now, and `data/` carries readings and corrections
+that file does not. [FORMAT.md](FORMAT.md) describes what the Markdown looks
+like and why; [DEVELOPER.md](DEVELOPER.md) describes what has been added.
+
+`data/categories.tsv` — the book's subject outline: 255 subjects, both
+languages, up to three levels apart, in the order the hymnal numbers them. A hymn's
+category is the one field of `data/N.md` that is written from somewhere else,
+and this is also what the published subject index is built from; see
+[DEVELOPER.md](DEVELOPER.md).
+
+`data/titles.tsv` — the name the hymnal's subject index files each hymn under,
+778 of them. The book prints no title over a hymn; this is the one place it
+names them, and about a third of those names are not the hymn's opening line.
+The other field of `data/N.md` written from somewhere else.
 
 `scan/` — the hymnal itself: one image per page of each language edition, and
 the page each hymn is printed on. `data/` was read off these and corrected
@@ -35,6 +48,9 @@ Both are carried in git. Everything else is generated.
   belongs to it, both languages, sized to fill the screen without overflowing
   it. Add `?grid` to a hymn's URL for two aligned columns instead of
   interleaved lines.
+- **Or browse by subject.** The hymnal's own subject index, all eighteen
+  sections of it in both languages, in the order the book prints them, each
+  hymn its number and the name the book gives it.
 - **Or each hymn beside the hymnal**, the text in the middle and the scanned
   page of each edition either side of it, scrolling independently. Follow the
   music while the words are in front of you, or check a line against the book —

@@ -14,18 +14,23 @@ from hymn_projection.converter import (
 )
 from hymn_projection.environment import BUILD_MODE_ENV
 from hymn_projection.model import Hymn
+from hymn_projection.categories import HEADER
 from hymn_projection.scans import SCAN_LANGUAGES
 
+
+DATA = Path(__file__).resolve().parent.parent / "data"
 
 HYMN_DATA = {
     "author": {"en": "An Author"},
     "category": {"zh": "分類——測試"},
+    "credit-note": {"en": "The page prints one name, the index another."},
     "meter": {"en": "8.6.8.6. with chorus", "zh": "8.6.8.6. 和"},
-    "note": {"en": "Keep *meaningful* Markdown"},
+    "note": [{"en": "Keep *meaningful* Markdown"}],
     "stanza": {
         1: [
             {"en": "A “quoted” line—with punctuation.", "zh": "第一行。"},
             {"zh": "　　保留全形空格。"},
+            {"en": "The Father only [glorious claim]!"},
         ],
         "1-chorus": [{"en": "A line with *emphasis* and ^[a note]."}],
     },
@@ -61,6 +66,25 @@ def make_site(root: Path, hymns: int) -> tuple[Path, Path]:
     return site, scans
 
 
+def make_table(markdown: Path) -> Path:
+    """Write the source files the site projection reads beside the hymns.
+
+    The subject index the fixture files every hymn under -- the table is what
+    says where that subject comes in the book and what the English edition
+    calls it -- and the two editions' prefaces the projection stacks onto one
+    page.
+    """
+
+    (markdown / "preface.en.markdown").write_text("# PREFACE\n\nEnglish preface.\n", encoding="utf-8")
+    (markdown / "preface.zh.markdown").write_text("# 編者的話\n\n中文序。\n", encoding="utf-8")
+    path = markdown / "categories.tsv"
+    path.write_text(
+        "\t".join(HEADER) + "\n" + "\t".join(("1", "1", "", "分類", "測試", "", "Category", "Test", "")) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 class HymnConversionTest(TestCase):
     """Exercise the object and collection round trips."""
 
@@ -73,11 +97,60 @@ class HymnConversionTest(TestCase):
         self.assertNotIn("{lang=", markdown)
         self.assertNotIn("auto-lang:", markdown)
         self.assertIn("category: 分類——測試", markdown)
-        self.assertIn("meter: 8.6.8.6. with chorus和", markdown)
+        self.assertIn("meter:\n  en: 8.6.8.6. with chorus\n  zh: 8.6.8.6. 和\n", markdown)
         self.assertIn("A “quoted” line—with punctuation.\n第一行。", markdown)
         self.assertIn("第一行。\n　　保留全形空格。\n", markdown)
-        self.assertIn("note: Keep *meaningful* Markdown", markdown)
+        self.assertIn("- Keep *meaningful* Markdown", markdown)
+        self.assertIn(
+            "credit-note: The page prints one name, the index another.", markdown
+        )
         self.assertIn("A line with *emphasis* and ^[a note].", markdown)
+        # Written as the page prints it. A lone bracket cannot begin a link
+        # here, so Pandoc neither needs nor writes an escape, and the source
+        # stays readable: `en/56` prints `The Father only [glorious claim]!`.
+        self.assertIn("The Father only [glorious claim]!", markdown)
+
+    def test_a_repeat_survives_the_round_trip_as_numbers(self) -> None:
+        # Pandoc metadata holds inlines and not numbers, so a repeat comes back
+        # out of the Markdown as strings and has to be read as figures again.
+        repeat = {"lines": [2, 3], "stanzas": [4]}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, repeat=repeat, stanza={
+            1: HYMN_DATA["stanza"][1], 4: HYMN_DATA["stanza"][1],
+        }))
+        markdown = hymn.to_markdown()
+
+        self.assertIn("repeat:\n  lines:\n  - 2\n  - 3\n  stanzas:\n  - 4\n", markdown)
+        self.assertEqual(Hymn.from_markdown(markdown).to_dict()["repeat"], repeat)
+
+    def test_a_chorus_omitted_survives_the_round_trip_as_numbers(self) -> None:
+        hymn = Hymn.from_dict(dict(HYMN_DATA, **{"chorus-omitted": [2]}, stanza={
+            1: HYMN_DATA["stanza"][1], "1-chorus": HYMN_DATA["stanza"][1],
+            2: HYMN_DATA["stanza"][1],
+        }))
+        markdown = hymn.to_markdown()
+
+        self.assertIn("chorus-omitted:\n- 2\n", markdown)
+        self.assertEqual(Hymn.from_markdown(markdown).chorus_omitted, [2])
+
+    def test_a_chorus_cannot_be_omitted_where_there_is_none(self) -> None:
+        with self.assertRaisesRegex(ValueError, "no chorus"):
+            Hymn.from_dict(dict(
+                HYMN_DATA, **{"chorus-omitted": [1]}, stanza={1: HYMN_DATA["stanza"][1]}
+            ))
+
+    def test_a_chorus_cannot_be_omitted_after_a_stanza_the_hymn_has_not(self) -> None:
+        with self.assertRaisesRegex(ValueError, "which this hymn has not"):
+            Hymn.from_dict(dict(HYMN_DATA, **{"chorus-omitted": [9]}, stanza={
+                1: HYMN_DATA["stanza"][1], "1-chorus": HYMN_DATA["stanza"][1],
+            }))
+
+    def test_a_repeat_sung_in_every_stanza_names_none_of_them(self) -> None:
+        hymn = Hymn.from_dict(dict(HYMN_DATA, repeat={"lines": [2]}))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertIsNone(recovered.repeat.stanzas)
+        self.assertEqual(recovered.to_dict()["repeat"], {"lines": [2]})
 
     def test_latin_scalar_meter_remains_a_scalar(self) -> None:
         hymn = Hymn.from_dict(dict(HYMN_DATA, meter="C.M."))
@@ -86,7 +159,7 @@ class HymnConversionTest(TestCase):
 
         self.assertEqual(recovered.meter, "C.M.")
 
-    def test_double_meter_notation_is_shared_between_languages(self) -> None:
+    def test_a_localized_meter_names_its_two_languages(self) -> None:
         meter = {
             "en": "7.7.7.7.D. with repeat",
             "zh": "7.7.7.7.D. 重",
@@ -94,8 +167,61 @@ class HymnConversionTest(TestCase):
         hymn = Hymn.from_dict(dict(HYMN_DATA, meter=meter))
         markdown = hymn.to_markdown()
 
-        self.assertIn("meter: 7.7.7.7.D. with repeat重", markdown)
+        self.assertIn(
+            "meter:\n  en: 7.7.7.7.D. with repeat\n  zh: 7.7.7.7.D. 重\n", markdown
+        )
         self.assertEqual(Hymn.from_markdown(markdown).meter.to_dict(), meter)
+
+    def test_two_all_latin_halves_survive_the_round_trip(self) -> None:
+        # The reason the field is a mapping. Run together these would be one
+        # string with no boundary to cut at, and the pair would be lost.
+        meter = {"en": "8.8.8.8.D. (A)", "zh": "8.8.8.8.D."}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, meter=meter))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertEqual(recovered.meter.to_dict(), meter)
+
+    def test_halves_that_share_no_notation_survive_the_round_trip(self) -> None:
+        # The other reason: the English edition calls a meter irregular where
+        # the Chinese page prints a count, and the figures between them belong
+        # to neither writing system.
+        meter = {"en": "Irregular Meter", "zh": "10.10.10.8.5. 和"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, meter=meter))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertEqual(recovered.meter.to_dict(), meter)
+
+    def test_a_localized_reference_names_its_two_languages(self) -> None:
+        reference = {"en": "Psalm 45 - Part 1", "zh": "詩篇第四十五篇(上)"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, ref=reference))
+        markdown = hymn.to_markdown()
+
+        self.assertIn(
+            "ref:\n  en: Psalm 45 - Part 1\n  zh: 詩篇第四十五篇(上)\n", markdown
+        )
+        self.assertEqual(Hymn.from_markdown(markdown).ref.to_dict(), reference)
+
+    def test_a_reference_opening_on_a_figure_survives_the_round_trip(self) -> None:
+        # The reason the field is a mapping. Run together, the cut by writing
+        # system lands after the leading 1 and the English half loses its book
+        # number.
+        reference = {"en": "1 John 1:5-7", "zh": "約壹1:5-7"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, ref=reference))
+
+        recovered = Hymn.from_markdown(hymn.to_markdown())
+
+        self.assertEqual(recovered.ref.to_dict(), reference)
+
+    def test_a_reference_one_edition_prints_stays_a_scalar(self) -> None:
+        # Nothing to cut apart, so it is written flat and `auto-lang` tags it.
+        reference = {"zh": "以西結書第四十七章"}
+        hymn = Hymn.from_dict(dict(HYMN_DATA, ref=reference))
+        markdown = hymn.to_markdown()
+
+        self.assertIn("ref: 以西結書第四十七章\n", markdown)
+        self.assertEqual(Hymn.from_markdown(markdown).ref.to_dict(), reference)
 
     def test_directory_round_trip_is_byte_exact(self) -> None:
         source_yaml = yaml.safe_dump([HYMN_DATA], allow_unicode=True, sort_keys=False)
@@ -128,6 +254,7 @@ class HymnConversionTest(TestCase):
             site, scans = make_site(root, hymns=2)
             source.write_text(source_yaml, encoding="utf-8")
             yaml_to_markdown(source, markdown)
+            make_table(markdown)
             markdown_to_site(markdown, site, scans, jobs=2)
             self.assertTrue((site / "slide" / "2.md").exists())
             self.assertTrue((site / "hymn" / "2.md").exists())
@@ -143,6 +270,42 @@ class HymnConversionTest(TestCase):
             self.assertTrue((site / "slide" / "1.md").exists())
             self.assertTrue((site / "hymn" / "1.md").exists())
 
+    def test_the_projection_writes_the_subject_index(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "data"
+            source.mkdir()
+            (source / "1.md").write_text(
+                Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
+            )
+            make_table(source)
+            site, scans = make_site(root, hymns=1)
+
+            markdown_to_site(source, site, scans, jobs=1)
+
+            index = (site / "subject.md").read_text(encoding="utf-8")
+            self.assertIn("## I. [Category]{lang=en} [分類]{lang=zh-Hant}", index)
+            self.assertIn("[[1]{.subject-number}", index)
+            self.assertIn("](hymn/1.html)", index)
+
+    def test_the_projection_writes_the_index_of_tunes(self) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "data"
+            source.mkdir()
+            (source / "1.md").write_text(
+                Hymn.from_dict(dict(HYMN_DATA, tune="Beecher")).to_markdown(),
+                encoding="utf-8",
+            )
+            make_table(source)
+            site, scans = make_site(root, hymns=1)
+
+            markdown_to_site(source, site, scans, jobs=1)
+
+            index = (site / "tune.md").read_text(encoding="utf-8")
+            self.assertIn("[[Beecher]{lang=en}]{.tune-name}", index)
+            self.assertIn("[[1](hymn/1.html)]{.tune-hymns}", index)
+
     def test_developer_projection_writes_the_chorus_report(self) -> None:
         with TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
@@ -151,6 +314,7 @@ class HymnConversionTest(TestCase):
             (source / "1.md").write_text(
                 Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
             )
+            make_table(source)
 
             site, scans = make_site(root, hymns=1)
             with patch.dict("os.environ", {BUILD_MODE_ENV: "develop"}):
@@ -168,6 +332,7 @@ class HymnConversionTest(TestCase):
             (source / "1.md").write_text(
                 Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
             )
+            make_table(source)
             (site / "chorus.md").write_text("stale", encoding="utf-8")
             (site / "chorus.html").write_text("stale", encoding="utf-8")
 
@@ -186,6 +351,7 @@ class HymnConversionTest(TestCase):
                 (source / f"{number}.md").write_text(
                     Hymn.from_dict(HYMN_DATA).to_markdown(), encoding="utf-8"
                 )
+            make_table(source)
 
             serial, scans = make_site(root / "serial", hymns=3)
             parallel, _ = make_site(root / "parallel", hymns=3)
@@ -212,3 +378,98 @@ class HymnConversionTest(TestCase):
 
         with self.assertRaisesRegex(ValueError, "meter must be"):
             Hymn.from_dict(invalid)
+
+    def test_one_tune_and_an_ordered_pair_both_survive_the_round_trip(self) -> None:
+        for tune in ("Azmon", ["Azmon", "Lyngham"]):
+            with self.subTest(tune=tune):
+                hymn = Hymn.from_dict(dict(HYMN_DATA, tune=tune))
+
+                self.assertEqual(Hymn.from_markdown(hymn.to_markdown()).tune, tune)
+                self.assertEqual(hymn.to_dict()["tune"], tune)
+
+    def test_a_hymn_set_to_one_tune_twice_is_rejected(self) -> None:
+        invalid = dict(HYMN_DATA, tune=["Azmon", "Azmon"])
+
+        with self.assertRaisesRegex(ValueError, "one tune twice"):
+            Hymn.from_dict(invalid)
+
+    def test_an_empty_tune_is_rejected(self) -> None:
+        invalid = dict(HYMN_DATA, tune=[])
+
+        with self.assertRaisesRegex(ValueError, "tune must be"):
+            Hymn.from_dict(invalid)
+
+
+class LocalizedMeterTest(TestCase):
+    """A meter whose two editions do not print the same thing."""
+
+    SOURCE = """---
+category: 甲——乙
+meter:
+  en: Irregular Meter
+  zh: 特.和
+---
+
+# 1
+
+A line
+一二三
+"""
+
+    def test_a_named_pair_reads_as_localized_text(self) -> None:
+        hymn = Hymn.from_markdown(self.SOURCE)
+
+        self.assertEqual(
+            hymn.meter.to_dict(), {"en": "Irregular Meter", "zh": "特.和"}
+        )
+
+    def test_a_named_pair_round_trips(self) -> None:
+        hymn = Hymn.from_markdown(self.SOURCE)
+
+        self.assertEqual(hymn.to_markdown(), self.SOURCE)
+
+    def test_a_numeric_pair_round_trips(self) -> None:
+        source = self.SOURCE.replace(
+            "  en: Irregular Meter\n  zh: 特.和",
+            "  en: 8.6.8.6. with chorus\n  zh: 8.6.8.6. 和",
+        )
+
+        hymn = Hymn.from_markdown(source)
+
+        self.assertEqual(
+            hymn.meter.to_dict(), {"en": "8.6.8.6. with chorus", "zh": "8.6.8.6. 和"}
+        )
+        self.assertEqual(hymn.to_markdown(), source)
+
+    def test_a_meter_both_editions_print_alike_stays_a_scalar(self) -> None:
+        source = self.SOURCE.replace(
+            "meter:\n  en: Irregular Meter\n  zh: 特.和", "meter: 8.6.8.6."
+        )
+
+        hymn = Hymn.from_markdown(source)
+
+        self.assertEqual(hymn.meter, "8.6.8.6.")
+        self.assertEqual(hymn.to_markdown(), source)
+
+
+class SourceTextTest(TestCase):
+    """A property of the checked-in source, asserted over all 848 files."""
+
+    def test_no_lyric_is_written_with_a_markdown_escape(self) -> None:
+        """`data/` is the page's characters, and a backslash is none of them.
+
+        Hymn 42 is the only line in the collection whose page prints square
+        brackets, and it carried `\\[glorious claim\\]` until the escape was
+        found to be doing nothing: both spellings survive the round trip
+        unchanged and parse to the same text, so the plain one is the source of
+        record. This keeps the collection at zero backslashes, which is what
+        makes the statement checkable.
+        """
+
+        escaped = sorted(
+            path.name
+            for path in DATA.glob("*.md")
+            if "\\" in path.read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(escaped, [])

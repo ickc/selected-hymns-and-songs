@@ -77,13 +77,31 @@ class StructureTest(TestCase):
 
         self.assertIn("8.6.8.6.", page(value))
 
-    def test_a_singing_instruction_leaves_the_lyric_line(self) -> None:
-        value = hymn({1: [{"en": "Sing^[Repeat the last two lines]"}]})
+    def test_the_credit_note_is_set_apart_from_the_book_own_note(self) -> None:
+        # Both are prose under the heading, and only one of them is printed in
+        # the hymnal, so each gets its own class rather than one shared one.
+        value = hymn(
+            {1: [{"en": "One"}]},
+            note=[{"en": "Repeat the last two lines"}],
+            **{"credit-note": {"en": "The page prints A, the index B."}},
+        )
+
+        markdown = page(value)
+
+        self.assertIn("hymn-note", markdown)
+        self.assertIn("hymn-credit-note", markdown)
+        self.assertIn("The page prints A, the index B.", markdown)
+
+    def test_a_hymn_whose_credit_needed_no_choice_carries_no_note(self) -> None:
+        self.assertNotIn("hymn-credit-note", page(hymn({1: [{"en": "One"}]})))
+
+    def test_a_gloss_leaves_the_lyric_line(self) -> None:
+        value = hymn({1: [{"en": "Sing^[The hymnal's word about this word]"}]})
 
         markdown = page(value)
 
         self.assertIn("[Sing]{lang=en}", markdown)
-        self.assertIn("singing-note", markdown)
+        self.assertIn(".gloss", markdown)
 
 
 class ResolutionTest(TestCase):

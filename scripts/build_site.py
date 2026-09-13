@@ -22,6 +22,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import filecmp
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -52,6 +53,10 @@ IGNORED_PROJECT_ENTRIES = {
     # A stopped Quarto render can leave these generated pages beside their
     # Markdown sources. They must not become input resources in a later build.
     "index.html",
+    "preface.html",
+    "subject.html",
+    "tune.html",
+    "metrical.html",
     "chorus.html",
 }
 
@@ -92,9 +97,15 @@ def _copy_project(
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     targets = [f"{projection}/*.md" for projection in PROJECTIONS]
     if first:
+        # The documents that are about the collection rather than about one
+        # hymn. They are project-wide, so one worker renders them all.
         targets.insert(0, "index.md")
+        targets.insert(1, "preface.md")
+        targets.insert(2, "subject.md")
+        targets.insert(3, "tune.md")
+        targets.insert(4, "metrical.md")
         if mode == DEVELOP:
-            targets.insert(1, "chorus.md")
+            targets.insert(5, "chorus.md")
     config["project"]["render"] = targets
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"
@@ -133,6 +144,10 @@ def _copy_without_project_files(source: Path, destination: Path) -> None:
             shutil.copy2(path, target)
 
 
+# The fragment `slides.py` gives a repeat slide: `slide/57.html#r1`.
+REPEAT_SLIDE = re.compile(r"\.html#r[1-9][0-9]*$")
+
+
 def _merge(worker_outputs: Sequence[Path], destination: Path) -> int:
     shutil.copytree(worker_outputs[0], destination)
     search_entries = _read_search(worker_outputs[0] / "search.json")
@@ -150,6 +165,16 @@ def _merge(worker_outputs: Sequence[Path], destination: Path) -> int:
         raise RuntimeError("worker search indexes contain duplicate object IDs")
     if any(str(entry.get("href", "")).startswith("chorus.html") for entry in search_entries):
         raise RuntimeError("the developer-only chorus report entered the search index")
+
+    # A repeat slide sings lines the stanza before it has already sung, and
+    # `pages.py` says why that is not indexed: an entry holding no words the
+    # index lacks puts the same hymn in the results twice for no new match.
+    # The stanza is where a half-remembered line should open the deck.
+    search_entries = [
+        entry
+        for entry in search_entries
+        if not REPEAT_SLIDE.search(str(entry.get("href", "")))
+    ]
 
     # Make the merge deterministic: documents follow the lexical expansion of
     # the render globs, while entries within a document remain in slide order.

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from collections.abc import Collection
 from typing import Iterator
 
 from .model import LANGUAGE_ORDER, Hymn, LyricLine, Stanza
@@ -25,10 +26,16 @@ LINES_PER_SLIDE = 4
 # becomes the specific tag a renderer can act on: CSS ``:lang()`` matches it by
 # prefix, and Pandoc's LaTeX writer maps it to babel's ``chinese-hant``.
 BCP47 = {"en": "en", "zh": "zh-Hant"}
-# A Pandoc inline note, ``^[...]``, holding one level of nested brackets.  In
-# this collection these are singing instructions rather than annotations of the
-# text, so a slide shows them beside the stanza instead of as a footnote.
-INLINE_NOTE = re.compile(r"\^\[([^\[\]]*(?:\[[^\]]*\][^\[\]]*)*)\]")
+# A Pandoc inline note, ``^[...]``, holding one level of nested brackets.  What
+# is written this way is a gloss: a word of the hymnal's own about a word of the
+# hymn -- what ``Beulah`` means, that ``基督`` may be sung as ``耶穌`` -- printed
+# at the foot of the page it is on.  A direction about singing is not written
+# here: it governs the whole stanza, the page sets it apart from the stanza, and
+# `data/` keeps it in the front matter under ``note``.
+#
+# A screen has no foot to put a footnote at, so a slide shows the gloss beside
+# the stanza the glossed word is in.
+GLOSS = re.compile(r"\^\[([^\[\]]*(?:\[[^\]]*\][^\[\]]*)*)\]")
 # Punctuation a lyric line ends with which a title should not. `!` and `？`
 # are not here: a hymn named "Christ is risen!" keeps it. A full stop is only
 # ever the end of the sentence the line happens to be, in either script.
@@ -60,10 +67,12 @@ class Slide:
     identifier: str
     label: str
     lines: list[LyricLine]
-    notes: list[tuple[str, str]] = field(default_factory=list)
+    glosses: list[tuple[str, str]] = field(default_factory=list)
 
 
-def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
+def chorus_sources(
+    stanzas: list[Stanza], omitted: Collection[int] = ()
+) -> dict[int, dict[str, str]]:
     """Name the chorus each numbered stanza's languages are sung with.
 
     Four shapes occur in the collection: no chorus at all; one ``1-chorus``
@@ -76,6 +85,9 @@ def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
 
     This is the rule itself, kept apart from the lyrics it selects so that the
     report in ``site/chorus.md`` names exactly what the slides sing.
+
+    A stanza in ``omitted`` -- a hymn's ``chorus_omitted`` -- sings none: the
+    book says so where a hymn ends on a verse.
     """
 
     latest: dict[str, str] = {}
@@ -90,10 +102,14 @@ def chorus_sources(stanzas: list[Stanza]) -> dict[int, dict[str, str]]:
             latest[language] = str(stanza.name)
         if current is not None:
             resolved[current] = dict(latest)
+    for number in omitted:
+        resolved[number] = {}
     return resolved
 
 
-def chorus_by_stanza(stanzas: list[Stanza]) -> dict[int, dict[str, list[LyricLine]]]:
+def chorus_by_stanza(
+    stanzas: list[Stanza], omitted: Collection[int] = ()
+) -> dict[int, dict[str, list[LyricLine]]]:
     """Return the lyrics of the chorus each numbered stanza is sung with."""
 
     named = {str(stanza.name): stanza for stanza in stanzas}
@@ -104,7 +120,7 @@ def chorus_by_stanza(stanzas: list[Stanza]) -> dict[int, dict[str, list[LyricLin
             ]
             for language, name in sources.items()
         }
-        for number, sources in chorus_sources(stanzas).items()
+        for number, sources in chorus_sources(stanzas, omitted).items()
     }
 
 
@@ -148,19 +164,21 @@ def split_lines(
     return divided
 
 
-def _extract_notes(lines: list[LyricLine]) -> tuple[list[LyricLine], list[tuple[str, str]]]:
-    """Lift inline singing instructions out of the lyric lines they sit in."""
+def _extract_glosses(
+    lines: list[LyricLine],
+) -> tuple[list[LyricLine], list[tuple[str, str]]]:
+    """Lift the glosses out of the lyric lines they are anchored in."""
 
-    notes: list[tuple[str, str]] = []
+    glosses: list[tuple[str, str]] = []
     stripped: list[LyricLine] = []
     for line in lines:
         translations: dict[str, str] = {}
         for language, text in line.translations.items():
-            for note in INLINE_NOTE.findall(text):
-                notes.append((language, note))
-            translations[language] = INLINE_NOTE.sub("", text).strip()
+            for gloss in GLOSS.findall(text):
+                glosses.append((language, gloss))
+            translations[language] = GLOSS.sub("", text).strip()
         stripped.append(LyricLine(translations))
-    return stripped, notes
+    return stripped, glosses
 
 
 def _parts(
@@ -170,28 +188,51 @@ def _parts(
 
     divided = split_lines(lines, limit)
     for index, part in enumerate(divided, start=1):
-        text, notes = _extract_notes(part)
+        text, glosses = _extract_glosses(part)
         if len(divided) == 1:
-            yield Slide(identifier, label, text, notes)
+            yield Slide(identifier, label, text, glosses)
         else:
             yield Slide(
                 f"{identifier}-{index}",
                 f"{label} ({index}/{len(divided)})",
                 text,
-                notes,
+                glosses,
             )
+
+
+def repeated_lines(hymn: Hymn, stanza: Stanza) -> list[LyricLine]:
+    """Return the lines this stanza sings again, in the order it sings them.
+
+    The book says which by three different means and `data/` relates them in
+    ``repeat``; this is where a projection acts on it.  A page prints the
+    direction and leaves the singing to the singer, so ``pages.py`` does not
+    call this -- but a screen has already turned the page by then, which is the
+    whole reason the field exists.
+    """
+
+    if hymn.repeat is None or not hymn.repeat.sung_in(stanza.name):
+        return []
+    return [stanza.lines[number - 1] for number in hymn.repeat.lines]
 
 
 def slides(hymn: Hymn, limit: int = LINES_PER_SLIDE) -> list[Slide]:
     """Return the slides of one hymn, in the order it is sung."""
 
     chorus_label = f"{span('Chorus', 'en')} {span('副歌', 'zh')}"
-    resolved = chorus_by_stanza(hymn.stanzas)
+    repeat_label = f"{span('Repeat', 'en')} {span('重唱', 'zh')}"
+    resolved = chorus_by_stanza(hymn.stanzas, hymn.chorus_omitted or ())
     result: list[Slide] = []
     for stanza in hymn.stanzas:
         if not isinstance(stanza.name, int):
             continue
         result.extend(_parts(stanza.lines, f"v{stanza.name}", str(stanza.name), limit))
+        # The repeat is the stanza's, and the hymnal prints its direction under
+        # the stanza rather than under the chorus, so it is sung before one.
+        repeated = repeated_lines(hymn, stanza)
+        if repeated:
+            result.extend(
+                _parts(repeated, f"r{stanza.name}", repeat_label, limit)
+            )
         chorus = merge_languages(resolved.get(stanza.name, {}))
         if chorus:
             result.extend(_parts(chorus, f"c{stanza.name}", chorus_label, limit))
@@ -199,19 +240,24 @@ def slides(hymn: Hymn, limit: int = LINES_PER_SLIDE) -> list[Slide]:
 
 
 def title(hymn: Hymn) -> dict[str, str]:
-    """Return the hymn's title, or the first line it is known by instead.
+    """Return what the hymn is called, one language at a time.
 
-    One hymn in the collection carries a title.  A congregation names the rest
-    by their opening line, which is what a slide should show.
+    The hymnal prints no title over a hymn; what it has is the line it files
+    each one under in its subject index, and that index is English and covers
+    all but the scripture portions.  So a title is filled in per language
+    rather than as a whole: where the book names the hymn, that name; where it
+    does not, the line the hymn opens with, which is how a congregation calls
+    for it.  A hymn whose English half is named therefore still shows its
+    Chinese first line beside it.
     """
 
-    if hymn.title is not None:
-        return dict(hymn.title.translations)
-    first = hymn.stanzas[0].lines[0].translations
-    return {
-        language: INLINE_NOTE.sub("", text).strip().rstrip(TITLE_TRAILING)
-        for language, text in first.items()
+    named = hymn.title.translations if hymn.title is not None else {}
+    first = {
+        language: GLOSS.sub("", text).strip().rstrip(TITLE_TRAILING)
+        for language, text in hymn.stanzas[0].lines[0].translations.items()
     }
+    languages = sorted(set(named) | set(first), key=LANGUAGE_ORDER.__getitem__)
+    return {language: named.get(language) or first[language] for language in languages}
 
 
 def document_language(hymn: Hymn) -> str:
@@ -236,14 +282,14 @@ def _lyric_block(slide: Slide) -> str:
     return "::: lyrics\n" + "\n\n".join(paragraphs) + "\n:::"
 
 
-def _note_block(slide: Slide) -> str:
-    """Render the singing instructions found in one slide's lyric lines."""
+def _gloss_block(slide: Slide) -> str:
+    """Render the glosses anchored in one slide's lyric lines."""
 
-    if not slide.notes:
+    if not slide.glosses:
         return ""
-    ordered = sorted(slide.notes, key=lambda note: LANGUAGE_ORDER[note[0]])
+    ordered = sorted(slide.glosses, key=lambda gloss: LANGUAGE_ORDER[gloss[0]])
     body = "\\\n".join(span(text, language) for language, text in ordered)
-    return f"\n\n::: singing-note\n{body}\n:::"
+    return f"\n\n::: gloss\n{body}\n:::"
 
 
 def chorus_shape(hymn: Hymn) -> str:
@@ -256,15 +302,19 @@ def chorus_shape(hymn: Hymn) -> str:
     the case worth checking.
     """
 
+    omitted = hymn.chorus_omitted or ()
+    # A stanza the book leaves without its chorus says nothing about the shape.
     numbers = [
-        stanza.name for stanza in hymn.stanzas if isinstance(stanza.name, int)
+        stanza.name
+        for stanza in hymn.stanzas
+        if isinstance(stanza.name, int) and stanza.name not in omitted
     ]
     names = [
         str(stanza.name) for stanza in hymn.stanzas if not isinstance(stanza.name, int)
     ]
     if not names:
         return "none"
-    sources = chorus_sources(hymn.stanzas)
+    sources = chorus_sources(hymn.stanzas, omitted)
     # Both plain shapes are claimed by what the resolution did, never by the
     # names alone: a lone `1-chorus` written after the second stanza leaves the
     # first two stanzas singing no chorus at all, which is a hymn to look at
@@ -329,7 +379,9 @@ def chorus_report_markdown(entries: list[tuple[int, Hymn]]) -> str:
         "|---:|---:|---|---|",
     ]
     for number, hymn in mixed:
-        for stanza, sources in sorted(chorus_sources(hymn.stanzas).items()):
+        for stanza, sources in sorted(
+            chorus_sources(hymn.stanzas, hymn.chorus_omitted or ()).items()
+        ):
             english = sources.get("en")
             chinese = sources.get("zh")
             lines.append(
@@ -353,16 +405,25 @@ def to_markdown(hymn: Hymn, number: int, limit: int = LINES_PER_SLIDE) -> str:
         f"lang: {document_language(hymn)}",
         f"category: {_yaml_scalar(_localized_inline(hymn.category.translations))}",
     ]
-    for name in ("author", "ref", "note"):
+    for name in ("author", "composer", "ref", "credit_note"):
         value = getattr(hymn, name)
         if value is not None:
             metadata.append(
-                f"{name}: {_yaml_scalar(_localized_inline(value.translations))}"
+                f"{name.replace('_', '-')}: "
+                f"{_yaml_scalar(_localized_inline(value.translations))}"
             )
+    # A list, and looped over by `title-slide.html`: the hymnal prints one note
+    # under another rather than running them together.
+    if hymn.note:
+        metadata.append("note:")
+        metadata.extend(
+            f"  - {_yaml_scalar(_localized_inline(value.translations))}"
+            for value in hymn.note
+        )
 
     body = [
         f"## {slide.label} {{#{slide.identifier}}}\n\n"
-        f"{_lyric_block(slide)}{_note_block(slide)}"
+        f"{_lyric_block(slide)}{_gloss_block(slide)}"
         for slide in slides(hymn, limit)
     ]
     return "---\n" + "\n".join(metadata) + "\n---\n\n" + "\n\n".join(body) + "\n"

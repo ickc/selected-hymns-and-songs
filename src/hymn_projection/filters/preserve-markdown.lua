@@ -46,10 +46,23 @@ local function inferred_language(inline)
   return false
 end
 
-local function collapse(value)
+local collapse
+
+-- A field the hymnal may print more than once on a hymn -- `note` -- arrives as
+-- a list, and each of its items is a value of the ordinary kind.
+local function collapse_list(value)
+  local items = pandoc.List({})
+  for _, item in ipairs(value) do items:insert(collapse(item)) end
+  return items
+end
+
+function collapse(value)
   -- Since Pandoc 3.6, MetaInlines is exposed to Lua filters directly as an
   -- Inlines value; older releases expose the MetaInlines constructor tag.
   local value_type = pandoc.utils.type(value)
+  if value_type == "List" or value.t == "MetaList" then
+    return collapse_list(value)
+  end
   if value_type ~= "Inlines" and value.t ~= "MetaInlines" then return value end
 
   local output = pandoc.Inlines({})

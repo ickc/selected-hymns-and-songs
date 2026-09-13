@@ -201,6 +201,33 @@ body.hymn-page div.quarto-container {
   opacity: 0.7;
 }
 
+// Not the book speaking. Every other line in this heading is transcribed from
+// a page; this one says that two pages disagreed and which way the credit
+// above it was settled, so it is set apart in italic rather than left to look
+// like one more thing the hymnal printed. English-only, like the credits it is
+// about, so the language toggle leaves it alone.
+.hymn-heading .hymn-credit-note {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  opacity: 0.55;
+}
+
+// Who wrote the music and who wrote the words. Everything else on this line
+// says what it is by its own shape -- a meter is figures, a tune is a name in
+// small caps' place, a reference is a chapter and verse -- but two personal
+// names side by side do not, so each is marked with the character a Chinese
+// hymnal heads that credit with: 曲 for the music, 詞 for the words.
+.hymn-heading .hymn-composer::before {
+  content: "曲 ";
+  opacity: 0.75;
+}
+
+.hymn-heading .hymn-author::before {
+  content: "詞 ";
+  opacity: 0.75;
+}
+
 .hymn-stanza {
   margin-bottom: 1.6rem;
 }
@@ -244,7 +271,7 @@ body.hymn-page div.quarto-container {
   line-height: 1.45;
 }
 
-.hymn-text .singing-note {
+.hymn-text .gloss {
   margin-top: 0.5rem;
   font-size: 0.82rem;
   opacity: 0.65;
@@ -267,7 +294,7 @@ body.hymn-page div.quarto-container {
 // are what the hymnal says this hymn is, and only the category is written in
 // Chinese: hiding it would leave the separator in front of a meter with
 // nothing before it.
-$hymn-sung: ".lyrics, .hymn-title, .singing-note, .hymn-note";
+$hymn-sung: ".lyrics, .hymn-title, .gloss, .hymn-note";
 
 // `[lang|=]` and not `:lang()`. `:lang()` matches an element that *inherits*
 // the language too, and every paragraph here inherits the document's -- so on

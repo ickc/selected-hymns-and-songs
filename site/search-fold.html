@@ -1,0 +1,101 @@
+<script>
+// Fold the hymnal's orthography and a modern keyboard's into one form, so the
+// search box finds a line either way it is typed.
+//
+// `data/` is in the book's own typesetting -- 着 not 著, 裏 not 裡, 爲 not 為,
+// 藉 not 借, 眞 not 真, 敎 not 教, 啓 not 啟 -- because a lyric is a quotation
+// and the page decides how it is spelled. That is right for the page and
+// awkward for a reader: 2,698 of the 6,906 entries in `search.json` carry at
+// least one of these characters, and none of them is what a modern IME
+// produces. Someone searching for 裡面 or 教會 would be told the hymnal does
+// not contain them. The pairs are two shapes of one character, not two words;
+// PLAN.md's D18 says which, and where each was read off a page image.
+//
+// Both ends of Quarto's search go through one object -- fuse.js is given each
+// indexed document by `add` and each query by `search` -- so folding both into
+// the form `data/` carries makes the match symmetric. Folding the query alone
+// would leave unreachable the handful of places the site does print the other
+// form: the Chinese preface is a modern publisher's note and prints 為, hymn
+// 458's 更著 is *zhu* rather than the particle, and 814 and 817 keep the book's
+// 彀 where the other four hymns under that subject print 夠.
+//
+// This changes what is searched and what a result's snippet shows, and nothing
+// else. `data/` and the rendered pages keep the book's spelling exactly --
+// which is why the fold is allowed to be more lenient than `data/` is. A search
+// result is an offer of candidates, not an assertion about the page: a reader
+// who cannot remember which of two shapes a line was set in should be handed
+// both and left to pick.
+(function () {
+  if (!window.Fuse || !window.Fuse.prototype) return;
+
+  // Two shapes of one character, keyed by the form `data/` does not carry and
+  // valued by the one it does. Seven point at the older shape, because that is
+  // what the book sets; 彀/夠 points the other way, because there the book's
+  // own dominant form is the modern one. Kept in step with `data/` by
+  // tests/test_search_fold.py.
+  var VARIANTS = {
+    "著": "着",
+    "裡": "裏",
+    "為": "爲",
+    "借": "藉",
+    "真": "眞",
+    "教": "敎",
+    "啟": "啓",
+    "彀": "夠"
+  };
+
+  // The four ways the hymnal's readers meet one syllable, *ni*. This is not an
+  // orthographic pair and it is not checked against `data/`: 你 is neutral, 妳
+  // is feminine -- Psalm 45's "O daughter" in hymn 109, the Church addressed as
+  // herself in 105, both correct as printed -- and 祢 is reserved for God,
+  // which 袮 is a second shape of. Choosing between them is a reading of who is
+  // being addressed, which is why `data/` may not fold them and D17 still owes
+  // the collection a pass over them.
+  //
+  // A search is under no such obligation. Nobody recalls a line by which
+  // pronoun it was set in, and it does not matter: all four are the same word
+  // said to a different hearer. They fold to 你 because that is the
+  // undifferentiated one -- and the one `data/` overwhelmingly carries, so the
+  // fold moves eight characters in the whole index today. When D17's pass lands
+  // and 祢 becomes common, what a snippet *displays* is worth revisiting; what
+  // it finds will still be right, because both ends are folded.
+  var PRONOUNS = {
+    "妳": "你",
+    "祢": "你",
+    "袮": "你"
+  };
+
+  var FOLD = Object.assign({}, VARIANTS, PRONOUNS);
+
+  // No value is also a key, so one pass is the whole fold.
+  var PATTERN = new RegExp("[" + Object.keys(FOLD).join("") + "]", "g");
+
+  function fold(text) {
+    if (typeof text !== "string") return text;
+    return text.replace(PATTERN, function (character) {
+      return FOLD[character];
+    });
+  }
+
+  // The three fields Quarto's index is searched on. `href`, `objectID` and
+  // `crumbs` are left alone: a folded href would not resolve.
+  var FIELDS = ["title", "section", "text"];
+
+  var add = window.Fuse.prototype.add;
+  window.Fuse.prototype.add = function (document_) {
+    if (document_ && typeof document_ === "object") {
+      var folded = Object.assign({}, document_);
+      FIELDS.forEach(function (field) {
+        folded[field] = fold(folded[field]);
+      });
+      document_ = folded;
+    }
+    return add.call(this, document_);
+  };
+
+  var search = window.Fuse.prototype.search;
+  window.Fuse.prototype.search = function (query, options) {
+    return search.call(this, fold(query), options);
+  };
+})();
+</script>

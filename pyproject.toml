@@ -21,9 +21,43 @@ hymn_projection = { path = ".", editable = true }
 env = { QUARTO_PORT = "8020" }
 
 [tool.pixi.tasks]
-yaml-to-md = { cmd = "python -m hymn_projection.converter yaml-to-markdown ../selected-hymns/data.yml data", description = "Render the canonical YAML collection as data/N.md" }
+# How data/ was first written, and now a way to lose it: data/ has diverged
+# from the upstream YAML -- English categories, three hymns' English text, the
+# irregular meters -- and this overwrites all 848 files with what upstream
+# says. `md-to-yaml` is the direction to use; run this only into a scratch
+# directory, and never over data/.
+yaml-to-md = { cmd = "python -m hymn_projection.converter yaml-to-markdown ../selected-hymns/data.yml data", description = "DESTRUCTIVE: overwrite data/N.md with the upstream YAML, which data/ has diverged from" }
 md-to-yaml = { cmd = "python -m hymn_projection.converter markdown-to-yaml data data.yml", description = "Rebuild the canonical YAML from data/N.md" }
 md-to-site = { cmd = "python -m hymn_projection.converter markdown-to-site data site", description = "Project data/N.md concurrently as the slide and page Markdown, and the developer chorus report" }
+# Preprocessing over data/, not a step of the build: what it writes is source.
+apply-categories = { cmd = "python scripts/apply_categories.py data", description = "Rewrite each hymn's category from data/categories.tsv" }
+check-categories = { cmd = "python scripts/apply_categories.py data --check", description = "Fail if any hymn's category disagrees with data/categories.tsv" }
+# The other table read out of the book's front matter: the name its subject
+# index files each hymn under, which no page prints over the hymn itself.
+apply-titles = { cmd = "python scripts/apply_titles.py data", description = "Rewrite each hymn's title from data/titles.tsv" }
+check-titles = { cmd = "python scripts/apply_titles.py data --check", description = "Fail if any hymn's title disagrees with data/titles.tsv" }
+# The third: the tune the English edition sets each hymn to, read out of the
+# book's two back-matter indexes of tunes and cross-checked between them.
+apply-tunes = { cmd = "python scripts/apply_tunes.py data", description = "Rewrite each hymn's tune from data/tunes.tsv" }
+check-tunes = { cmd = "python scripts/apply_tunes.py data --check", description = "Fail if any hymn's tune disagrees with data/tunes.tsv" }
+# Likewise for the author and composer, read off the book's single index of
+# them. That index is printed once, so unlike the tunes there was no second
+# printing to check it against; see src/hymn_projection/authors.py.
+apply-authors = { cmd = "python scripts/apply_authors.py data", description = "Rewrite each hymn's author and composer from data/authors.tsv" }
+check-authors = { cmd = "python scripts/apply_authors.py data --check", description = "Fail if any hymn's credits disagree with data/authors.tsv" }
+# The two kinds of prose the hymnal prints beside a hymn -- a direction in the
+# front matter, a gloss in the lyric line -- checked against the hymn itself.
+# A gate, not a report: nothing in data/ fails it.
+check-notes = { cmd = "python scripts/check_notes.py data", description = "Fail if a hymn's own notes and glosses disagree with its stanzas" }
+# The two editions are set in different typography and data/ holds both in one
+# file, so each lyric line is read against its own edition's marks. Also a
+# gate: --kinds counts the findings rather than listing them.
+check-punctuation = { cmd = "python scripts/check_punctuation.py data", description = "Fail if a lyric line is not written with the marks its edition of the hymnal sets" }
+# The hymnal states a repeat in three places -- written out, ordered in a note,
+# marked in the meter -- and only the first says which lines. `repeat` in the
+# front matter is the other two written down, and this keeps the three from
+# drifting apart. A gate too: --kinds counts the findings rather than listing.
+check-repeats = { cmd = "python scripts/check_repeats.py data", description = "Fail if a hymn's three statements of what is sung twice disagree" }
 build = { cmd = "python scripts/build_site.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the decks and pages in parallel into site/_site" }
 build-serial = { cmd = "quarto render site && python scripts/stage_scans.py site", depends-on = ["md-to-site"], description = "Regenerate the projection and render the site in one Quarto process" }
 serve = { cmd = "quarto preview site --render none --port $QUARTO_PORT --host 0.0.0.0", depends-on = ["build"], description = "Build in parallel, then preview and rebuild changed pages on $QUARTO_PORT" }
@@ -33,7 +67,11 @@ check-slides = { cmd = "python scripts/check_slides.py site/_site/slide", descri
 setup-chrome = { cmd = "quarto install chrome-headless-shell --no-prompt", description = "Install the headless browser check-slides needs" }
 test = { cmd = "python -m unittest discover -s tests -v", description = "Run the conversion and projection tests" }
 chorus-report = { cmd = "python scripts/chorus_report.py data", description = "List the hymns whose chorus the projection resolves, to check against the hymnal" }
-clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/chorus.md site/index.html site/chorus.html", description = "Remove everything the projection and the render generate" }
+# A meter is a syllable count and Chinese is one syllable a character, so
+# this counts rather than trusts. A report, not a gate:
+# PLAN.md D7 says why the hymns it lists are left as the hymnal prints them.
+meter-report = { cmd = "python scripts/check_meters.py data", description = "List the hymns whose Chinese lyrics do not scan as their meter, their other verses or their other choruses say; --shape prints the counts" }
+clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/hymn site/preface.md site/subject.md site/tune.md site/metrical.md site/chorus.md site/index.html site/preface.html site/subject.html site/tune.html site/metrical.html site/chorus.html", description = "Remove everything the projection and the render generate" }
 
 [tool.pixi.dependencies]
 pandoc = ">=3.8.3,<4"

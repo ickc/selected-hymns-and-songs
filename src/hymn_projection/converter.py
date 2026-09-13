@@ -10,10 +10,15 @@ from pathlib import Path
 
 import yaml
 
+from .categories import read_table
 from .environment import PRODUCTION, available_cpu_count, build_mode
 from .model import Hymn
 from .pages import Collection, to_markdown as page_markdown
+from .preface import to_markdown as preface_markdown
 from .scans import missing_images, read_editions
+from .subjects import to_markdown as subject_markdown
+from .meterindex import to_markdown as metrical_markdown
+from .tuneindex import to_markdown as tune_markdown
 from .slides import (
     LINES_PER_SLIDE,
     chorus_report_markdown,
@@ -28,6 +33,13 @@ SOURCE_REPO = "source-repo"
 # What each projection writes, relative to the Quarto project.
 SLIDE_DIRECTORY = "slide"
 PAGE_DIRECTORY = "hymn"
+PREFACE_PAGE = "preface.md"
+SUBJECT_PAGE = "subject.md"
+TUNE_PAGE = "tune.md"
+METRICAL_PAGE = "metrical.md"
+# The subject index, beside the hymns it files. `data/N.md` says which subject
+# a hymn is under; only this says what order the subjects come in.
+SUBJECT_TABLE = "categories.tsv"
 
 
 def hymns_from_yaml(path: Path) -> Iterator[Hymn]:
@@ -184,7 +196,22 @@ def markdown_to_site(
             executor.map(_projection, files, repeat(limit), repeat(collection))
         )
 
+    # The book's own front matter: the two editions' prefaces, stacked on one
+    # page. Prose about the collection, not a hymn, so one worker renders it.
+    (destination / PREFACE_PAGE).write_text(preface_markdown(source), encoding="utf-8")
+
     entries = [(number, hymn) for number, hymn, _, _ in projections]
+    # Three projections about the collection rather than about a hymn: the
+    # outline the hymnal is arranged by, with every hymn under the subject its
+    # own page prints; the tunes the English edition sets them to; and the same
+    # relation grouped by meter, which is the book's other index of tunes.
+    (destination / SUBJECT_PAGE).write_text(
+        subject_markdown(read_table(source / SUBJECT_TABLE), entries), encoding="utf-8"
+    )
+    (destination / TUNE_PAGE).write_text(tune_markdown(entries), encoding="utf-8")
+    (destination / METRICAL_PAGE).write_text(
+        metrical_markdown(entries), encoding="utf-8"
+    )
     _replace_directory(
         destination / SLIDE_DIRECTORY,
         {number: slides for number, _, slides, _ in projections},

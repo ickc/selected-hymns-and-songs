@@ -2,12 +2,16 @@
 .pixi/*
 !.pixi/config.toml
 
-# The two projections and the report beside them, written by `pixi run
+# The projections and the report beside them, written by `pixi run
 # md-to-site` from data/ and rebuilt in CI. data/ is the source; these are
 # not, so they are not carried in the history. `site/index.md` is: nothing
 # generates it.
 site/slide/
 site/hymn/
+site/preface.md
+site/subject.md
+site/tune.md
+site/metrical.md
 site/chorus.md
 
 # Quarto render output. Its cache is ignored by site/.gitignore, which Quarto
@@ -20,4 +24,5 @@ site/*.html
 !site/fit.html
 !site/goto.html
 !site/hymn-page.html
+!site/search-fold.html
 !site/title-slide.html
