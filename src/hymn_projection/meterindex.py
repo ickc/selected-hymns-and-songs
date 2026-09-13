@@ -46,6 +46,7 @@ of any hymn, so they are written here rather than stored 62 times over.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Sequence
 
 from .model import Hymn
@@ -133,19 +134,32 @@ def _filed(
     """
 
     filed: dict[str, dict[str | None, list[int]]] = {}
-    chinese: dict[str, str | None] = {}
+    halves: dict[str, Counter[str | None]] = {}
     for number, hymn in sorted(entries):
         if hymn.meter is None:
             raise ValueError(f"hymn {number} has no meter to file it under")
         meter = english(hymn.meter)
-        # Every English meter but `Irregular Meter` has one Chinese half across
-        # the whole collection; that one has three, differing by a qualifier
-        # that belongs to the hymn rather than to the heading.
-        chinese.setdefault(meter, IRREGULAR_ZH if meter == IRREGULAR else _chinese(hymn.meter))
+        halves.setdefault(meter, Counter())[_chinese(hymn.meter)] += 1
         names = hymn.tune if isinstance(hymn.tune, list) else [hymn.tune]
         for name in names:
             filed.setdefault(meter, {}).setdefault(name, []).append(number)
-    return filed, chinese
+    return filed, {meter: _chinese_heading(meter, counts) for meter, counts in halves.items()}
+
+
+def _chinese_heading(meter: str, counts: Counter[str | None]) -> str | None:
+    """Return the Chinese half a meter's heading carries.
+
+    Sixteen English meters file a hymn whose Chinese page prints another
+    meter -- 8.6.8.6. files 790, which the Chinese page counts 8.7.8.7.  That
+    meter is the hymn's, not the heading's, so the heading takes the half
+    most of its hymns print, and on a tie the English one standing for both.
+    `Irregular Meter` has three, differing by a qualifier that belongs to the
+    hymn, and heads its section with none of them.
+    """
+
+    if meter == IRREGULAR:
+        return IRREGULAR_ZH
+    return max(counts, key=lambda half: (counts[half], half is None))
 
 
 def _heading(meter: str, chinese: str | None) -> str:

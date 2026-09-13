@@ -136,6 +136,26 @@ class IndexTest(TestCase):
             markdown,
         )
 
+    def test_a_heading_takes_the_chinese_half_most_of_its_hymns_print(self) -> None:
+        # 279's Chinese page counts 8.6.8.6. 和; the heading is not 279's.
+        markdown = to_markdown(
+            [
+                (279, bilingual("10.6.10.6. with chorus", "8.6.8.6. 和")),
+                (351, bilingual("10.6.10.6. with chorus", "10.6.10.6. 和")),
+                (573, bilingual("10.6.10.6. with chorus", "10.6.10.6. 和")),
+            ]
+        )
+
+        self.assertIn("## [10.6.10.6. with chorus]{lang=en} [10.6.10.6. 和]{lang=zh-Hant} ", markdown)
+
+    def test_a_tie_heads_the_section_with_the_english_alone(self) -> None:
+        # 166's Chinese page counts 7.7.7.4.; 206's prints the meter as it is.
+        markdown = to_markdown(
+            [(166, bilingual("7.7.7.3.", "7.7.7.4.")), (206, hymn("7.7.7.3."))]
+        )
+
+        self.assertIn("## [7.7.7.3.]{lang=en} {#meter-7-7-7-3}", markdown)
+
     def test_a_meter_both_editions_print_alike_heads_its_section_once(self) -> None:
         markdown = to_markdown([(1, hymn("8.7.8.7.D."))])
 
