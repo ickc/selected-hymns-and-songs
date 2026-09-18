@@ -129,11 +129,13 @@ class Occurrence:
     seen: str | None
     zh: str
     en: str
-    #: The page to crop, and the pixel row to crop around -- from the layer's
-    #: own position when it read the character, and from the nearest character
-    #: it did read on the same line when it did not.
+    #: The page to crop, the pixel row to crop around, and how near the layer
+    #: was when it named them: its own position when it read the character,
+    #: and the nearest it did read on the line, in the stanza or in the hymn
+    #: when it did not.
     page: int | None
     top: int | None
+    anchor: str
 
     @property
     def verdict(self) -> str:
@@ -239,26 +241,34 @@ def _nearest(
     characters: list[tuple[str, str, int, int]],
     read: dict[int, Character],
     index: int,
-) -> Character | None:
+) -> tuple[Character | None, str]:
     """Return where the layer read the character nearest to an unread one.
 
     An unresolved pronoun has no position of its own -- the layer did not read
-    it -- so what is offered instead is the band its line is printed in, taken
-    from the nearest character of the *same* line the layer did read.  Falling
-    back to another line would name a band the character is not in, which is
-    worse than naming none.
+    it -- so what is offered instead is the band around the nearest character
+    the layer *did* read, and how far away that was: on the same line, which
+    puts the pronoun in the band; elsewhere in the stanza, which puts it within
+    a line or two; or anywhere in the hymn, which only names the page.  A
+    reader is told which, because it decides how much of the page to crop.
     """
 
     _, stanza, line, _ = characters[index]
-    best: Character | None = None
-    nearest: int | None = None
+    best: dict[str, tuple[int, Character]] = {}
     for other, found in read.items():
-        if characters[other][1] != stanza or characters[other][2] != line:
-            continue
+        _, other_stanza, other_line, _ = characters[other]
+        if other_stanza == stanza and other_line == line:
+            scope = "line"
+        elif other_stanza == stanza:
+            scope = "stanza"
+        else:
+            scope = "hymn"
         distance = abs(other - index)
-        if nearest is None or distance < nearest:
-            best, nearest = found, distance
-    return best
+        if scope not in best or distance < best[scope][0]:
+            best[scope] = (distance, found)
+    for scope in ("line", "stanza", "hymn"):
+        if scope in best:
+            return best[scope][1], scope
+    return None, "none"
 
 
 def witness(number: int, hymn: Hymn, layer: list[Character]) -> list[Occurrence]:
@@ -284,13 +294,17 @@ def witness(number: int, hymn: Hymn, layer: list[Character]) -> list[Occurrence]
         found = read.get(index)
         if found is not None and found.text not in PRONOUNS:
             found = None
-        place = found or _nearest(characters, read, index)
+        if found is not None:
+            place, anchor = found, "self"
+        else:
+            place, anchor = _nearest(characters, read, index)
         zh, en = halves[(stanza, line)]
         occurrences.append(Occurrence(
             number, stanza, line, offset, character,
             found.text if found else None, zh, en,
             place.page if place else None,
             round(place.y * PIXELS_PER_POINT) if place else None,
+            anchor,
         ))
     return occurrences
 
@@ -366,7 +380,7 @@ def main() -> None:
             writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
             writer.writerow((
                 "hymn", "stanza", "line", "offset", "written", "seen",
-                "verdict", "conflict", "page", "top", "zh", "en",
+                "verdict", "conflict", "page", "top", "anchor", "zh", "en",
             ))
             for occurrence in occurrences:
                 writer.writerow((
@@ -375,7 +389,7 @@ def main() -> None:
                     occurrence.verdict, "thou" if occurrence.conflict else "",
                     occurrence.page if occurrence.page is not None else "",
                     occurrence.top if occurrence.top is not None else "",
-                    occurrence.zh, occurrence.en,
+                    occurrence.anchor, occurrence.zh, occurrence.en,
                 ))
 
     counts: dict[str, int] = {}
@@ -384,15 +398,18 @@ def main() -> None:
     hymns = {occurrence.number for occurrence in occurrences}
     unresolved = {occurrence.number for occurrence in occurrences
                   if occurrence.verdict == "unresolved"}
-    unplaced = sum(1 for occurrence in occurrences
-                   if occurrence.verdict == "unresolved" and occurrence.page is None)
+    scopes: dict[str, int] = {}
+    for occurrence in occurrences:
+        if occurrence.verdict == "unresolved":
+            scopes[occurrence.anchor] = scopes.get(occurrence.anchor, 0) + 1
     conflicts = sum(1 for occurrence in occurrences if occurrence.conflict)
 
     print(f"{len(occurrences)} pronouns in {len(hymns)} hymns")
     for verdict in ("agree", "correct", "overcorrect", "unresolved"):
         print(f"{counts.get(verdict, 0):>6}  {verdict}")
     print(f"{len(unresolved):>6}  hymns with an unresolved pronoun")
-    print(f"{unplaced:>6}  unresolved with no band to crop")
+    for scope in ("line", "stanza", "hymn", "none"):
+        print(f"{scopes.get(scope, 0):>6}  unresolved anchored to the {scope}")
     print(f"{conflicts:>6}  printed plain against an English Thou")
     if arguments.apply:
         print(f"{written:>6}  hymns rewritten")
