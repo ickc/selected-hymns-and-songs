@@ -334,19 +334,21 @@ What has been added here and is not there:
   no `with repeat`, so the two editions differ, and both are now as printed.
   This one was found because 470 also carries a `note` — 57 other hymns carry a
   bare `特` and have not been checked for a trailing `.重` or `.和`;
-- **one normalisation that departs from `scan/`**: hymn 822's subject is
-  `因着祂足夠的恩典` here, though its page prints `足彀` — confirmed on
-  `scan/zh/884.png`, so it is the book and not the extraction. The other four
-  hymns under that subject print `足夠`, and a reader searching for one
-  spelling should not be shown four of the five. This is the one place
-  consistency is allowed to beat the page, and the reason is that **the
-  category is a key and a lyric is not**: `read_mapping` builds the
-  Chinese-to-English correspondence keyed by the Chinese string, and
+- **a normalisation that departed from `scan/`, now withdrawn**: the subject
+  `因着祂足彀的恩典` was held here as `足夠`, on the stated grounds that hymn
+  822's page prints `足彀` and *the other four hymns under that subject print
+  `足夠`*. D22 read those four pages. They do not: `scan/zh/627.png`,
+  `629.png`, `630.png` and `631.png` all print `足彀`, as `884.png` does, so
+  all five agree and there was never an inconsistency to normalise away. The
+  subject is now the spelling its five pages set. **The reason the rule existed
+  still stands** — the category is a key and a lyric is not: `read_mapping`
+  builds the Chinese-to-English correspondence keyed by the Chinese string, and
   `subjects._filed` groups the index page by it, so two spellings of one
-  subject would be two subjects. Everything else `data/` holds is a quotation
-  and takes the page's spelling — `彀` included, which the lyrics of 814 and
-  817 keep as printed. [D18](PLAN.md) is where this is written up as a rule,
-  with the variant pairs and the two that cannot be folded.
+  subject would be two subjects, and where the pages disagree one spelling must
+  win. It is simply not needed here. A reader who searches `足夠` still finds
+  all five, because the fold points `彀` at `夠` and folds the indexed text too.
+  [D18](PLAN.md) is where the rule is written up, with the variant pairs and
+  the two that cannot be folded, and [D22](PLAN.md) is where this reading is.
 
 What is kept here although the hymnal does not print it:
 
@@ -875,11 +877,16 @@ the two hymns it belongs to, 105's Church and 109's daughter of Psalm 45; the
 OCR spells the reverential pronoun the same way, so an automatic pass over its
 verdicts could have turned those eight into a wrong word.
 
-What the pass did not settle is fourteen pronouns in lines the Chinese edition
-does not print the way `data/` writes them. They are not a pronoun problem:
-490's third and fourth stanzas, 494's chorus, 539's, 571 throughout, 505, 530,
-603 and 610 each carry a Chinese text that is not the one on their page. PLAN.md
-records them for the transcription pass that owes them.
+What the pass did not settle at the time is fourteen pronouns in lines the
+Chinese edition does not print the way `data/` wrote them — 490's third and
+fourth stanzas, 494's chorus, 539's, 571 throughout, 505, 530, 603 and 610 each
+carrying a Chinese text that is not the one on their page. **D22 read those
+pages and the lines are now the pages'**, which settles the fourteen: four of
+them print 祢 and are rows here like any other, and the rest are a plain 你 the
+line addresses to the singer, or a 你 in a clause the page does not print.
+Because the table quotes the line as `data/` writes it, every rewritten line's
+row was rewritten with it — which is the check working as intended, each stale
+quote failing loudly rather than silently matching nothing.
 
 ## The metrical index
 
@@ -1077,12 +1084,13 @@ what a modern IME produces: without the fold, a reader searching for 裡面 or
 Both ends of the search go through one object — fuse.js is handed each indexed
 document by `add` and each query by `search` — so the include patches those two
 methods and folds both into the form `data/` carries. Folding **both** is what
-makes it symmetric, and it is not redundant: the eleven places the site does
-print the other form would otherwise become unreachable. The Chinese preface is
+makes it symmetric, and it is not redundant: the 31 places the site does print
+the other form would otherwise become unreachable. The Chinese preface is
 a modern publisher's note and prints 為; hymn 458's 更顯著 is *zhù* rather than
-the particle; 814 and 817 keep the 彀 their pages print where the other hymns
-under that subject print 夠. Folded on both sides, each of those is found by
-either spelling.
+the particle; and 彀 is in `data/` 26 times because the pages set it 26 times —
+588's lyrics seventeen, 814 and 817 theirs, and the five hymns of 因着祂足彀的
+恩典 one apiece. Folded on both sides, each of those is found by either
+spelling.
 
 There are **two tables**, and the difference between them is the whole point.
 
