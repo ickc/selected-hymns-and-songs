@@ -87,9 +87,13 @@ class Reading:
     stanza: str
     line: int
     offset: int
-    #: What the page prints there, and the page it was read on.
+    #: What the page prints there, and the page it was read on.  The page is
+    #: empty where the Chinese edition prints no such line: hymn 404's fourth
+    #: stanza is in the English edition and in `data/`, and `zh/425` ends the
+    #: hymn at its third, so there is nothing to read and the form is the one
+    #: the collection uses everywhere else for the one addressed.
     pronoun: str
-    page: int
+    page: int | None
     #: The line as `data/` writes it, so that the row can be read by a person
     #: and so that applying it can refuse a line that has since been changed.
     text: str
@@ -132,7 +136,8 @@ def read_ledger(path: Path) -> list[Reading]:
         try:
             reading = Reading(
                 int(row["hymn"]), row["stanza"], int(row["line"]),
-                int(row["offset"]), row["pronoun"], int(row["page"]), row["zh"],
+                int(row["offset"]), row["pronoun"],
+                int(row["page"]) if row["page"] else None, row["zh"],
             )
         except (TypeError, ValueError) as error:
             raise ValueError(f"{path}:{index}: {error}") from error
