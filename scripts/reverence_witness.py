@@ -24,6 +24,13 @@ treatment.  Every row it writes carries the page and the band to crop, because
 that reading is the point of the exercise and the layer is only what makes it
 finite.
 
+`data/reverence.tsv` outranks the layer wherever it has a row: a person looked
+at the page, so that occurrence is reported as ``read`` rather than argued
+with.  With the pass finished, a run should say 0 ``correct``, 0
+``overcorrect`` and 0 unlooked-at conflicts, and report exactly twelve
+``unresolved`` -- the lines D22 records, where the Chinese in `data/` is not the
+Chinese the page prints and so cannot be aligned against it.
+
 Usage::
 
     python scripts/reverence_witness.py --layer ../../private/selected-hymns-and-songs-pdf
@@ -49,6 +56,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from hymn_projection.converter import numbered_markdown_files  # noqa: E402
 from hymn_projection.model import Hymn  # noqa: E402
+from hymn_projection.reverence import read_ledger  # noqa: E402
 from hymn_projection.scans import read_editions  # noqa: E402
 from hymn_projection.slides import GLOSS  # noqa: E402
 
@@ -136,6 +144,10 @@ class Occurrence:
     page: int | None
     top: int | None
     anchor: str
+    #: Whether `data/reverence.tsv` holds a reading of this one, which is a
+    #: person having looked at the page.  That outranks the layer, so such an
+    #: occurrence is reported as ``read`` and not argued with.
+    read: bool = False
 
     @property
     def verdict(self) -> str:
@@ -144,9 +156,13 @@ class Occurrence:
         ``correct`` and ``overcorrect`` are the two ways `data/` and the page
         differ, kept apart because they are not equally likely: the first is
         the defect this pass is for, and the second would be this pass having
-        gone too far.
+        gone too far.  Neither is said of an occurrence the table has read:
+        the eight the eye overruled would otherwise be reported for ever as
+        the tool disagreeing with the correction it was used to make.
         """
 
+        if self.read:
+            return "read"
         if self.seen is None:
             return "unresolved"
         if self.written == self.seen or (
@@ -271,7 +287,12 @@ def _nearest(
     return None, "none"
 
 
-def witness(number: int, hymn: Hymn, layer: list[Character]) -> list[Occurrence]:
+def witness(
+    number: int,
+    hymn: Hymn,
+    layer: list[Character],
+    read: frozenset[tuple[int, str, int, int]] = frozenset(),
+) -> list[Occurrence]:
     """Say what the page's text layer reads at every pronoun of one hymn."""
 
     characters = hymn_characters(hymn)
@@ -281,23 +302,23 @@ def witness(number: int, hymn: Hymn, layer: list[Character]) -> list[Occurrence]
         [_fold(character.text) for character in layer],
         autojunk=False,
     )
-    read: dict[int, Character] = {}
+    aligned: dict[int, Character] = {}
     for start, other, size in matcher.get_matching_blocks():
         for step in range(size):
-            read[start + step] = layer[other + step]
+            aligned[start + step] = layer[other + step]
 
     halves = _halves(hymn)
     occurrences: list[Occurrence] = []
     for index, (character, stanza, line, offset) in enumerate(characters):
         if character not in PRONOUNS:
             continue
-        found = read.get(index)
+        found = aligned.get(index)
         if found is not None and found.text not in PRONOUNS:
             found = None
         if found is not None:
             place, anchor = found, "self"
         else:
-            place, anchor = _nearest(characters, read, index)
+            place, anchor = _nearest(characters, aligned, index)
         zh, en = halves[(stanza, line)]
         occurrences.append(Occurrence(
             number, stanza, line, offset, character,
@@ -305,6 +326,7 @@ def witness(number: int, hymn: Hymn, layer: list[Character]) -> list[Occurrence]
             place.page if place else None,
             round(place.y * PIXELS_PER_POINT) if place else None,
             anchor,
+            (number, stanza, line, offset) in read,
         ))
     return occurrences
 
@@ -351,10 +373,16 @@ def main() -> None:
                         help="write every occurrence to this TSV")
     parser.add_argument("--apply", action="store_true",
                         help="write the corrections the layer is sure of")
+    parser.add_argument("--table", type=Path, default=None,
+                        help="the readings that outrank it (default: reverence.tsv beside the hymns)")
     arguments = parser.parse_args()
 
     edition = read_editions(arguments.scan)["zh"]
     directory = arguments.layer / "zh"
+    table = arguments.table or arguments.data / "reverence.tsv"
+    read = frozenset(
+        reading.key for reading in read_ledger(table)
+    ) if table.exists() else frozenset()
 
     occurrences: list[Occurrence] = []
     written = 0
@@ -367,7 +395,9 @@ def main() -> None:
                    for line in stanza.lines
                    for character in line.translations.get("zh", "")):
             continue
-        found = witness(number, hymn, layer_characters(directory, edition.pages(number)))
+        found = witness(
+            number, hymn, layer_characters(directory, edition.pages(number)), read
+        )
         occurrences.extend(found)
         if arguments.apply:
             text = corrected(hymn, found)
@@ -402,15 +432,16 @@ def main() -> None:
     for occurrence in occurrences:
         if occurrence.verdict == "unresolved":
             scopes[occurrence.anchor] = scopes.get(occurrence.anchor, 0) + 1
-    conflicts = sum(1 for occurrence in occurrences if occurrence.conflict)
+    conflicts = sum(1 for occurrence in occurrences
+                    if occurrence.conflict and not occurrence.read)
 
     print(f"{len(occurrences)} pronouns in {len(hymns)} hymns")
-    for verdict in ("agree", "correct", "overcorrect", "unresolved"):
+    for verdict in ("agree", "read", "correct", "overcorrect", "unresolved"):
         print(f"{counts.get(verdict, 0):>6}  {verdict}")
     print(f"{len(unresolved):>6}  hymns with an unresolved pronoun")
     for scope in ("line", "stanza", "hymn", "none"):
         print(f"{scopes.get(scope, 0):>6}  unresolved anchored to the {scope}")
-    print(f"{conflicts:>6}  printed plain against an English Thou")
+    print(f"{conflicts:>6}  read plain against an English Thou and not looked at")
     if arguments.apply:
         print(f"{written:>6}  hymns rewritten")
 
