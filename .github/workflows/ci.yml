@@ -52,13 +52,14 @@ jobs:
       # beside it. Fail here if the two have been edited apart.
       - run: pixi run check-categories
       # The same for the other tables, and the checks that hold a hymn's notes,
-      # punctuation and repeats to its own stanzas.
+      # punctuation, repeats and pronouns to its own stanzas.
       - run: pixi run check-titles
       - run: pixi run check-tunes
       - run: pixi run check-authors
       - run: pixi run check-notes
       - run: pixi run check-punctuation
       - run: pixi run check-repeats
+      - run: pixi run check-reverence
       # Developer-mode dispatches print and guard the exceptional chorus list.
       - if: env.HYMN_BUILD_MODE == 'develop'
         run: pixi run chorus-report -- --expect 17
