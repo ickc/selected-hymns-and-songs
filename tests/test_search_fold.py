@@ -134,9 +134,17 @@ class CollectionTest(TestCase):
 
     def test_the_hymns_are_not_still_in_two_minds_about_a_pair(self) -> None:
         # A handful of the folded-away form is expected and documented: 458's
-        # 著 is *zhu*, 556's 借 is *borrow*, and 814 and 817 keep the 彀 their
-        # pages print. A sweep that left a hundred behind would be a different
-        # thing, and would mean `data/` had drifted rather than been corrected.
+        # 著 is *zhu*, 556's 借 is *borrow*. A sweep that left a hundred behind
+        # would be a different thing, and would mean `data/` had drifted rather
+        # than been corrected.
+        #
+        # 彀 is the exception, and it is not drift: it is in `data/` 26 times
+        # because the pages set it 26 times. 588 is *about* sufficiency and
+        # sets it seventeen times in one hymn; 814 and 817 keep theirs; and the
+        # subject 因着祂足彀的恩典 carries five, one per hymn filed under it,
+        # all five pages agreeing. D22 read every one of those pages. The fold
+        # still points 彀 at 夠, because a reader who types the common form
+        # must find them.
         for variant in self.variants:
             with self.subTest(variant=variant):
-                self.assertLess(self.text.count(variant), 10)
+                self.assertLess(self.text.count(variant), 10 if variant != "彀" else 40)
