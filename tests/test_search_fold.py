@@ -94,8 +94,9 @@ class PronounTest(TestCase):
 
     def test_the_feminine_and_the_divine_are_both_folded(self) -> None:
         # 妳 is in `data/` and correct there -- Psalm 45's daughter in hymn 109,
-        # the Church in 105. 祢 is not in `data/` yet and will be; 袮 is its
-        # other shape and may never be, which is exactly why it is folded.
+        # the Church in 105. 祢 is in it 3,613 times since D17's reading pass
+        # landed; 袮 is its other shape and is in no page this book prints,
+        # which is exactly why it is folded rather than stored.
         for character in ("妳", "祢", "袮"):
             self.assertIn(character, self.pronouns)
 
@@ -110,8 +111,9 @@ class CollectionTest(TestCase):
     """The orthographic table against the text it is meant to be searched over.
 
     Only that table. `PRONOUNS` is a leniency rather than a claim about how the
-    book was set, so `data/` has nothing to say about it -- and once D17's pass
-    over 你/祢 lands, checking it here would fail for the wrong reason.
+    book was set, so `data/` has nothing to say about it: `check-reverence` is
+    what holds 你 and 祢 to the pages, and checking them here as orthographic
+    variants would fail for the wrong reason.
     """
 
     @classmethod
