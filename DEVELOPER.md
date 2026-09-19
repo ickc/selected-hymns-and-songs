@@ -31,6 +31,7 @@ flowchart LR
   tits["<b>data/titles.tsv</b><br/>778 names, in git"]
   tuns["<b>data/tunes.tsv</b><br/>765 pairs, in git"]
   auth["<b>data/authors.tsv</b><br/>764 rows, in git"]
+  rev["<b>data/reverence.tsv</b><br/>761 pronouns, in git"]
   slide["site/slide/N.md"]
   page["site/hymn/N.md"]
   subject["site/subject.md"]
@@ -46,6 +47,7 @@ flowchart LR
   tits -- "apply-titles" --> md
   tuns -- "apply-tunes" --> md
   auth -- "apply-authors" --> md
+  rev -- "apply-reverence" --> md
   yaml -- "yaml-to-md" --> md
   md -- "md-to-yaml" --> yaml
   md -- "md-to-site" --> slide
@@ -73,13 +75,15 @@ flowchart LR
 is generated, ignored, and rebuilt here and in CI — so it cannot be stale, and
 there is no generated file to review in a diff.
 
-`data/categories.tsv`, `data/titles.tsv`, `data/tunes.tsv` and
-`data/authors.tsv` are the four things that write *into* `data/`. All four are
-preprocessing, run when they change rather than on the way to the site, and all
-four were read out of the book's own front or back matter, which is the only
-place any of them exists. See [the category table](#the-category-table), [the
-title table](#the-title-table), [the tune table](#the-tune-table) and [the
-credits table](#the-credits-table). The category
+`data/categories.tsv`, `data/titles.tsv`, `data/tunes.tsv`, `data/authors.tsv`
+and `data/reverence.tsv` are the five things that write *into* `data/`. All
+five are preprocessing, run when they change rather than on the way to the
+site. The first four were read out of the book's own front or back matter,
+which is the only place any of them exists; the fifth was read off the hymn
+pages themselves, one character at a time. See [the category
+table](#the-category-table), [the title table](#the-title-table), [the tune
+table](#the-tune-table), [the credits table](#the-credits-table) and
+`src/hymn_projection/reverence.py`. The category
 table is read a second time on the way *out*, as the subject index: a hymn
 knows its own subject, but only the table knows what order the subjects come
 in. The tune table is not — once applied, a hymn knows its own tune, and the
@@ -103,6 +107,7 @@ in. The tune table is not — once applied, a hymn knows its own tune, and the
 | `meters.py` | the **check** with no output of its own: what the meter over a hymn says its Chinese lines should scan as, against what they do — separating a verse that has lost syllables from one that only breaks its lines elsewhere, and reading the meter the Chinese page prints rather than the English one's. |
 | `notes.py` | the second **check** with no output of its own: the two kinds of prose the hymnal prints beside a hymn — a direction in the front matter, a gloss in the lyric line — read back against the stanzas they describe. |
 | `punctuation.py` | the third **check** with no output of its own: each lyric line read against the marks its own edition of the hymnal sets, the rule that a mark stays on the side of the line break its text is on, and the pairing of quotation marks. |
+| `reverence.py` | `data/reverence.tsv`: which of 你 and 祢 the Chinese page prints where the edition's text layer would not say, the **preprocessing** step that writes them, and the **check** that holds every hymn to them and to two things no table is needed for — that a line printed twice spells its pronouns the same way both times, and that the feminine 妳 stays in the two hymns it belongs to. |
 | `repeats.py` | the fourth **check** with no output of its own: the three places the hymnal states a repeat — written out, ordered in a note, marked in the meter — held against one another and against the `repeat` that says which lines. |
 | `converter.py` | the CLI, and the directory-level streaming each direction. |
 
@@ -329,19 +334,21 @@ What has been added here and is not there:
   no `with repeat`, so the two editions differ, and both are now as printed.
   This one was found because 470 also carries a `note` — 57 other hymns carry a
   bare `特` and have not been checked for a trailing `.重` or `.和`;
-- **one normalisation that departs from `scan/`**: hymn 822's subject is
-  `因着祂足夠的恩典` here, though its page prints `足彀` — confirmed on
-  `scan/zh/884.png`, so it is the book and not the extraction. The other four
-  hymns under that subject print `足夠`, and a reader searching for one
-  spelling should not be shown four of the five. This is the one place
-  consistency is allowed to beat the page, and the reason is that **the
-  category is a key and a lyric is not**: `read_mapping` builds the
-  Chinese-to-English correspondence keyed by the Chinese string, and
+- **a normalisation that departed from `scan/`, now withdrawn**: the subject
+  `因着祂足彀的恩典` was held here as `足夠`, on the stated grounds that hymn
+  822's page prints `足彀` and *the other four hymns under that subject print
+  `足夠`*. D22 read those four pages. They do not: `scan/zh/627.png`,
+  `629.png`, `630.png` and `631.png` all print `足彀`, as `884.png` does, so
+  all five agree and there was never an inconsistency to normalise away. The
+  subject is now the spelling its five pages set. **The reason the rule existed
+  still stands** — the category is a key and a lyric is not: `read_mapping`
+  builds the Chinese-to-English correspondence keyed by the Chinese string, and
   `subjects._filed` groups the index page by it, so two spellings of one
-  subject would be two subjects. Everything else `data/` holds is a quotation
-  and takes the page's spelling — `彀` included, which the lyrics of 814 and
-  817 keep as printed. [D18](PLAN.md) is where this is written up as a rule,
-  with the variant pairs and the two that cannot be folded.
+  subject would be two subjects, and where the pages disagree one spelling must
+  win. It is simply not needed here. A reader who searches `足夠` still finds
+  all five, because the fold points `彀` at `夠` and folds the indexed text too.
+  [D18](PLAN.md) is where the rule is written up, with the variant pairs and
+  the two that cannot be folded, and [D22](PLAN.md) is where this reading is.
 
 What is kept here although the hymnal does not print it:
 
@@ -819,6 +826,68 @@ line a reader could not tell apart from the text alone. A deck's title slide
 shows the author alone; the composer is carried in its front matter and left
 untemplated, on the grounds that nobody sings a tune by knowing who wrote it.
 
+## The pronouns read off the page
+
+The Chinese edition distinguishes 祢, the reverential second person, from plain
+你, and reserves it for God. `data/` descends from a transcription that did
+not: it wrote 你 4,546 times and 祢 not once. Which of the two a line prints
+turns on who is addressed, line by line, so nothing about the text settles it —
+D17 could correct 着 for 著 and 爲 for 為 by substitution and could not touch
+this. The pages had to be read.
+
+**Most of them were read by machine, and not by this repository.** The scan's
+own OCR, which only the private extraction project holds, misreads the printed
+祢 as 妳 and gets plain 你 right. That is a wrong character, but a consistently
+wrong one, and therefore a witness: `scripts/reverence_witness.py` aligns each
+hymn's Chinese lines against the OCR of the pages `scan/zh.csv` says it
+occupies, and says which of the two is printed at 3,826 of the 4,554 pronouns.
+Those verdicts are not in a table; they are simply in `data/`, the way D17's
+and D19's corrections are.
+
+Fifteen of them were checked against the page images before any was applied —
+eight plain, seven reverential, eight hundred pages apart — and the tool takes
+`--apply` only after that. It is not a check CI can run, because the layer it
+reads is outside this repository; what CI runs is `check-reverence`.
+
+**`data/reverence.tsv` is the rest**: 761 rows, each a pronoun a person read
+off `scan/zh/N.png`. 714 of them are ones the OCR did not read at all. 45 are
+ones it did read, plain, where the English half of the same line says *Thou* —
+which is not a contradiction on its face, the English addressing the believer
+as *thee* about as often as it addresses God, but is worth looking at twice.
+**Six of those forty-five were the layer misreading a printed 祢**: 165, 217,
+253, 429, 451 and 641. The last two rows came from asking the same question a
+different way, of the 89 lines where a plain 你 owns something the hymnal
+ascribes to God — 祢愛, 祢名, 祢恩 — and where the English says neither *Thou*
+nor *You*: 154's 祢愛不止息 and 393's 祢這生命種子 were wrong too, and the other
+87 were right. The audit in the other direction found nothing: each of the five
+hymns where a lone 祢 sits among many 你 prints it, 452 included, where `zh/474`
+sets 祢魂對外的門戶 of the believer's own soul.
+
+A row carries its page, and the page may be empty. Hymn 404's fourth stanza is
+in the English edition and in `data/`, and `zh/425` ends the hymn at its third,
+so its two pronouns cannot be read off anything; the row says so, and takes the
+form the collection uses everywhere else for the one addressed.
+
+**The check asserts two more things, which need no table at all.** A line
+printed twice spells its pronouns the same way both times — that is how 830 was
+caught, its last stanza printing 我求祢快來 twice where a partial pass had
+corrected one copy and not the other, and closing punctuation is folded away
+because the hymnal varies it between the copies. And the feminine 妳 stays in
+the two hymns it belongs to, 105's Church and 109's daughter of Psalm 45; the
+OCR spells the reverential pronoun the same way, so an automatic pass over its
+verdicts could have turned those eight into a wrong word.
+
+What the pass did not settle at the time is fourteen pronouns in lines the
+Chinese edition does not print the way `data/` wrote them — 490's third and
+fourth stanzas, 494's chorus, 539's, 571 throughout, 505, 530, 603 and 610 each
+carrying a Chinese text that is not the one on their page. **D22 read those
+pages and the lines are now the pages'**, which settles the fourteen: four of
+them print 祢 and are rows here like any other, and the rest are a plain 你 the
+line addresses to the singer, or a 你 in a clause the page does not print.
+Because the table quotes the line as `data/` writes it, every rewritten line's
+row was rewritten with it — which is the check working as intended, each stale
+quote failing loudly rather than silently matching nothing.
+
 ## The metrical index
 
 `site/metrical.md` is the fifth projection: meter, then tune, then the hymns
@@ -1015,12 +1084,13 @@ what a modern IME produces: without the fold, a reader searching for 裡面 or
 Both ends of the search go through one object — fuse.js is handed each indexed
 document by `add` and each query by `search` — so the include patches those two
 methods and folds both into the form `data/` carries. Folding **both** is what
-makes it symmetric, and it is not redundant: the eleven places the site does
-print the other form would otherwise become unreachable. The Chinese preface is
+makes it symmetric, and it is not redundant: the 31 places the site does print
+the other form would otherwise become unreachable. The Chinese preface is
 a modern publisher's note and prints 為; hymn 458's 更顯著 is *zhù* rather than
-the particle; 814 and 817 keep the 彀 their pages print where the other hymns
-under that subject print 夠. Folded on both sides, each of those is found by
-either spelling.
+the particle; and 彀 is in `data/` 26 times because the pages set it 26 times —
+588's lyrics seventeen, 814 and 817 theirs, and the five hymns of 因着祂足彀的
+恩典 one apiece. Folded on both sides, each of those is found by either
+spelling.
 
 There are **two tables**, and the difference between them is the whole point.
 
@@ -1034,7 +1104,9 @@ was read off a page image.
 orthographic pair, and that is why it needs a table of its own. Which one a
 line takes is a reading of who is being addressed — Psalm 45's "O daughter" in
 hymn 109 and the Church addressed as herself in 105 are correctly 妳 — so
-`data/` may not fold them, and D17 still owes the collection a pass over 你/祢.
+`data/` may not fold them. D17's reading pass has since put 祢 on 3,613 of the
+4,553 pronouns in the collection, and [the pronouns read off the
+page](#the-pronouns-read-off-the-page) is what keeps them there.
 A search is under no such obligation: nobody recalls a line by its pronoun, and
 all four are one word said to a different hearer. They fold to 你, the
 undifferentiated one.
@@ -1052,10 +1124,11 @@ it checks `VARIANTS` against `data/`, so a pair that stops being true of the
 collection — D17 rewrote its orthography once already, and D18 leaves a sweep
 of the lyrics open — fails there rather than quietly searching for a character
 that is no longer present. It checks `PRONOUNS` only for shape: no count in
-`data/` can confirm or refute a claim about what readers remember, and once
-D17's pass lands and 祢 becomes common, checking it against `data/` would fail
-for the wrong reason. What *would* deserve revisiting then is what a snippet
-displays; what it finds will still be right, because both ends are folded.
+`data/` can confirm or refute a claim about what readers remember, and 袮 is in
+no page this book prints, so checking the four against `data/` would fail for
+the wrong reason. `check-reverence` is what holds 你 and 祢 to the pages. What
+the pass *did* leave worth revisiting is what a snippet displays, now that 祢 is
+common; what a search finds is still right, because both ends are folded.
 
 ### Parallel rendering
 
@@ -1193,6 +1266,11 @@ Nobody is going to open 848 decks, so two scripts do it instead.
   `data/tunes.tsv`.
 - `scripts/apply_authors.py --check` (`pixi run check-authors`) does the same
   for `data/authors.tsv`.
+- `scripts/apply_reverence.py --check` (`pixi run check-reverence`) does the
+  same for `data/reverence.tsv`, and asserts two things besides that no table
+  is needed for: that a line printed twice spells its pronouns the same way
+  both times, and that the feminine 妳 stays in hymns 105 and 109. See [the
+  pronouns read off the page](#the-pronouns-read-off-the-page).
 - `scripts/chorus_report.py` (`pixi run chorus-report`) prints the hymns whose
   chorus the projection had to work out. `--expect 17` fails if that list
   changes, so a new one cannot arrive unseen.
@@ -1398,6 +1476,10 @@ apply-titles      Rewrite each hymn's title from data/titles.tsv
 check-titles      Fail if any hymn's title disagrees with that table
 apply-tunes       Rewrite each hymn's tune from data/tunes.tsv
 check-tunes       Fail if any hymn's tune disagrees with that table
+apply-authors     Rewrite each hymn's author and composer from data/authors.tsv
+check-authors     Fail if any hymn's credits disagree with that table
+apply-reverence   Rewrite each pronoun read off a page from data/reverence.tsv
+check-reverence   Fail if a pronoun disagrees with that table or with itself
 check-notes       Fail if a hymn's own notes and glosses disagree with its stanzas
 check-punctuation Fail if a lyric line is not written with its edition's marks
 check-repeats     Fail if a hymn's three statements of what is sung twice disagree

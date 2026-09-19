@@ -94,8 +94,9 @@ class PronounTest(TestCase):
 
     def test_the_feminine_and_the_divine_are_both_folded(self) -> None:
         # 妳 is in `data/` and correct there -- Psalm 45's daughter in hymn 109,
-        # the Church in 105. 祢 is not in `data/` yet and will be; 袮 is its
-        # other shape and may never be, which is exactly why it is folded.
+        # the Church in 105. 祢 is in it 3,613 times since D17's reading pass
+        # landed; 袮 is its other shape and is in no page this book prints,
+        # which is exactly why it is folded rather than stored.
         for character in ("妳", "祢", "袮"):
             self.assertIn(character, self.pronouns)
 
@@ -110,8 +111,9 @@ class CollectionTest(TestCase):
     """The orthographic table against the text it is meant to be searched over.
 
     Only that table. `PRONOUNS` is a leniency rather than a claim about how the
-    book was set, so `data/` has nothing to say about it -- and once D17's pass
-    over 你/祢 lands, checking it here would fail for the wrong reason.
+    book was set, so `data/` has nothing to say about it: `check-reverence` is
+    what holds 你 and 祢 to the pages, and checking them here as orthographic
+    variants would fail for the wrong reason.
     """
 
     @classmethod
@@ -132,9 +134,17 @@ class CollectionTest(TestCase):
 
     def test_the_hymns_are_not_still_in_two_minds_about_a_pair(self) -> None:
         # A handful of the folded-away form is expected and documented: 458's
-        # 著 is *zhu*, 556's 借 is *borrow*, and 814 and 817 keep the 彀 their
-        # pages print. A sweep that left a hundred behind would be a different
-        # thing, and would mean `data/` had drifted rather than been corrected.
+        # 著 is *zhu*, 556's 借 is *borrow*. A sweep that left a hundred behind
+        # would be a different thing, and would mean `data/` had drifted rather
+        # than been corrected.
+        #
+        # 彀 is the exception, and it is not drift: it is in `data/` 26 times
+        # because the pages set it 26 times. 588 is *about* sufficiency and
+        # sets it seventeen times in one hymn; 814 and 817 keep theirs; and the
+        # subject 因着祂足彀的恩典 carries five, one per hymn filed under it,
+        # all five pages agreeing. D22 read every one of those pages. The fold
+        # still points 彀 at 夠, because a reader who types the common form
+        # must find them.
         for variant in self.variants:
             with self.subTest(variant=variant):
-                self.assertLess(self.text.count(variant), 10)
+                self.assertLess(self.text.count(variant), 10 if variant != "彀" else 40)

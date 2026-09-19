@@ -45,6 +45,14 @@ check-tunes = { cmd = "python scripts/apply_tunes.py data --check", description 
 # printing to check it against; see src/hymn_projection/authors.py.
 apply-authors = { cmd = "python scripts/apply_authors.py data", description = "Rewrite each hymn's author and composer from data/authors.tsv" }
 check-authors = { cmd = "python scripts/apply_authors.py data --check", description = "Fail if any hymn's credits disagree with data/authors.tsv" }
+# The fifth table, and the only one that is not a field of the hymn but a
+# character inside its lines: the pronouns a person read off `scan/zh/N.png`
+# because the Chinese edition's text layer would not say which of 你 and 祢
+# the page prints. `--check` also asserts what holds without any table -- a
+# line printed twice spells its pronouns the same way both times, and the
+# feminine 妳 stays in the two hymns it belongs to.
+apply-reverence = { cmd = "python scripts/apply_reverence.py data", description = "Rewrite each pronoun read off a page from data/reverence.tsv" }
+check-reverence = { cmd = "python scripts/apply_reverence.py data --check", description = "Fail if a pronoun disagrees with data/reverence.tsv, with another printing of its line, or with the two hymns 妳 belongs to" }
 # The two kinds of prose the hymnal prints beside a hymn -- a direction in the
 # front matter, a gloss in the lyric line -- checked against the hymn itself.
 # A gate, not a report: nothing in data/ fails it.
