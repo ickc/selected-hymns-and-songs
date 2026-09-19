@@ -675,12 +675,14 @@ a defect: `data/480.md`'s English matches `en/516.txt` word for word, and its
 Chinese tracks that English more closely than the page's Chinese does — 經營 is
 "economy", where the page's 運行 is not. But this repository's rule is that the
 page wins, and the page is the only Chinese witness there is. The twelve lines
-are now the page's, in the collection's own orthography: `data/` writes 你 and
-著 on all 848 hymns and 祢 and 着 on none, so the page's 祢 and 着 are left as
-the typographic variants they are, and only the wording changed.
+are now the page's, in the collection's own orthography: `data/` wrote 你 and
+著 on all 848 hymns and 祢 and 着 on none when this was done, so the page's 祢
+and 着 were left as the typographic variants they were, and only the wording
+changed. D17 has since made both of them the page's here as everywhere, and
+the line below now reads 我接受祢，以祢爲主，從我活出祢自己.
 
 **The odd syllable was the book's after all.** The page prints fifteen in the
-first chorus's second line (我接受你，以你為主，從我活出你自己) and fourteen in
+first chorus's second line (我接受祢，以祢爲主，從我活出祢自己) and fourteen in
 the other two, so 480 is still the one hymn `meter-report` reports for its
 choruses — but the three verses now scan `13.13.13.11` against the
 `13.13.13.11. 和` its page prints, which they did before only by coincidence.
@@ -874,7 +876,7 @@ English pages, about seven Chinese ones), the provenance notes, `zh/152`'s long
 instruction, and the copyright lines; and the nineteen bilingual notes
 inherited from `data.yml`, whose English wording is still unsourced.
 
-### D17 — `data/` was in a different orthography from the book — **done bar `你`/`祢`**
+### D17 — `data/` was in a different orthography from the book — **done**
 
 **How it surfaced.** §8 item 10 noticed that both Chinese indexes call V.6
 神的醫治 while `data/` called it 醫病, and first recorded it as an
@@ -923,15 +925,49 @@ the build is unchanged at 848 decks and pages. `data/preface.zh.markdown` was
 **not** touched: the Chinese preface is a modern publisher's note set in modern
 forms, and its page prints 為, so it is right as it stands.
 
-**What is left: `你` for `祢`.** The book distinguishes 你 from 祢, the
-reverential second person, and reserves 祢 for God. `data/` has 你 4,547 times
-in 557 files and 祢 not once, and the page images show 祢 wherever the text
-layer reads 妳 — hymn 55's 神在**祢**身顯着 among them. This is the only one of
-the eight that is not a glyph substitution: it turns on who is being addressed,
-line by line. The layer settles it per hymn only where it finds no plain 你 and
-its count matches ours exactly, which is **100 of the 557**; 253 more have only
-祢 but a count that disagrees, and 204 have both. So it needs a reading pass,
-and it is the largest single correction left in `data/`.
+**`你` for `祢` — done: 3,613 corrected, 761 read off a page.** The book
+distinguishes 你 from 祢, the reverential second person, and reserves 祢 for
+God. `data/` had 你 4,546 times in 557 files and 祢 not once. This is the only
+one of the eight that is not a glyph substitution: it turns on who is being
+addressed, line by line, so the pages had to be read.
+
+*Per hymn*, the text layer settles it only where it finds no plain 你 and its
+count matches ours exactly — **100 of the 557**, which is what made this look
+like a reading pass over five hundred files. *Per character* it does far
+better. The scan's own OCR reads the printed 祢 as 妳 and plain 你 as 你: a
+wrong character, but a consistently wrong one, and therefore a witness.
+Aligning each hymn's Chinese against the OCR of its own pages — filtered to the
+two hidden OCR fonts, so that the numbered notation between the staves is not
+in the way — says which of the two is printed at **3,826 of the 4,554**
+pronouns. Fifteen of those verdicts were checked against `scan/zh/N.png` before
+any was applied. `scripts/reverence_witness.py` is that alignment; it needs the
+private extraction project, which is why its *result* is committed and CI runs
+something else.
+
+The remaining **728**, and the **45** the layer read plain under an English
+*Thou*, were read off the page images one at a time, in bands cropped to the
+line the layer's nearest anchor named. They are `data/reverence.tsv`, 761 rows
+of hymn, stanza, line, offset, what the page prints, and which page it was read
+on — and `pixi run check-reverence` holds `data/` to them, together with two
+things no table is needed for: that a line printed twice spells its pronouns
+the same way both times, and that the feminine 妳 stays in 105 and 109.
+
+**The layer was wrong eight times, and each was caught by asking who the line
+addresses.** Six of the 45 *Thou* conflicts were a printed 祢 read as 你 — 165,
+217, 253, 429, 451, 641. Two more came from the same question put differently,
+over the 89 lines where a plain 你 owns something the hymnal ascribes to God
+and the English says neither *Thou* nor *You*: 154's 祢愛不止息 and 393's
+祢這生命種子. The audit in the other direction found nothing to undo: each of
+the five hymns where a lone 祢 sits among many 你 prints it — 452 included,
+where `zh/474` sets 祢魂對外的門戶 of the believer's own soul, which is the
+hymnal's usage and not ours to tidy.
+
+A row's page may be empty, and one case needs it: hymn 404's fourth stanza is
+in the English edition and in `data/`, and `zh/425` ends the hymn at its third,
+so its two pronouns are printed nowhere to be read.
+
+**What the pass could not settle is not about pronouns** — fourteen of them sit
+in lines whose Chinese is not the Chinese on the page. See D22.
 
 **Still unchecked: the rest of the Chinese text.** Comparing every hymn's
 category against its page heading found six subjects where the two named
@@ -1070,19 +1106,22 @@ D17 checked, and any dictionary has to record the exception beside the rule.
   independent of the layer, so the two disagreeing is the layer misreading.
 - **`你`/`祢` is not a glyph question**, and there are four of them, not two:
   你 neutral, 妳 feminine, 祢 for God and 袮 a second shape of 祢. `data/`
-  carries 4,547 你 and 8 妳 — hymn 109's Psalm 45 daughter and hymn 105's
-  Church, both correct — and no 祢 or 袮 at all. Choosing between them is a
-  reading of who is addressed, so this cannot go in the orthographic table; it
-  has its own, and it is folded in *search* only. See D17.
+  carried 4,546 你 and 8 妳 — hymn 109's Psalm 45 daughter and hymn 105's
+  Church, both correct — and no 祢 or 袮 at all when this was written. Choosing
+  between them is a reading of who is addressed, so this cannot go in the
+  orthographic table; it has its own, and it is folded in *search* only. D17
+  has since read them: 3,613 祢, 934 你, and `check-reverence` holding both.
 - **The preface is exempt.** `data/preface.zh.markdown` is a modern
   publisher's note, and `zh/001` prints 為. Any dictionary applied across
   `data/` has to know that not all of `data/` is the 1960s typesetting.
 
 **Size.** It was small as a table and as a search change, and both are done.
-What is left under this heading is the sweep of the lyrics, which is really
-D17's outstanding half and belongs to whoever does 你/祢 — and the caveats
-above say what such a sweep would have to establish before it moved a
-character.
+The sweep of the lyrics it left open was really D17's outstanding half, and
+D17's reading pass has since done the pronoun. The caveats above held: the
+layer reads 祢 as 妳 *always*, which is what made the pass possible, and it was
+still wrong eight times where it read 你 — so the rule that a glyph must be
+verified on a page image and not in the text layer is the one this stands on.
+What the sweep turned up that is not a glyph at all is D22.
 
 ### D8 — the category is single-valued, but the book's index is not
 
@@ -1687,6 +1726,48 @@ syllable moved, and the meter report and the chorus report are both unchanged.
 
 ---
 
+### D22 — some of `data/`'s Chinese is not the Chinese on the page
+
+D17's reading pass cropped a band of `scan/zh/N.png` around some seven hundred
+lines and read each one as a sentence rather than as one character. That found
+the pronoun it went looking for, and it also found **lines whose words do not
+match the page at all**. They are not a pronoun problem and were not corrected
+as one; the fourteen pronouns among them are the only part of D17 left unwritten.
+
+Four were corrected in passing, because each was a single character and the
+page was unambiguous:
+
+| hymn | `data/` had | the page prints | at |
+| --- | --- | --- | --- |
+| 403 | 如同你的翻版。 | 作祢活像、同伴。 | `zh/425` |
+| 417 | 心中疑惑**你**消散， | 心中疑惑**全**消散， | `zh/438` |
+| 448 | 日復一日，時**複**一時， | 時**復**一時 | `zh/470` |
+| 454 | 主，你已使盲者**複**明， | 盲者**復**明 | `zh/475` |
+
+403's is a whole line rather than a glyph, and is D14's kind of defect exactly
+— *half of hymn 480's Chinese was not the text on its page*.
+
+**The rest are open, and they are of three sizes.** A glyph the collection is
+inconsistent about: 423 and 428 write 舍 where their pages print 捨; 642 and 831
+write 紀念 for 記念; 588 writes 夠 where `zh/628` prints 彀, which D18 already
+knows 814 and 817 do; 678 writes 贊 for 讚. (`data/` also mixes 秘 and 祕, 30
+against 17, and `zh/420` and `zh/473` print 祕 — which nothing has read the rest
+of.) A word or two: 530, 553, 603, 610, 620, 627's refrain and 676. And a whole
+passage: **490**'s third and fourth stanzas, **494**'s chorus and fifth stanza,
+**505**'s fifth line, **539**'s chorus and **571** throughout, where `data/`
+carries a different translation from the one printed — 571's page sets
+我心、安靜！主正在你身旁 against `data/`'s 我心，安靜！你主在你身旁.
+
+**Where this comes from is the same place D17 came from.** `data/` descends
+from `../selected-hymns/data.yml`, which is cleaned OCR of *a* printing, and
+these are the places it and this printing part company. What the sweep so far
+has covered is only the lines a pronoun made someone look at — 557 files of
+848, and within them only the lines that hold a 你. **A systematic pass would
+read every Chinese line against its page**, which is a bigger job than this one
+was and the only way to know how many more there are.
+
+---
+
 ## 3. The preface — **done**
 
 **Source.** Two pages, one each: `en/001` (English *PREFACE*, ~2.6 kB of OCR)
@@ -2111,19 +2192,30 @@ committed table itself rather than in a commit message.
     name that looked like an index-against-page disagreement and was not —
     **D17**, which is not small.
 
-**What is next.** Three things are open and each is a different size. **D17**'s
-orthography is corrected; what remains of it — 你 for 祢 across 557 files — is
-a reading pass and the largest single correction left in `data/`, and it is now
-the only part of D18 still standing.
-**D7** is done: the Chinese edition's meter is recorded on the 43 hymns where
-it is not the English one's, and the 64 hymns still reported are the hymnal's
-own — 56 a lineation question, and eight the report should keep making.
-**D19** is done: 386 lines corrected across 145 hymns in eight classes, and
-`check-punctuation` now asserts that each edition of the hymnal is written with
-its own. **D21** is done on top of it: 28 hymns now say which lines they sing
-twice, the decks sing them, and `check-repeats` holds the hymnal's three
-statements of a repeat together. **D16** is the largest, a two-edition transcription of the page
-annotations, and it is what would finally settle what the notes inherited from `data.yml` are. Also still open and unchanged: **D8**, item 9's argument
-for carrying the front and back matter in `scan/`. **D17** would want it too:
-the Chinese subject index is one of its witnesses and is not in this
-repository.
+12. ~~**D17's reading pass** — 你 for 祢 across 557 files.~~ Done, and far
+    cheaper than "a reading pass over five hundred files" sounded. The Chinese
+    edition's own OCR misreads the printed 祢 as 妳 and gets 你 right, so an
+    alignment per *character* rather than per hymn settles 3,826 of the 4,554
+    pronouns; the other 728, and the 45 the layer read plain under an English
+    *Thou*, were read off `scan/zh/N.png` one band at a time. `data/` now
+    writes 祢 3,613 times, `data/reverence.tsv` holds the 761 a person read,
+    and `check-reverence` keeps them. Eight of the layer's verdicts were
+    wrong and each was caught by asking who its line addresses. It turned up
+    **D22**.
+
+**What is next.** **D22** is new and is the one this pass argues for: reading
+every Chinese line against its page, rather than only the lines a pronoun made
+someone look at. Five hymns are already known to carry a translation the page
+does not print, and nothing has looked at the other 291 files. **D16** is the
+other large one, a two-edition transcription of the page annotations, and it is
+what would finally settle what the notes inherited from `data.yml` are; the
+copyright line this pass met on `zh/232` — 因中文版權問題，不印樂譜，請參照英文版
+— is one of the four families it lists. Still open and unchanged: **D8**, and
+item 9's argument for carrying the front and back matter in `scan/`.
+
+For the record of what is closed: **D7**, the Chinese edition's meter on the 43
+hymns where it is not the English one's, with 64 hymns still reported that are
+the hymnal's own. **D17**, both halves — the seven glyphs and now the pronoun.
+**D18**, which the pronoun pass was the last part of. **D19**, 386 lines in
+eight classes, with `check-punctuation` asserting that each edition is written
+with its own marks. **D21**, 28 hymns saying which lines they sing twice.
