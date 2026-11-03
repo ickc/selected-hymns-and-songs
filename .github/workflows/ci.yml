@@ -43,9 +43,10 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
         with:
+          pixi-version: v0.83.0
           locked: true
       - run: pixi run test
       # data/N.md is the source, but one field of it is written from a table
@@ -72,9 +73,10 @@ jobs:
     # installs a browser and measures every slide.
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
         with:
+          pixi-version: v0.83.0
           locked: true
       # ~260 MB, and only the opt-in browser check needs it. The render does not.
       - if: env.HYMN_BUILD_MODE == 'develop'
