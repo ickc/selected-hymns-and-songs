@@ -83,6 +83,6 @@ clean = { cmd = "rm -rf site/_site site/.quarto site/site_libs site/slide site/h
 
 [tool.pixi.dependencies]
 pandoc = ">=3.8.3,<4"
-quarto = ">=1.9.38,<2"
+quarto = ">=1.11.9,<2"
 panflute = ">=2.0.5,<3"
 pyyaml = ">=6,<7"
